@@ -25,12 +25,50 @@ export async function getRandomRecipes(amount) {
     }
 };
 
+export async function replaceRecipe(index) {
+    let newRecipe = await getRandomRecipe();
+    console.log(newRecipe);
+    recipes.update((recipes) => {
+        recipes[index] = newRecipe;
+        return recipes;
+    });
+}
+
 export const deleteAllRecipes = async () => {
     recipes.set([]);
 }
 
-export function deleteRecipe(recipe) {
-    recipes.update((recipes) => recipes.filter((r) => r !== recipe));
+export function deleteRecipe(index) {
+    recipes.update((recipes) => recipes.filter((_, i) => i != index));
 };
 
+export async function searchRecipesByName(name) {
+    const url = apiUrl("/recipes/name/" + name);
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw "Error while fetching data from ${url} (${res.status} ${res.statusText}).`;";
+    }
+    const response = await res.json();
+
+    for (let i = 0; i < response.length; i++) {
+        recipes.update((recipes) => [...recipes, response[i]]);
+    }
+
+}
+
+export async function searchRecipesByIngredient(ingredient) {
+    const url = apiUrl("/recipes/ingredient/" + ingredient);
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw "Error while fetching data from ${url} (${res.status} ${res.statusText}).`;";
+    }
+    const response = await res.json();
+
+    for (let i = 0; i < response.length; i++) {
+        recipes.update((recipes) => [...recipes, response[i]]);
+    }
+
+}
+
 export const recipes = writable([]);
+export const filter = writable("name");

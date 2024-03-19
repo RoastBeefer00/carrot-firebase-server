@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/RoastBeefer00/carrot-firebase-server/database"
@@ -23,7 +24,7 @@ type IDs struct {
     IDs []string `json:"ids"`
 }
 
-func GetAllRecipes(w http.ResponseWriter, r *http.Request) {
+func getAll() []Recipe {
     client, ctx, err := database.GetClient()
     if err != nil {
         log.Fatal(err)
@@ -45,6 +46,74 @@ func GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 
         recipes = append(recipes, recipe)
     }
+
+    return recipes
+}
+
+func filterRecipes(recipes []Recipe, function func(Recipe) bool) []Recipe {
+    var filteredRecipes []Recipe
+
+    for _, recipe := range recipes {
+        if function(recipe) {
+            filteredRecipes = append(filteredRecipes, recipe)
+        }
+    }
+
+    return filteredRecipes
+}
+
+func SearchRecipesByName(w http.ResponseWriter, r *http.Request) {
+    name := r.PathValue("name")
+    recipes := getAll()
+    var filteredRecipes []Recipe
+
+    filterFunc := func(recipe Recipe) bool {
+        if strings.Contains(strings.ToLower(recipe.Name), strings.ToLower(name)) {
+            return true
+        }
+        return false
+    }
+
+    filteredRecipes = filterRecipes(recipes, filterFunc)
+
+    w.Header().Set("Content-Type", "application/json")
+    data, err := json.Marshal(filteredRecipes)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    w.WriteHeader(http.StatusOK)
+    w.Write(data)
+}
+
+func SearchRecipesByIngredient(w http.ResponseWriter, r *http.Request) {
+    filter := r.PathValue("ingredient")
+    recipes := getAll()
+    var filteredRecipes []Recipe
+
+    filterFunc := func(recipe Recipe) bool {
+        for _, ingredient := range recipe.Ingredients {
+            if strings.Contains(strings.ToLower(ingredient), strings.ToLower(filter)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    filteredRecipes = filterRecipes(recipes, filterFunc)
+
+    w.Header().Set("Content-Type", "application/json")
+    data, err := json.Marshal(filteredRecipes)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    w.WriteHeader(http.StatusOK)
+    w.Write(data)
+}
+
+func GetAllRecipes(w http.ResponseWriter, r *http.Request) {
+    recipes := getAll()
 
     w.Header().Set("Content-Type", "application/json")
     data, err := json.Marshal(recipes)

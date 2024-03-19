@@ -1,16 +1,13 @@
 <script>
-    import { getRandomRecipe, deleteRecipe } from "$lib/stores.js";
+    import { replaceRecipe, deleteRecipe } from "$lib/stores.js";
 
     export let recipe;
+    export let index;
 
     let open = false;
 
     function toggleOpen() {
         open = !open;
-    }
-
-    async function replaceRecipe() {
-        recipe = await getRandomRecipe();
     }
 </script>
 
@@ -50,7 +47,7 @@
         </button>
         <div class="flex gap-2">
             <button
-                on:click={replaceRecipe}
+                on:click={() => replaceRecipe(index)}
                 class="text-crust text-center rounded bg-sky p-2 border border-crust"
             >
                 <svg
@@ -70,7 +67,7 @@
                 >
             </button>
             <button
-                on:click={() => deleteRecipe(recipe)}
+                on:click={() => deleteRecipe(index)}
                 class="text-crust text-center rounded bg-red p-2 border border-crust"
             >
                 <svg
