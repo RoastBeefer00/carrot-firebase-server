@@ -84,19 +84,25 @@
         </div>
     </div>
     {#if open}
-        <div class="bg-surface2 m-2 p-2 rounded">
-            <ul>
-                {#each recipe.ingredients as ingredient}
-                    <li class="text-text">{ingredient}</li>
-                {/each}
-            </ul>
-        </div>
-        <div class="bg-surface2 m-2 p-2 rounded">
-            {#each recipe.steps as step}
-                <div>
-                    <span class="text-text">{step}</span>
-                </div>
-            {/each}
+        <div class="bg-surface0 mt-2 p-2 rounded">
+            <div class="bg-green m-2 p-2 rounded">
+                <ul class="list-disc list-inside grid sm:grid-cols-2">
+                    {#each recipe.ingredients as ingredient}
+                        <li class="text-crust">{ingredient}</li>
+                    {/each}
+                </ul>
+            </div>
+            <div class="bg-blue m-2 p-2 rounded">
+                <ol type="1">
+                    {#each recipe.steps as step}
+                        <li>
+                            <div class="border-b border-crust p-1">
+                                <span class="text-crust">{step}</span>
+                            </div>
+                        </li>
+                    {/each}
+                </ol>
+            </div>
         </div>
     {/if}
 </div>
