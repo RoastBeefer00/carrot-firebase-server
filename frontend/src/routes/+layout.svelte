@@ -2,12 +2,16 @@
     // import { base } from "$app/paths";
     import "../app.css";
     import { deleteAllRecipes, filter, getRandomRecipes } from "$lib/stores.js";
+    import { clickOutside } from "$lib/clickOutside.js";
 
-    let sidebarBase = "fixed top-0 left-0 z-20 w-64 pt-20 h-screen transition-transform sm:translate-x-0"
+    let sidebarBase =
+        "fixed top-0 left-0 z-20 w-64 pt-20 h-screen transition-transform sm:translate-x-0";
     let sidebarClass;
     let sidebarOpen = false;
     $: {
-        sidebarClass = sidebarOpen ? sidebarBase + " translate-x-0" : sidebarBase + " -translate-x-full";
+        sidebarClass = sidebarOpen
+            ? sidebarBase + " translate-x-0"
+            : sidebarBase + " -translate-x-full";
         console.log(sidebarClass);
     }
 
@@ -18,8 +22,12 @@
             filter.set("ingredient");
         } else {
             filter.set("name");
-        };
-    };
+        }
+    }
+
+    function handleClickOutside(event) {
+		sidebarOpen = false;
+	}
 </script>
 
 <nav class="fixed top-0 z-30 w-full bg-base border-b border-rosewater">
@@ -53,11 +61,7 @@
         </div>
     </div>
 </nav>
-<aside
-    id="separator-sidebar"
-    class={sidebarClass}
-    aria-label="Sidebar"
->
+<aside use:clickOutside on:click_outside={handleClickOutside} id="separator-sidebar" class={sidebarClass} aria-label="Sidebar">
     <div
         class="h-full px-3 sm:py-4 overflow-y-auto bg-base border-r border-r-rosewater"
     >
@@ -77,11 +81,18 @@
                     <span class="ml-4"> Remove All </span>
                 </button>
             </li>
-            <li class="border-b border-b-rosewater" >
-                <label for="filters" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" >
+            <li class="border-b border-b-rosewater">
+                <label
+                    for="filters"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
                     Search by:
                 </label>
-                <select id="filters" on:change={toggleFilter} class="bg-gray-50 mb-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lavender focus:border-lavender block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" >
+                <select
+                    id="filters"
+                    on:change={toggleFilter}
+                    class="bg-gray-50 mb-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lavender focus:border-lavender block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                >
                     <option selected value="name">Name</option>
                     <option value="ingredients">Ingredient</option>
                 </select>
