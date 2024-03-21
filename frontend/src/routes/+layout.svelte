@@ -82,7 +82,7 @@
                     Search by:
                 </label>
                 <select id="filters" on:change={toggleFilter} class="bg-gray-50 mb-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lavender focus:border-lavender block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" >
-                    <option value="name">Name</option>
+                    <option selected value="name">Name</option>
                     <option value="ingredients">Ingredient</option>
                 </select>
             </li>

@@ -11,7 +11,7 @@
     }
 </script>
 
-<div class="bg-lavender p-4 rounded">
+<div class="bg-lavender sm:p-4 p-2 rounded">
     <div class="flex mb-2">
         <h1 class="text-mantle text-3xl font-bold mr-2">{recipe.name}</h1>
         <span class="text-mantle mt-2">{recipe.time}</span>
@@ -84,15 +84,15 @@
         </div>
     </div>
     {#if open}
-        <div class="bg-surface0 mt-2 p-2 rounded">
-            <div class="bg-green m-2 p-2 rounded">
+        <div class="bg-surface0 mt-2 p-1 sm:p-2 rounded">
+            <div class="bg-green sm:m-1 sm:p-1 m-1 p-1 rounded">
                 <ul class="list-disc list-inside grid sm:grid-cols-2">
                     {#each recipe.ingredients as ingredient}
                         <li class="text-crust">{ingredient}</li>
                     {/each}
                 </ul>
             </div>
-            <div class="bg-blue m-2 p-2 rounded">
+            <div class="bg-blue sm:m-2 sm:p-2 m-1 p-1 rounded">
                 <ol type="1">
                     {#each recipe.steps as step}
                         <li>

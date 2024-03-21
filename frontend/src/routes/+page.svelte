@@ -29,7 +29,7 @@
     <div>
         {#if $recipes != []}
             {#each $recipes as recipe, index}
-                <div class="p-2">
+                <div class="sm:p-2 p-1">
                     <Recipe {recipe} {index} />
                 </div>
             {/each}
