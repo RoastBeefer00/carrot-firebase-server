@@ -31,6 +31,7 @@ func main() {
     mux.HandleFunc("GET /recipes/random/{amount}", handlers.GetRandomRecipes)
     mux.HandleFunc("GET /recipes/name/{name}", handlers.SearchRecipesByName)
     mux.HandleFunc("GET /recipes/ingredient/{ingredient}", handlers.SearchRecipesByIngredient)
+    mux.HandleFunc("POST /groceries", handlers.CombineIngredients)
     //
     // mux.HandleFunc("POST /recipes", addRecipe)
     // mux.HandleFunc("DELETE /recipes", deleteRecipe)
