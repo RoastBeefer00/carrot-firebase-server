@@ -70,5 +70,25 @@ export async function searchRecipesByIngredient(ingredient) {
 
 }
 
+export async function getGroceries() {
+    let currentGroceries;
+    recipes.subscribe((value) => (currentGroceries = value));
+    const url = apiUrl("/groceries");
+    const res = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify(currentGroceries),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    });
+
+    if (!res.ok) {
+        throw "Error while fetching data from ${url} (${res.status} ${res.statusText}).`;";
+    }
+    const response = await res.json();
+    groceries.set(response);
+}
+
 export const recipes = writable([]);
+export const groceries = writable([]);
 export const filter = writable("name");

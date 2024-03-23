@@ -2,7 +2,10 @@
     // import { base } from "$app/paths";
     import "../app.css";
     import { deleteAllRecipes, filter, getRandomRecipes } from "$lib/stores.js";
+    import Groceries from "$lib/components/groceries.svelte";
     import { clickOutside } from "$lib/clickOutside.js";
+
+    let groceriesOpen = false;
 
     let sidebarBase =
         "fixed top-0 left-0 z-20 w-64 pt-20 h-screen transition-transform sm:translate-x-0";
@@ -25,9 +28,13 @@
         }
     }
 
-    function handleClickOutside(event) {
-		sidebarOpen = false;
-	}
+    function handleClickOutsideSidebar(event) {
+        sidebarOpen = false;
+    }
+
+    function handleClickOutsideGroceries(event) {
+        groceriesOpen = false;
+    }
 </script>
 
 <nav class="fixed top-0 z-30 w-full bg-base border-b border-rosewater">
@@ -36,22 +43,40 @@
             <div
                 class="flex items-center justify-start sm:justify-center w-full"
             >
-                <button
-                    class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-                    on:click={() => (sidebarOpen = !sidebarOpen)}
-                >
-                    <span class="sr-only"> "Open sidebar" </span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        ><path
-                            fill="currentColor"
-                            d="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"
-                        /></svg
+                {#if sidebarOpen}
+                    <button
+                        class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
                     >
-                </button>
+                        <span class="sr-only"> "Open sidebar" </span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="32"
+                            height="32"
+                            viewBox="0 0 24 24"
+                            ><path
+                                fill="currentColor"
+                                d="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"
+                            /></svg
+                        >
+                    </button>
+                {:else}
+                    <button
+                        class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+                        on:click={() => (sidebarOpen = !sidebarOpen)}
+                    >
+                        <span class="sr-only"> "Open sidebar" </span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="32"
+                            height="32"
+                            viewBox="0 0 24 24"
+                            ><path
+                                fill="currentColor"
+                                d="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"
+                            /></svg
+                        >
+                    </button>
+                {/if}
                 <h1
                     class="text-lavender lg:text-5xl text-4xl m-2 text-center font-extrabold"
                 >
@@ -61,13 +86,20 @@
         </div>
     </div>
 </nav>
-<aside use:clickOutside on:click_outside={handleClickOutside} id="separator-sidebar" class={sidebarClass} aria-label="Sidebar">
+<aside
+    use:clickOutside
+    on:click_outside={handleClickOutsideSidebar}
+    id="separator-sidebar"
+    class={sidebarClass}
+    aria-label="Sidebar"
+>
     <div
         class="h-full px-3 sm:py-4 overflow-y-auto bg-base border-r border-r-rosewater"
     >
         <ul class="pt-4 sm:mt-4 space-y-2 font-medium">
             <li>
                 <button
+                    on:click={() => { groceriesOpen = true; sidebarOpen = false }}
                     class="flex text-center p-2 text-crust rounded-lg bg-sky w-full"
                 >
                     <span class="ml-4"> Grocery List </span>
@@ -126,3 +158,13 @@
 <div class="p-4 sm:ml-64 mt-16 sm:mt-28">
     <slot />
 </div>
+
+{#if groceriesOpen}
+    <div
+        use:clickOutside
+        on:click_outside={handleClickOutsideGroceries}
+        class="absolute mx-auto mt-10 z-40 w-[90vw] sm:w-1/2 m-4 inset-0 h-[80vh]"
+    >
+        <Groceries />
+    </div>
+{/if}

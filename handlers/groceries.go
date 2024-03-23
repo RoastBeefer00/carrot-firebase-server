@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"regexp"
 	"slices"
@@ -62,14 +63,16 @@ func getIngredientItem(ingredient string) (string, error) {
 }
 
 func CombineIngredients(w http.ResponseWriter, r *http.Request) {
-    var recipes []Recipe
+	var recipes []Recipe
 	var ingredients []Ingredient
 
-    err := json.NewDecoder(r.Body).Decode(&recipes)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
+	fmt.Println(r.Body)
+
+	err := json.NewDecoder(r.Body).Decode(&recipes)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	for _, recipe := range recipes {
 		for _, ing := range recipe.Ingredients {
@@ -86,7 +89,9 @@ func CombineIngredients(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sort.Slice(ingredients, func(i, j int) bool { return ingredients[i].Item < ingredients[j].Item })
+	sort.Slice(ingredients, func(i, j int) bool {
+		return strings.ToLower(ingredients[i].Item) < strings.ToLower(ingredients[j].Item)
+	})
 	i := 0
 	max := len(ingredients) - 2
 
@@ -96,51 +101,52 @@ func CombineIngredients(w http.ResponseWriter, r *http.Request) {
 		ingredientJ := ingredients[j]
 
 		if strings.Contains(ingredientI.Item, ingredientJ.Item) || strings.Contains(ingredientJ.Item, ingredientI.Item) {
-			insert := Ingredient{}
-			if ingredientI.Quantity != "" {
-				if len(ingredientI.Quantity) > len(ingredientJ.Quantity) {
-					insert.Item = ingredientJ.Item
-				} else {
-					insert.Item = ingredientI.Item
-				}
+			if (ingredientI.Measurement == "" && ingredientJ.Measurement == "") || ((strings.Contains(ingredientI.Measurement, ingredientJ.Measurement) && ingredientJ.Measurement != "") || (strings.Contains(ingredientJ.Measurement, ingredientI.Measurement) && ingredientI.Measurement != "")) {
+				insert := Ingredient{}
+				if ingredientI.Quantity != "" {
+					if len(ingredientI.Quantity) > len(ingredientJ.Quantity) {
+						insert.Item = ingredientJ.Item
+					} else {
+						insert.Item = ingredientI.Item
+					}
 
-				if len(ingredientI.Measurement) > len(ingredientJ.Measurement) {
-					insert.Measurement = ingredientJ.Measurement
-				} else {
-					insert.Measurement = ingredientI.Measurement
-				}
+					if len(ingredientI.Measurement) > len(ingredientJ.Measurement) {
+						insert.Measurement = ingredientJ.Measurement
+					} else {
+						insert.Measurement = ingredientI.Measurement
+					}
 
-				if strings.Contains(ingredientI.Quantity, ".") || strings.Contains(ingredientJ.Quantity, ".") {
-					floatI, _ := strconv.ParseFloat(ingredientI.Quantity, 64)
-					floatJ, _ := strconv.ParseFloat(ingredientJ.Quantity, 64)
-					added := floatI + floatJ
-					insert.Quantity = strconv.FormatFloat(added, 'f', 2, 64)
-				} else {
-					intI, _ := strconv.Atoi(ingredientI.Quantity)
-					intJ, _ := strconv.Atoi(ingredientJ.Quantity)
-					added := intI + intJ
-					insert.Quantity = strconv.Itoa(added)
+					if strings.Contains(ingredientI.Quantity, ".") || strings.Contains(ingredientJ.Quantity, ".") {
+						floatI, _ := strconv.ParseFloat(ingredientI.Quantity, 64)
+						floatJ, _ := strconv.ParseFloat(ingredientJ.Quantity, 64)
+						added := floatI + floatJ
+						insert.Quantity = strconv.FormatFloat(added, 'f', 2, 64)
+					} else {
+						intI, _ := strconv.Atoi(ingredientI.Quantity)
+						intJ, _ := strconv.Atoi(ingredientJ.Quantity)
+						added := intI + intJ
+						insert.Quantity = strconv.Itoa(added)
+					}
 				}
-
-				ingredients = append(ingredients[:j], ingredients[j+1:]...)
-				if insert.Item != "" {
-					ingredients = slices.Insert(ingredients, j, insert)
-					ingredients = append(ingredients[:i], ingredients[i+1:]...)
-				}
-				i++
-				max--
+                ingredients = append(ingredients[:j], ingredients[j+1:]...)
+                if insert.Item != "" {
+                    ingredients = slices.Insert(ingredients, j, insert)
+                    ingredients = append(ingredients[:i], ingredients[i+1:]...)
+                }
+                i--
+                max--
 			}
 		}
-		i++
+        i++
 	}
 
-    w.Header().Set("Content-Type", "application/json")
-    data, err := json.Marshal(ingredients)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
+	w.Header().Set("Content-Type", "application/json")
+	data, err := json.Marshal(ingredients)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-    w.WriteHeader(http.StatusOK)
-    w.Write(data)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
