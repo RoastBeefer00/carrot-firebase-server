@@ -86,7 +86,9 @@ export async function getGroceries() {
         throw "Error while fetching data from ${url} (${res.status} ${res.statusText}).`;";
     }
     const response = await res.json();
-    groceries.set(response);
+    if (JSON.stringify(response) != JSON.stringify(currentGroceries)) {
+        groceries.set(response);
+    }
 }
 
 export const recipes = writable([]);
