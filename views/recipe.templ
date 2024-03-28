@@ -6,14 +6,6 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-func getId(thing string, id int) string {
-    return thing + "-" + strconv.Itoa(id) 
-}
-
-func getClass(thing string, id int) string {
-    return "#" + thing + "-" + strconv.Itoa(id) 
-}
-
 templ Recipes(recipes []services.Recipe) {
     for _, recipe := range recipes {
         @Recipe(recipe, recipe.Id)
@@ -21,27 +13,28 @@ templ Recipes(recipes []services.Recipe) {
 }
 
 templ Recipe(recipe services.Recipe, id int) {
-	<div class="bg-lavender sm:p-4 p-2 rounded mt-2" id={ getId("recipe", id) } x-data="{ open: false }">
+	<div class="bg-lavender sm:p-4 p-2 rounded mt-2" id={ "recipe-" + strconv.Itoa(id) }>
 		<div class="flex mb-2">
 			<h1 class="text-mantle text-3xl font-bold mr-2">{ recipe.Name }</h1>
 			<span class="text-mantle mt-2">{ recipe.Time }</span>
 		</div>
 		<div class="flex justify-between">
 			<button
-                @click="open = ! open"
+                id={ "toggle-recipe-" + strconv.Itoa(id) }
+                _="on click toggle .hidden on <svg/> in me"
 				class="text-crust text-center rounded bg-green p-2 border border-crust"
 			>
-				<svg x-show="! open" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 					<path fill="currentColor" d="m12 18l-6-6l1.4-1.4l3.6 3.575V6h2v8.175l3.6-3.575L18 12Z"></path>
 				</svg>
-				<svg x-show="open" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+				<svg class="hidden" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 					<path fill="currentColor" d="M11 18V9.825L7.4 13.4L6 12l6-6l6 6l-1.4 1.4L13 9.825V18Z"></path>
 				</svg>
 			</button>
 			<div class="flex gap-2">
 				<button class="text-crust text-center rounded bg-sky p-2 border border-crust"
                     hx-get="/recipes/random"
-                    hx-target={ getClass("recipe", id) }
+                    hx-target={ "#recipe-" + strconv.Itoa(id) }
                     hx-swap="outerHTML"
                 >
 					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
@@ -56,7 +49,7 @@ templ Recipe(recipe services.Recipe, id int) {
 				</button>
 				<button class="text-crust text-center rounded bg-red p-2 border border-crust"
                     hx-delete="/recipes/delete"
-                    hx-target={ getClass("recipe", id) }
+                    hx-target={ "#recipe-" + strconv.Itoa(id) }
                     hx-swap="outerHTML"
                 >
 					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
@@ -68,7 +61,7 @@ templ Recipe(recipe services.Recipe, id int) {
 				</button>
 			</div>
 		</div>
-		<div x-show="open" class="bg-surface0 mt-2 p-1 sm:p-2 rounded">
+		<div _={ "on click from #toggle-recipe-" + strconv.Itoa(id) + " toggle .hidden" } class="bg-surface0 mt-2 p-1 sm:p-2 rounded hidden">
 			<div class="bg-green sm:m-1 sm:p-1 m-1 p-1 rounded">
 				<ul class="list-disc list-inside grid sm:grid-cols-2">
 					for _, ingredient := range recipe.Ingredients {
