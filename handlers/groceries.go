@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"regexp"
 	"slices"
@@ -11,13 +9,9 @@ import (
 	"strings"
 
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
+	"github.com/RoastBeefer00/carrot-firebase-server/views"
+	"github.com/labstack/echo/v4"
 )
-
-type Ingredient struct {
-	Quantity    string `json:"quantity"`
-	Measurement string `json:"measurement"`
-	Item        string `json:"item"`
-}
 
 func getIngredientQuantity(ingredient string) (string, error) {
 	r, err := regexp.Compile("^\\d*[^a-zA-Z \\*]?\\d*")
@@ -64,24 +58,16 @@ func getIngredientItem(ingredient string) (string, error) {
 	}
 }
 
-func CombineIngredients(w http.ResponseWriter, r *http.Request) {
-	var recipes []services.Recipe
-	var ingredients []Ingredient
-
-	fmt.Println(r.Body)
-
-	err := json.NewDecoder(r.Body).Decode(&recipes)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func CombineIngredients(c echo.Context) error {
+    recipes := services.AllRecipes.Recipes
+	var ingredients []services.Ingredient
 
 	for _, recipe := range recipes {
 		for _, ing := range recipe.Ingredients {
 			quantity, _ := getIngredientQuantity(ing)
 			measurement, _ := getIngredientMeasurement(ing)
 			item, _ := getIngredientItem(ing)
-			ingredient := Ingredient{
+			ingredient := services.Ingredient{
 				Quantity:    quantity,
 				Measurement: measurement,
 				Item:        item,
@@ -104,7 +90,7 @@ func CombineIngredients(w http.ResponseWriter, r *http.Request) {
 
 		if strings.Contains(ingredientI.Item, ingredientJ.Item) || strings.Contains(ingredientJ.Item, ingredientI.Item) {
 			if (ingredientI.Measurement == "" && ingredientJ.Measurement == "") || ((strings.Contains(ingredientI.Measurement, ingredientJ.Measurement) && ingredientJ.Measurement != "") || (strings.Contains(ingredientJ.Measurement, ingredientI.Measurement) && ingredientI.Measurement != "")) {
-				insert := Ingredient{}
+				insert := services.Ingredient{}
 				if ingredientI.Quantity != "" {
 					if len(ingredientI.Quantity) > len(ingredientJ.Quantity) {
 						insert.Item = ingredientJ.Item
@@ -142,13 +128,6 @@ func CombineIngredients(w http.ResponseWriter, r *http.Request) {
         i++
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	data, err := json.Marshal(ingredients)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+    services.AllIngredients = ingredients
+    return Render(c, http.StatusOK, views.Groceries())
 }

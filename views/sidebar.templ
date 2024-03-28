@@ -9,7 +9,12 @@ templ sidebar() {
 		<div class="h-full px-3 sm:py-4 overflow-y-auto bg-base border-r border-r-rosewater">
 			<ul class="pt-4 sm:mt-4 space-y-2 font-medium">
 				<li>
-					<button class="flex text-center p-2 text-crust rounded-lg bg-sky w-full">
+					<button class="flex text-center p-2 text-crust rounded-lg bg-sky w-full"
+                        _="on click toggle .hidden on #groceries"
+                        hx-get="/groceries"
+                        hx-target="#groceries"
+                        hx-swap="innerHTML"
+                    >
 						<span class="ml-4">Grocery List </span>
 					</button>
 				</li>
@@ -60,7 +65,7 @@ templ sidebar() {
 								x-init="$watch('num', () => htmx.process($el))"
 								x-bind:hx-get="`/recipes/random/${num}`"
 								hx-target="#recipes"
-								hx-swap-oob="beforeend"
+								hx-swap="beforeend"
 							>
 								Add
 							</button>

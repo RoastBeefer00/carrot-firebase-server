@@ -48,9 +48,9 @@ func main() {
     e.GET("/recipes/name", handlers.SearchRecipesByName)
     e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)
     e.GET("/recipes/filter", handlers.ChangeFilter)
-    e.DELETE("/recipes/delete", handlers.DeleteRecipe)
+    e.DELETE("/recipes/delete/:id", handlers.DeleteRecipe)
     e.DELETE("/recipes/delete/all", handlers.DeleteAllRecipes)
-    // e.GET("/groceries", handlers.CombineIngredients)
+    e.GET("/groceries", handlers.CombineIngredients)
 
 	e.Logger.Fatal(e.Start(":42069"))
 }

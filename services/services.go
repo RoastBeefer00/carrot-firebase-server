@@ -2,13 +2,15 @@ package services
 
 var Id = 0
 var Filter = "name"
+var AllRecipes = Recipes{}
+var AllIngredients = []Ingredient{}
 
 type Recipes struct {
-	recipes []Recipe
+	Recipes []Recipe
 }
 
 func (r *Recipes) AddRecipe(recipe Recipe) {
-    r.recipes = append(r.recipes, recipe)
+    r.Recipes = append(r.Recipes, recipe)
 }
 
 type Recipe struct {
@@ -22,6 +24,12 @@ type Recipe struct {
 func (r *Recipe) AddId() {
     Id++
     r.Id = Id
+}
+
+type Ingredient struct {
+	Quantity    string
+	Measurement string
+	Item        string
 }
 
 func SetFilter(filter string) {

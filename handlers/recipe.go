@@ -83,6 +83,10 @@ func SearchRecipesByName(c echo.Context) error {
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
 
+    for _, recipe := range filteredRecipes {
+        services.AllRecipes.AddRecipe(recipe)
+    }
+
     return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
 }
 
@@ -105,6 +109,10 @@ func SearchRecipesByIngredient(c echo.Context) error {
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
 
+    for _, recipe := range filteredRecipes {
+        services.AllRecipes.AddRecipe(recipe)
+    }
+
     return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
 }
 
@@ -114,6 +122,9 @@ func GetAllRecipes(c echo.Context) error {
         return err
     }
 
+    for _, recipe := range recipes {
+        services.AllRecipes.AddRecipe(recipe)
+    }
     return Render(c, http.StatusOK, views.Recipes(recipes))
 }
 
@@ -139,6 +150,7 @@ func GetRandomRecipe(c echo.Context) error {
 	doc.DataTo(&recipe)
 
     recipe.AddId()
+    services.AllRecipes.AddRecipe(recipe)
 	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id))
 }
 
@@ -184,14 +196,30 @@ func GetRandomRecipes(c echo.Context) error {
 	}
 	wg.Wait()
 
+    for _, recipe := range randomRecipes {
+        services.AllRecipes.AddRecipe(recipe)
+    }
     return Render(c, http.StatusOK, views.Recipes(randomRecipes))
 }
 
 func DeleteRecipe(c echo.Context) error {
+    param := c.Param("id")
+    id, err := strconv.Atoi(param)
+    if err != nil {
+        return err
+    }
+
+    for i, recipe := range services.AllRecipes.Recipes {
+        if recipe.Id == id {
+            services.AllRecipes.Recipes = append(services.AllRecipes.Recipes[:i], services.AllRecipes.Recipes[i+1:]...)
+            break
+        }
+    }
     return c.NoContent(200)
 }
 
 func DeleteAllRecipes(c echo.Context) error {
+    services.AllRecipes = services.Recipes{}
     return c.NoContent(200)
 }
 

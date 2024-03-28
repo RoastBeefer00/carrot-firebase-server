@@ -48,7 +48,7 @@ templ Recipe(recipe services.Recipe, id int) {
 					</svg>
 				</button>
 				<button class="text-crust text-center rounded bg-red p-2 border border-crust"
-                    hx-delete="/recipes/delete"
+                    hx-delete={ "/recipes/delete/" + strconv.Itoa(id) }
                     hx-target={ "#recipe-" + strconv.Itoa(id) }
                     hx-swap="outerHTML"
                 >
