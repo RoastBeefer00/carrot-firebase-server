@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"math/rand/v2"
 	"net/http"
 	"strconv"
@@ -11,197 +9,195 @@ import (
 	"sync"
 
 	"github.com/RoastBeefer00/carrot-firebase-server/database"
+	"github.com/RoastBeefer00/carrot-firebase-server/views"
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+	"github.com/a-h/templ"
+	"github.com/labstack/echo/v4"
 )
 
-type Recipe struct {
-    Name string `json:"name"`
-    Time string `json:"time"`
-    Ingredients []string `json:"ingredients"`
-    Steps []string `json:"steps"`
-}
 
 type IDs struct {
-    IDs []string `json:"ids"`
+	IDs []string `json:"ids"`
 }
 
-func getAll() []Recipe {
-    client, ctx, err := database.GetClient()
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer client.Close()
-
-    docs, err := client.Collection("recipes").Documents(ctx).GetAll()
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    var recipes []Recipe
-    for _, doc := range docs {
-        var recipe Recipe
-        err = doc.DataTo(&recipe)
-        if err != nil {
-            log.Fatal(err)
-        }
-
-        recipes = append(recipes, recipe)
-    }
-
-    return recipes
+func Render(ctx echo.Context, statusCode int, t templ.Component) error {
+	ctx.Response().Writer.WriteHeader(statusCode)
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
+	return t.Render(ctx.Request().Context(), ctx.Response().Writer)
 }
 
-func filterRecipes(recipes []Recipe, function func(Recipe) bool) []Recipe {
-    var filteredRecipes []Recipe
+func getAll() ([]services.Recipe, error) {
+	client, ctx, err := database.GetClient()
+	if err != nil {
+        return nil, err
+	}
+	defer client.Close()
 
-    for _, recipe := range recipes {
-        if function(recipe) {
-            filteredRecipes = append(filteredRecipes, recipe)
-        }
-    }
+	docs, err := client.Collection("recipes").Documents(ctx).GetAll()
+	if err != nil {
+        return nil, err
+	}
 
-    return filteredRecipes
+	var recipes []services.Recipe
+	for _, doc := range docs {
+		var recipe services.Recipe
+		err = doc.DataTo(&recipe)
+		if err != nil {
+            return nil, err
+		}
+
+        recipe.AddId()
+		recipes = append(recipes, recipe)
+	}
+
+	return recipes, nil
 }
 
-func SearchRecipesByName(w http.ResponseWriter, r *http.Request) {
-    name := r.PathValue("name")
-    recipes := getAll()
-    var filteredRecipes []Recipe
+func filterRecipes(recipes []services.Recipe, function func(services.Recipe) bool) []services.Recipe {
+	var filteredRecipes []services.Recipe
 
-    filterFunc := func(recipe Recipe) bool {
-        if strings.Contains(strings.ToLower(recipe.Name), strings.ToLower(name)) {
-            return true
-        }
-        return false
-    }
+	for _, recipe := range recipes {
+		if function(recipe) {
+            recipe.AddId()
+			filteredRecipes = append(filteredRecipes, recipe)
+		}
+	}
 
-    filteredRecipes = filterRecipes(recipes, filterFunc)
-
-    w.Header().Set("Content-Type", "application/json")
-    data, err := json.Marshal(filteredRecipes)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    w.WriteHeader(http.StatusOK)
-    w.Write(data)
+	return filteredRecipes
 }
 
-func SearchRecipesByIngredient(w http.ResponseWriter, r *http.Request) {
-    filter := r.PathValue("ingredient")
-    recipes := getAll()
-    var filteredRecipes []Recipe
-
-    filterFunc := func(recipe Recipe) bool {
-        for _, ingredient := range recipe.Ingredients {
-            if strings.Contains(strings.ToLower(ingredient), strings.ToLower(filter)) {
-                return true
-            }
-        }
-        return false
-    }
-
-    filteredRecipes = filterRecipes(recipes, filterFunc)
-
-    w.Header().Set("Content-Type", "application/json")
-    data, err := json.Marshal(filteredRecipes)
+func SearchRecipesByName(c echo.Context) error {
+	filter := c.FormValue("search")
+	recipes, err := getAll()
     if err != nil {
-        log.Fatal(err)
+        return err
     }
+	var filteredRecipes []services.Recipe
 
-    w.WriteHeader(http.StatusOK)
-    w.Write(data)
+	filterFunc := func(recipe services.Recipe) bool {
+		if strings.Contains(strings.ToLower(recipe.Name), strings.ToLower(filter)) {
+			return true
+		}
+		return false
+	}
+
+	filteredRecipes = filterRecipes(recipes, filterFunc)
+
+    return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
 }
 
-func GetAllRecipes(w http.ResponseWriter, r *http.Request) {
-    recipes := getAll()
-
-    w.Header().Set("Content-Type", "application/json")
-    data, err := json.Marshal(recipes)
+func SearchRecipesByIngredient(c echo.Context) error {
+	filter := c.FormValue("search")
+	recipes, err := getAll()
     if err != nil {
-        log.Fatal(err)
+        return err
     }
+	var filteredRecipes []services.Recipe
 
-    w.WriteHeader(http.StatusOK)
-    w.Write(data)
+	filterFunc := func(recipe services.Recipe) bool {
+		for _, ingredient := range recipe.Ingredients {
+			if strings.Contains(strings.ToLower(ingredient), strings.ToLower(filter)) {
+				return true
+			}
+		}
+		return false
+	}
+
+	filteredRecipes = filterRecipes(recipes, filterFunc)
+
+    return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
 }
 
-func GetRandomRecipe(w http.ResponseWriter, r *http.Request) {
-    client, ctx, err := database.GetClient()
+func GetAllRecipes(c echo.Context) error {
+	recipes, err := getAll()
     if err != nil {
-        log.Fatal(err)
-    }
-    defer client.Close()
-
-    docs, err := client.Collection("ids").Documents(ctx).GetAll()
-    if err != nil {
-        log.Fatalln(err)
-    }
-    var ids IDs
-    docs[0].DataTo(&ids)
-    randomId := ids.IDs[rand.IntN(len(ids.IDs))]
-    doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
-    if err != nil {
-        log.Fatalln(err)
-    }
-    var recipe Recipe
-    doc.DataTo(&recipe)
-
-    w.Header().Set("Content-Type", "application/json")
-    data, err := json.Marshal(recipe)
-    if err != nil {
-        log.Fatal(err)
+        return err
     }
 
-    w.WriteHeader(http.StatusOK)
-    w.Write(data)
+    return Render(c, http.StatusOK, views.Recipes(recipes))
 }
 
-func GetRandomRecipes(w http.ResponseWriter, r *http.Request) {
-    var randomRecipes []Recipe
-    amount := r.PathValue("amount")
-    fmt.Println(amount)
-    amountInt, err := strconv.Atoi(amount)
-    if err != nil {
-        log.Fatal(err)
-    }
+func GetRandomRecipe(c echo.Context) error {
+	client, ctx, err := database.GetClient()
+	if err != nil {
+		return err
+	}
+	defer client.Close()
 
-    client, ctx, err := database.GetClient()
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer client.Close()
+	docs, err := client.Collection("ids").Documents(ctx).GetAll()
+	if err != nil {
+		return err
+	}
+	var ids IDs
+	docs[0].DataTo(&ids)
+	randomId := ids.IDs[rand.IntN(len(ids.IDs))]
+	doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
+	if err != nil {
+		return err
+	}
+	var recipe services.Recipe
+	doc.DataTo(&recipe)
 
-    docs, err := client.Collection("ids").Documents(ctx).GetAll()
-    if err != nil {
-        log.Fatalln(err)
-    }
-    var ids IDs
-    docs[0].DataTo(&ids)
+    recipe.AddId()
+	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id))
+}
 
-    var wg sync.WaitGroup
-    for _ = range amountInt {
-        wg.Add(1)
-        go func() {
-            defer wg.Done()
-            randomId := ids.IDs[rand.IntN(len(ids.IDs))]
-            doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
-            if err != nil {
-                log.Fatalln(err)
-            }
-            var recipe Recipe
-            doc.DataTo(&recipe)
+func GetRandomRecipes(c echo.Context) error {
+	var randomRecipes []services.Recipe
+	amount := c.Param("amount")
+	fmt.Println(amount)
+	amountInt, err := strconv.Atoi(amount)
+	if err != nil {
+        return err
+	}
 
-            randomRecipes = append(randomRecipes, recipe)
-        }()
-    }
-    wg.Wait()
+	client, ctx, err := database.GetClient()
+	if err != nil {
+        return err
+	}
+	defer client.Close()
 
-    w.Header().Set("Content-Type", "application/json")
-    data, err := json.Marshal(randomRecipes)
-    if err != nil {
-        log.Fatal(err)
-    }
+	docs, err := client.Collection("ids").Documents(ctx).GetAll()
+	if err != nil {
+        return err
+	}
+	var ids IDs
+	docs[0].DataTo(&ids)
 
-    w.WriteHeader(http.StatusOK)
-    w.Write(data)
+	var wg sync.WaitGroup
+	for range amountInt {
+		wg.Add(1)
+		go func() error {
+			defer wg.Done()
+			randomId := ids.IDs[rand.IntN(len(ids.IDs))]
+			doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
+			if err != nil {
+                return err
+			}
+			var recipe services.Recipe
+			doc.DataTo(&recipe)
+
+            recipe.AddId()
+			randomRecipes = append(randomRecipes, recipe)
+            return nil
+		}()
+	}
+	wg.Wait()
+
+    return Render(c, http.StatusOK, views.Recipes(randomRecipes))
+}
+
+func DeleteRecipe(c echo.Context) error {
+    return c.NoContent(200)
+}
+
+func DeleteAllRecipes(c echo.Context) error {
+    return c.NoContent(200)
+}
+
+func ChangeFilter(c echo.Context) error {
+    filter := c.QueryParam("filter")
+    fmt.Println(filter)
+    services.SetFilter(filter)
+    return Render(c, http.StatusOK, views.Search(filter))
 }

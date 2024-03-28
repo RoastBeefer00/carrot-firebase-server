@@ -1,0 +1,24 @@
+package views
+
+func getFilter(t string) string {
+    return "Press 'Enter' to search by " + t + "..."
+}
+
+templ Search(t string) {
+	<input
+		class="flex-initial w-full shadow rounded appearance-none border-8 border-lavender p-2 outline-none"
+		type="text"
+		name="search"
+        value=""
+        if t == "name" {
+            hx-get="/recipes/name"
+        } else {
+            hx-get="/recipes/ingredients"
+        }
+		hx-target="#recipes"
+		hx-swap="beforeend"
+		hx-trigger="keyup[keyCode==13]"
+        hx-on::after-request="if(event.detail.successful) this.reset()"
+		placeholder={ getFilter(t) }
+	/>
+}

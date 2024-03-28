@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
 type Ingredient struct {
@@ -63,7 +65,7 @@ func getIngredientItem(ingredient string) (string, error) {
 }
 
 func CombineIngredients(w http.ResponseWriter, r *http.Request) {
-	var recipes []Recipe
+	var recipes []services.Recipe
 	var ingredients []Ingredient
 
 	fmt.Println(r.Body)
