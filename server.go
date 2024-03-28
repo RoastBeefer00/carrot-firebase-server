@@ -44,6 +44,7 @@ func main() {
     })
     e.GET("/recipes", handlers.GetAllRecipes)
     e.GET("/recipes/random", handlers.GetRandomRecipe)
+    e.POST("/recipes/random", handlers.GetRandomRecipePost)
     e.GET("/recipes/random/:amount", handlers.GetRandomRecipes)
     e.GET("/recipes/name", handlers.SearchRecipesByName)
     e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)

@@ -154,6 +154,54 @@ func GetRandomRecipe(c echo.Context) error {
 	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id))
 }
 
+func GetRandomRecipesPost(c echo.Context) error {
+	var randomRecipes []services.Recipe
+	amount := c.QueryParam("amount")
+	fmt.Println(amount)
+	amountInt, err := strconv.Atoi(amount)
+	if err != nil {
+        return err
+	}
+
+	client, ctx, err := database.GetClient()
+	if err != nil {
+        return err
+	}
+	defer client.Close()
+
+	docs, err := client.Collection("ids").Documents(ctx).GetAll()
+	if err != nil {
+        return err
+	}
+	var ids IDs
+	docs[0].DataTo(&ids)
+
+	var wg sync.WaitGroup
+	for range amountInt {
+		wg.Add(1)
+		go func() error {
+			defer wg.Done()
+			randomId := ids.IDs[rand.IntN(len(ids.IDs))]
+			doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
+			if err != nil {
+                return err
+			}
+			var recipe services.Recipe
+			doc.DataTo(&recipe)
+
+            recipe.AddId()
+			randomRecipes = append(randomRecipes, recipe)
+            return nil
+		}()
+	}
+	wg.Wait()
+
+    for _, recipe := range randomRecipes {
+        services.AllRecipes.AddRecipe(recipe)
+    }
+    return Render(c, http.StatusOK, views.Recipes(randomRecipes))
+}
+
 func GetRandomRecipes(c echo.Context) error {
 	var randomRecipes []services.Recipe
 	amount := c.Param("amount")
