@@ -19,5 +19,6 @@ templ Search(t string) {
 		hx-swap="beforeend"
 		hx-trigger="keyup[keyCode==13]"
 		placeholder={ getFilter(t) }
+        _="on htmx:afterRequest set my value to ''"
 	/>
 }
