@@ -1,0 +1,19 @@
+package views
+
+import (
+
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+)
+
+templ page() {
+	<div x-data="{ sidebar-open: false }">
+		@nav()
+		@sidebar()
+		<div class="p-4 sm:ml-64 mt-16 sm:mt-28">
+			<div id="search">
+				@Search(services.Filter)
+			</div>
+			<div id="recipes" class="mt-4"></div>
+		</div>
+	</div>
+}
