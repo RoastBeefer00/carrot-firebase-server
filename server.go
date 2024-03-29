@@ -54,5 +54,5 @@ func main() {
     e.DELETE("/recipes/delete/all", handlers.DeleteAllRecipes)
     e.GET("/groceries", handlers.CombineIngredients)
 
-	e.Logger.Fatal(e.Start(":42069"))
+	e.Logger.Fatal(e.Start(":8080"))
 }
