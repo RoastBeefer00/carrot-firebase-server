@@ -71,13 +71,13 @@ templ Recipe(recipe services.Recipe, id int) {
 			</div>
 			<div class="bg-blue sm:m-2 sm:p-2 m-1 p-1 rounded">
 				<ol type="1">
+                for _, step := range recipe.Steps {
 					<li>
 						<div class="border-b border-crust p-1">
-							for _, step := range recipe.Steps {
 								<span class="text-crust">{ step }</span>
-							}
 						</div>
 					</li>
+                }
 				</ol>
 			</div>
 		</div>
