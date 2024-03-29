@@ -128,6 +128,42 @@ func GetAllRecipes(c echo.Context) error {
     return Render(c, http.StatusOK, views.Recipes(recipes))
 }
 
+func ReplaceRecipe(c echo.Context) error {
+    param := c.Param("id")
+    id, err := strconv.Atoi(param)
+    if err != nil {
+        return err
+    }
+
+	client, ctx, err := database.GetClient()
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	docs, err := client.Collection("ids").Documents(ctx).GetAll()
+	if err != nil {
+		return err
+	}
+	var ids IDs
+	docs[0].DataTo(&ids)
+	randomId := ids.IDs[rand.IntN(len(ids.IDs))]
+	doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
+	if err != nil {
+		return err
+	}
+	var recipe services.Recipe
+	doc.DataTo(&recipe)
+
+    recipe.AddId()
+    for _, r := range services.AllRecipes.Recipes {
+        if r.Id == id {
+            r = recipe
+        }
+    }
+	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id))
+}
+
 func GetRandomRecipe(c echo.Context) error {
 	client, ctx, err := database.GetClient()
 	if err != nil {

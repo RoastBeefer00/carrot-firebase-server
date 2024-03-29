@@ -33,7 +33,7 @@ templ Recipe(recipe services.Recipe, id int) {
 			</button>
 			<div class="flex gap-2">
 				<button class="text-crust text-center rounded bg-sky p-2 border border-crust"
-                    hx-get="/recipes/random"
+                    hx-post={ "/recipes/replace/" + strconv.Itoa(id) }
                     hx-target={ "#recipe-" + strconv.Itoa(id) }
                     hx-swap="outerHTML"
                 >
