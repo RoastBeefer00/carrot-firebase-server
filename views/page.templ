@@ -5,15 +5,15 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-templ page() {
-	<div>
+templ Page() {
+	<div class="page">
 		@nav()
 		@sidebar()
 		<div class="p-4 sm:ml-64 mt-16 sm:mt-28">
 			<div id="search">
 				@Search(services.Filter)
 			</div>
-			<div id="recipes" class="mt-4" hx-swap-oob="true"></div>
+            <div id="recipes" class="mt-4"></div>
 		</div>
 	</div>
     <div id="groceries" 

@@ -5,19 +5,24 @@ func getFilter(t string) string {
 }
 
 templ Search(t string) {
-	<input
-		class="flex-initial w-full shadow rounded appearance-none border-8 border-lavender p-2 outline-none"
-		type="text"
-		name="search"
-        value=""
+    <form
         if t == "name" {
             hx-get="/recipes/name"
         } else {
             hx-get="/recipes/ingredients"
         }
-		hx-target="#recipes"
-		hx-swap="beforeend"
-		hx-trigger="keyup[keyCode==13]"
+        hx-target="#recipes"
+        hx-swap="beforeend"
+        hx-trigger="keyup[keyCode==13]"
+    >
+    </form>
+    <input type="hidden" id="recipe-searchbar"/>
+    @GetUid("recipe-searchbar")
+	<input
+		class="flex-initial w-full shadow rounded appearance-none border-8 border-lavender p-2 outline-none"
+		type="text"
+		name="search"
+        value=""
 		placeholder={ getFilter(t) }
         _="on htmx:afterRequest set my value to ''"
 	/>

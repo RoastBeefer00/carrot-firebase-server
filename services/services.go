@@ -5,6 +5,13 @@ var Filter = "name"
 var AllRecipes = Recipes{}
 var AllIngredients = []Ingredient{}
 
+type User struct {
+    Email string
+    Uid string
+    Token string
+    DisplayName string
+}
+
 type Recipes struct {
 	Recipes []Recipe
 }
