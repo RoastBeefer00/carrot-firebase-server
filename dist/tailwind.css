@@ -1152,10 +1152,6 @@ video {
 }
 
 @media (min-width: 640px) {
-  .sm\:m-1 {
-    margin: 0.25rem;
-  }
-
   .sm\:m-2 {
     margin: 0.5rem;
   }
@@ -1191,10 +1187,6 @@ video {
 
   .sm\:justify-center {
     justify-content: center;
-  }
-
-  .sm\:p-1 {
-    padding: 0.25rem;
   }
 
   .sm\:p-2 {

@@ -62,7 +62,7 @@ templ Recipe(recipe services.Recipe, id int) {
 			</div>
 		</div>
 		<div _={ "on click from #toggle-recipe-" + strconv.Itoa(id) + " toggle .hidden" } class="bg-surface0 mt-2 p-1 sm:p-2 rounded hidden">
-			<div class="bg-green sm:m-2 sm:p-2 m-1 p-1 rounded">
+			<div class="bg-green sm:m-2 sm:p-4 m-1 p-2 rounded">
 				<ul class="list-disc list-inside grid sm:grid-cols-2">
 					for _, ingredient := range recipe.Ingredients {
 						<li class="text-crust">{ ingredient }</li>
