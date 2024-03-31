@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/gob"
-	"fmt"
 	"net/http"
 
 	"github.com/a-h/templ"
