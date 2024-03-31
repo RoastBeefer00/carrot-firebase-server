@@ -71,12 +71,12 @@ func main() {
 		fmt.Println("Email: " + email)
 		fmt.Println("Uid: " + uid)
 
-		user := services.User{
-			Token:       token,
-			DisplayName: displayName,
-			Email:       email,
-			Uid:         uid,
-		}
+		// user := services.User{
+		// 	Token:       token,
+		// 	DisplayName: displayName,
+		// 	Email:       email,
+		// 	Uid:         uid,
+		// }
 
 		sess, _ := session.Get(uid, c)
 		sess.Options = &sessions.Options{
@@ -86,17 +86,16 @@ func main() {
 		}
 		sess.Values["foo"] = "bar"
 		sess.Save(c.Request(), c.Response())
-		return Render(c, http.StatusOK, views.Page(user))
+		return Render(c, http.StatusOK, views.Page())
 	})
-	e.GET("/recipes", handlers.GetAllRecipes)
-	e.POST("/recipes/replace/:id", handlers.ReplaceRecipe)
+	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)
 	// e.GET("/recipes/random", handlers.GetRandomRecipe)
 	e.GET("/recipes/random", handlers.GetRandomRecipes)
 	e.GET("/recipes/name", handlers.SearchRecipesByName)
 	e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)
 	e.GET("/recipes/filter", handlers.ChangeFilter)
-	e.DELETE("/recipes/delete/:id", handlers.DeleteRecipe)
-	e.DELETE("/recipes/delete/all", handlers.DeleteAllRecipes)
+	e.GET("/recipes/delete/:id", handlers.DeleteRecipe)
+	e.GET("/recipes/delete/all", handlers.DeleteAllRecipes)
 	e.GET("/groceries", handlers.CombineIngredients)
 
 	e.Logger.Fatal(e.Start(":8080"))

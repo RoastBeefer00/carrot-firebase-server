@@ -68,6 +68,8 @@ func filterRecipes(recipes []services.Recipe, function func(services.Recipe) boo
 
 func SearchRecipesByName(c echo.Context) error {
 	filter := c.FormValue("search")
+	uid := c.FormValue("uid")
+
 	recipes, err := getAll()
 	if err != nil {
 		return err
@@ -83,8 +85,22 @@ func SearchRecipesByName(c echo.Context) error {
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
 
-	for _, recipe := range filteredRecipes {
-		services.AllRecipes.AddRecipe(recipe)
+	sess, err := session.Get(uid, c)
+
+	if sess.Values["recipes"] == nil {
+		sess.Values["recipes"] = filteredRecipes
+		sess.Save(c.Request(), c.Response())
+	} else {
+		store, ok := sess.Values["recipes"].([]services.Recipe)
+		if !ok {
+			fmt.Println("STORE IS NOT A SLICE")
+		}
+		recipes := append(store, filteredRecipes...)
+		sess.Values["recipes"] = recipes
+		err = sess.Save(c.Request(), c.Response())
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
@@ -92,6 +108,8 @@ func SearchRecipesByName(c echo.Context) error {
 
 func SearchRecipesByIngredient(c echo.Context) error {
 	filter := c.FormValue("search")
+	uid := c.FormValue("uid")
+
 	recipes, err := getAll()
 	if err != nil {
 		return err
@@ -109,27 +127,33 @@ func SearchRecipesByIngredient(c echo.Context) error {
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
 
-	for _, recipe := range filteredRecipes {
-		services.AllRecipes.AddRecipe(recipe)
+	sess, err := session.Get(uid, c)
+
+	if sess.Values["recipes"] == nil {
+		sess.Values["recipes"] = filteredRecipes
+		sess.Save(c.Request(), c.Response())
+	} else {
+		store, ok := sess.Values["recipes"].([]services.Recipe)
+		if !ok {
+			fmt.Println("STORE IS NOT A SLICE")
+		}
+		recipes := append(store, filteredRecipes...)
+		sess.Values["recipes"] = recipes
+		err = sess.Save(c.Request(), c.Response())
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
 }
 
-func GetAllRecipes(c echo.Context) error {
-	recipes, err := getAll()
-	if err != nil {
-		return err
-	}
-
-	for _, recipe := range recipes {
-		services.AllRecipes.AddRecipe(recipe)
-	}
-	return Render(c, http.StatusOK, views.Recipes(recipes))
-}
-
 func ReplaceRecipe(c echo.Context) error {
 	param := c.Param("id")
+    fmt.Println(param)
+	uid := c.FormValue("uid")
+    fmt.Println(uid)
+
 	id, err := strconv.Atoi(param)
 	if err != nil {
 		return err
@@ -156,46 +180,34 @@ func ReplaceRecipe(c echo.Context) error {
 	doc.DataTo(&recipe)
 
 	recipe.AddId()
-	for _, r := range services.AllRecipes.Recipes {
+	sess, _ := session.Get(uid, c)
+
+	store, ok := sess.Values["recipes"].([]services.Recipe)
+	if !ok {
+		fmt.Println("STORE IS NOT A SLICE")
+	}
+
+	for i, r := range store {
 		if r.Id == id {
-			r = recipe
+			store[i] = recipe
+			break
 		}
 	}
-	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id))
-}
 
-func GetRandomRecipe(c echo.Context) error {
-	client, ctx, err := database.GetClient()
+	sess.Values["recipes"] = store
+	err = sess.Save(c.Request(), c.Response())
 	if err != nil {
-		return err
+		fmt.Println("failed to save session")
 	}
-	defer client.Close()
 
-	docs, err := client.Collection("ids").Documents(ctx).GetAll()
-	if err != nil {
-		return err
-	}
-	var ids IDs
-	docs[0].DataTo(&ids)
-	randomId := ids.IDs[rand.IntN(len(ids.IDs))]
-	doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
-	if err != nil {
-		return err
-	}
-	var recipe services.Recipe
-	doc.DataTo(&recipe)
-
-	recipe.AddId()
-	services.AllRecipes.AddRecipe(recipe)
 	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id))
 }
 
 func GetRandomRecipes(c echo.Context) error {
 	var randomRecipes []services.Recipe
 	amount := c.FormValue("amount")
-	fmt.Println(amount)
 	uid := c.FormValue("uid")
-	fmt.Println(uid)
+
 	amountInt, err := strconv.Atoi(amount)
 	if err != nil {
 		return err
@@ -235,49 +247,76 @@ func GetRandomRecipes(c echo.Context) error {
 	wg.Wait()
 
 	sess, _ := session.Get(uid, c)
-    fmt.Println("sess")
-    fmt.Println(sess.Values)
-    fmt.Println()
 
-    if sess.Values["recipes"] == nil {
-        sess.Values["recipes"] = randomRecipes
-        sess.Save(c.Request(), c.Response())
-    } else {
-        store, ok := sess.Values["recipes"].([]services.Recipe)
-        if !ok {
-            fmt.Println("STORE IS NOT A SLICE")
-        }
-        fmt.Println("store", store)
-        recipes := append(store, randomRecipes...)
-        sess.Values["recipes"] = recipes
-        err = sess.Save(c.Request(), c.Response())
-        if err != nil {
-            fmt.Println(err)
-        }
-    }
+	if sess.Values["recipes"] == nil {
+		sess.Values["recipes"] = randomRecipes
+		sess.Save(c.Request(), c.Response())
+	} else {
+		store, ok := sess.Values["recipes"].([]services.Recipe)
+		if !ok {
+			fmt.Println("STORE IS NOT A SLICE")
+		}
+		recipes := append(store, randomRecipes...)
+		sess.Values["recipes"] = recipes
+		err = sess.Save(c.Request(), c.Response())
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 
-    fmt.Println(sess.Values["recipes"])
 	return Render(c, http.StatusOK, views.Recipes(randomRecipes))
 }
 
 func DeleteRecipe(c echo.Context) error {
 	param := c.Param("id")
+    fmt.Println(param)
+	uid := c.FormValue("uid")
+    fmt.Println(uid)
+
 	id, err := strconv.Atoi(param)
 	if err != nil {
 		return err
 	}
 
-	for i, recipe := range services.AllRecipes.Recipes {
+	sess, err := session.Get(uid, c)
+	if err != nil {
+		fmt.Println("failed to get session")
+	}
+
+	store, ok := sess.Values["recipes"].([]services.Recipe)
+	if !ok {
+		fmt.Println("STORE IS NOT A SLICE")
+	}
+	for i, recipe := range store {
 		if recipe.Id == id {
-			services.AllRecipes.Recipes = append(services.AllRecipes.Recipes[:i], services.AllRecipes.Recipes[i+1:]...)
+			store = append(store[:i], store[i+1:]...)
 			break
 		}
 	}
+	sess.Values["recipes"] = store
+	err = sess.Save(c.Request(), c.Response())
+	if err != nil {
+		fmt.Println("failed to save session")
+	}
+
+    fmt.Println(sess.Values["recipes"])
 	return c.NoContent(200)
 }
 
 func DeleteAllRecipes(c echo.Context) error {
-	services.AllRecipes = services.Recipes{}
+    uid := c.FormValue("uid")
+    fmt.Println()
+    fmt.Println("uid:", uid)
+    fmt.Println()
+    sess, _ := session.Get(uid, c)
+
+    sess.Values["recipes"] = []services.Recipe{}
+    err := sess.Save(c.Request(), c.Response())
+	if err != nil {
+		fmt.Println("failed to save session")
+	}
+
+    fmt.Println(sess.Values["recipes"])
 	return c.NoContent(200)
 }
 

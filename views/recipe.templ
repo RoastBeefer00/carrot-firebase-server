@@ -36,13 +36,16 @@ templ Recipe(recipe services.Recipe, id int) {
 			</button>
 			<div class="flex gap-2">
 				<form
-					hx-post={ "/recipes/replace/" + strconv.Itoa(id) }
+					hx-get={ "/recipes/replace/" + strconv.Itoa(id) }
 					hx-target={ "#recipe-" + strconv.Itoa(id) }
 					hx-swap="outerHTML"
 				>
-					<input type="hidden" id={ "recipe-replace-" + strconv.Itoa(id) }/>
+					<input type="hidden" name="uid" id={ "recipe-replace-" + strconv.Itoa(id) } />
 					@GetUid("recipe-replace-" + strconv.Itoa(id))
-					<button type="submit" class="text-crust text-center rounded bg-sky p-2 border border-crust">
+					<button 
+                        type="submit" 
+                        class="text-crust text-center rounded bg-sky p-2 border border-crust"
+                    >
 						<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
 							<g fill="currentColor">
 								<path
@@ -55,11 +58,11 @@ templ Recipe(recipe services.Recipe, id int) {
 					</button>
 				</form>
 				<form
-					hx-delete={ "/recipes/delete/" + strconv.Itoa(id) }
+					hx-get={ "/recipes/delete/" + strconv.Itoa(id) }
 					hx-target={ "#recipe-" + strconv.Itoa(id) }
 					hx-swap="outerHTML"
 				>
-					<input type="hidden" id={ "recipe-delete-" + strconv.Itoa(id) }/>
+					<input type="hidden" name="uid" id={ "recipe-delete-" + strconv.Itoa(id) } />
                     @GetUid("recipe-delete-" + strconv.Itoa(id))
 					<button 
                         type="submit"

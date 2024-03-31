@@ -1,11 +1,7 @@
 package views
 
-import (
-	"github.com/RoastBeefer00/carrot-firebase-server/services"
-)
-
 script GetUid(id string) {
-document.getElementById(id).value = window.uid;
+    document.getElementById(id).value = window.uid;
 }
 
 templ sidebar() {
@@ -29,10 +25,12 @@ templ sidebar() {
 					</button>
 				</li>
 				<li class="border-b border-b-rosewater">
-					<form hx-delete="/recipes/delete/all" hx-target="#recipes">
-                        <input type="hidden" id="delete-all" />
-                        @GetUid("delete-all")
-						<button type="submit" class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full">
+					<form hx-get="/recipes/delete/all" hx-target="#recipes">
+						<input type="hidden" id="delete-all" name="uid" />
+						@GetUid("delete-all")
+						<button 
+                            class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full"
+                        >
 							<span class="ml-4">Remove All </span>
 						</button>
 					</form>
