@@ -1,7 +1,7 @@
 package views
 
 script GetUid(id string) {
-    document.getElementById(id).value = window.uid;
+document.getElementById(id).value = window.uid;
 }
 
 templ sidebar() {
@@ -13,24 +13,28 @@ templ sidebar() {
 		<div class="h-full px-3 sm:py-4 overflow-y-auto bg-base border-r border-r-rosewater">
 			<ul class="pt-4 sm:mt-4 space-y-2 font-medium">
 				<li>
-					<button
-						class="flex text-center p-2 text-crust rounded-lg bg-sky w-full"
-						id="groceries-button"
-						_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar then toggle .hidden on #groceries then toggle @disabled on #groceries-button"
-						hx-get="/groceries"
-						hx-target="#groceries"
-						hx-swap="innerHTML"
-					>
-						<span class="ml-4">Grocery List </span>
-					</button>
+                    <input type="hidden" id="groceries-input" name="uid"/>
+                    @GetUid("groceries-input")
+                    <button
+                        hx-get="/groceries"
+                        hx-target="#groceries"
+                        hx-swap="innerHTML"
+                        hx-include="previous input"
+                        type="submit"
+                        class="flex text-center p-2 text-crust rounded-lg bg-sky w-full"
+                        id="groceries-button"
+                        _="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar 
+                            then toggle .hidden on #groceries 
+                            then toggle @disabled on #groceries-button"
+                    >
+                        <span class="ml-4">Grocery List </span>
+                    </button>
 				</li>
 				<li class="border-b border-b-rosewater">
 					<form hx-get="/recipes/delete/all" hx-target="#recipes">
-						<input type="hidden" id="delete-all" name="uid" />
+						<input type="hidden" id="delete-all" name="uid"/>
 						@GetUid("delete-all")
-						<button 
-                            class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full"
-                        >
+						<button class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full">
 							<span class="ml-4">Remove All </span>
 						</button>
 					</form>

@@ -4,7 +4,7 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-templ Groceries() {
+templ Groceries(ingredients []services.Ingredient) {
 	<div class="h-full w-full rounded bg-crust p-2"
         _="on click from elsewhere remove me then toggle .hidden on #groceries then toggle @disabled on #groceries-button"
     >
@@ -13,7 +13,7 @@ templ Groceries() {
 				<h1 class="text-3xl font-bold">Groceries</h1>
 			</div>
 			<div class="p-4 overflow-y-auto">
-				for _, ingredient := range services.AllIngredients {
+				for _, ingredient := range ingredients {
 					<div class="flex p-2">
 						<input type="checkbox"/>
 						<span class="ml-2">
