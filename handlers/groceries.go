@@ -62,7 +62,6 @@ func getIngredientItem(ingredient string) (string, error) {
 
 func CombineIngredients(c echo.Context) error {
     uid := c.FormValue("uid")
-    fmt.Println("uid: " + uid)
     sess, err := session.Get(uid, c)
     if err != nil {
         fmt.Println("Unable to get session")

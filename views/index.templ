@@ -40,6 +40,7 @@ templ Index() {
                         console.log(u.email);
                         console.log(u.uid);
                         window.uid = u.uid;
+                        window.email = u.email;
 
                         htmx.ajax('GET', '/login', {
                             target:'#page', 
@@ -47,6 +48,13 @@ templ Index() {
                                 token: u.accessToken,
                                 displayName: u.displayName,
                                 email: u.email,
+                                uid: u.uid
+                            }
+                        });
+                        htmx.ajax('GET', '/refresh', {
+                            target:'#recipes', 
+                            swap: 'innerHTML',
+                            values: {
                                 uid: u.uid
                             }
                         });

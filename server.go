@@ -62,34 +62,19 @@ func main() {
 		return Render(c, http.StatusOK, index)
 	})
 	e.GET("/login", func(c echo.Context) error {
-		token := c.QueryParam("token")
-		displayName := c.QueryParam("displayName")
-		email := c.QueryParam("email")
 		uid := c.QueryParam("uid")
-		fmt.Println("Token: " + token)
-		fmt.Println("DisplayName: " + displayName)
-		fmt.Println("Email: " + email)
-		fmt.Println("Uid: " + uid)
-
-		// user := services.User{
-		// 	Token:       token,
-		// 	DisplayName: displayName,
-		// 	Email:       email,
-		// 	Uid:         uid,
-		// }
 
 		sess, _ := session.Get(uid, c)
 		sess.Options = &sessions.Options{
 			Path:     "/",
 			MaxAge:   86400 * 30,
-			HttpOnly: true,
+			HttpOnly: false,
 		}
-		sess.Values["foo"] = "bar"
 		sess.Save(c.Request(), c.Response())
 		return Render(c, http.StatusOK, views.Page())
 	})
+    e.GET("/refresh", handlers.GetRecipes)
 	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)
-	// e.GET("/recipes/random", handlers.GetRandomRecipe)
 	e.GET("/recipes/random", handlers.GetRandomRecipes)
 	e.GET("/recipes/name", handlers.SearchRecipesByName)
 	e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)

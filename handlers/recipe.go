@@ -66,6 +66,26 @@ func filterRecipes(recipes []services.Recipe, function func(services.Recipe) boo
 	return filteredRecipes
 }
 
+func GetRecipes(c echo.Context) error {
+    uid := c.QueryParam("uid")
+    fmt.Println("uid: ", uid)
+    sess, err := session.Get(uid, c)
+    if err != nil {
+        fmt.Println("Unable to get session")
+        return err
+    }
+
+    recipes, ok := sess.Values["recipes"].([]services.Recipe)
+    fmt.Println("refresh recipes: ", recipes)
+    if !ok {
+        fmt.Println("STORE IS NOT A SLICE")
+        fmt.Println(sess.Values["recipes"])
+        return c.NoContent(200)
+    }
+    fmt.Println("no errors, refreshing recipes")
+    return Render(c, http.StatusOK, views.Recipes(recipes))
+}
+
 func SearchRecipesByName(c echo.Context) error {
 	filter := c.FormValue("search")
 	uid := c.FormValue("uid")
