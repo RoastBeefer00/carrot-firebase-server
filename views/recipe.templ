@@ -9,14 +9,18 @@ import (
 templ AllRecipes() {
 }
 
-templ Recipes(recipes []services.Recipe) {
+templ Recipes(recipes []services.Recipe, oob bool) {
 	for _, recipe := range recipes {
-		@Recipe(recipe, recipe.Id)
+		@Recipe(recipe, recipe.Id, oob)
 	}
 }
 
-templ Recipe(recipe services.Recipe, id int) {
-	<div hx-swap-oob="beforeend:#recipes">
+templ Recipe(recipe services.Recipe, id int, oob bool) {
+	<div 
+        if oob {
+            hx-swap-oob="beforeend:#recipes"
+        }
+    >
 		<div class="bg-lavender sm:p-4 p-2 rounded mt-2" id={ "recipe-" + strconv.Itoa(id) }>
 			<div class="flex mb-2">
 				<h1 class="text-mantle text-3xl font-bold mr-2">{ recipe.Name }</h1>

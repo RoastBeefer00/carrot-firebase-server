@@ -83,7 +83,7 @@ func GetRecipes(c echo.Context) error {
         return c.NoContent(200)
     }
     fmt.Println("no errors, refreshing recipes")
-    return Render(c, http.StatusOK, views.Recipes(recipes))
+    return Render(c, http.StatusOK, views.Recipes(recipes, true))
 }
 
 func SearchRecipesByName(c echo.Context) error {
@@ -123,7 +123,7 @@ func SearchRecipesByName(c echo.Context) error {
 		}
 	}
 
-	return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
+	return Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
 }
 
 func SearchRecipesByIngredient(c echo.Context) error {
@@ -165,7 +165,7 @@ func SearchRecipesByIngredient(c echo.Context) error {
 		}
 	}
 
-	return Render(c, http.StatusOK, views.Recipes(filteredRecipes))
+	return Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
 }
 
 func ReplaceRecipe(c echo.Context) error {
@@ -220,7 +220,7 @@ func ReplaceRecipe(c echo.Context) error {
 		fmt.Println("failed to save session")
 	}
 
-	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id))
+	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id, false))
 }
 
 func GetRandomRecipes(c echo.Context) error {
@@ -284,7 +284,7 @@ func GetRandomRecipes(c echo.Context) error {
 		}
 	}
 
-	return Render(c, http.StatusOK, views.Recipes(randomRecipes))
+	return Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
 }
 
 func DeleteRecipe(c echo.Context) error {
