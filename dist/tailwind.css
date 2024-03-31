@@ -1160,6 +1160,10 @@ video {
     margin-left: 16rem;
   }
 
+  .sm\:mt-0 {
+    margin-top: 0px;
+  }
+
   .sm\:mt-28 {
     margin-top: 7rem;
   }
