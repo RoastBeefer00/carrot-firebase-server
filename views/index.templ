@@ -34,13 +34,9 @@ templ Index() {
 
                 auth.onAuthStateChanged(async u => {
                     if (u) {
-                        console.log(u);
-                        console.log(u.accessToken);
-                        console.log(u.displayName);
-                        console.log(u.email);
-                        console.log(u.uid);
+                        token = await u.getIdToken(true);
                         window.uid = u.uid;
-                        window.email = u.email;
+                        window.token = token;
 
                         htmx.ajax('GET', '/login', {
                             target:'#page', 

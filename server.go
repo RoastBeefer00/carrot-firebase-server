@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	// "fmt"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -12,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/time/rate"
 
+	"github.com/RoastBeefer00/carrot-firebase-server/database"
 	"github.com/RoastBeefer00/carrot-firebase-server/handlers"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
@@ -61,7 +63,12 @@ func main() {
 		return Render(c, http.StatusOK, index)
 	})
 	e.GET("/login", func(c echo.Context) error {
+        // cook := c.Cookies()
+        // fmt.Println("COOKIES: ", cook)
 		uid := c.QueryParam("uid")
+		token := c.QueryParam("token")
+        // fmt.Println("Token: ", token)
+        database.ValidateUser(token)
 
 		sess, _ := session.Get(uid, c)
 		sess.Options = &sessions.Options{
