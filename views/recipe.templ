@@ -1,0 +1,111 @@
+package views
+
+import (
+	"strconv"
+
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+)
+
+templ AllRecipes() {
+}
+
+templ Recipes(recipes []services.Recipe, oob bool) {
+	for _, recipe := range recipes {
+		@Recipe(recipe, recipe.Id, oob)
+	}
+}
+
+templ Recipe(recipe services.Recipe, id int, oob bool) {
+	<div 
+        if oob {
+            hx-swap-oob="beforeend:#recipes"
+        }
+    >
+		<div class="bg-lavender sm:p-4 p-2 rounded mt-2" id={ "recipe-" + strconv.Itoa(id) }>
+			<div class="flex mb-2">
+				<h1 class="text-mantle text-3xl font-bold mr-2">{ recipe.Name }</h1>
+				<span class="text-mantle mt-2">{ recipe.Time }</span>
+			</div>
+			<div class="flex justify-between">
+				<button
+					id={ "toggle-recipe-" + strconv.Itoa(id) }
+					_="on click toggle .hidden on <svg/> in me"
+					class="text-crust text-center rounded bg-green p-2 border border-crust"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+						<path fill="currentColor" d="m12 18l-6-6l1.4-1.4l3.6 3.575V6h2v8.175l3.6-3.575L18 12Z"></path>
+					</svg>
+					<svg class="hidden" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+						<path fill="currentColor" d="M11 18V9.825L7.4 13.4L6 12l6-6l6 6l-1.4 1.4L13 9.825V18Z"></path>
+					</svg>
+				</button>
+				<div class="flex gap-2">
+					<form
+						hx-get={ "/recipes/replace/" + strconv.Itoa(id) }
+						hx-target={ "#recipe-" + strconv.Itoa(id) }
+						hx-swap="outerHTML"
+					>
+						<input type="hidden" name="uid" id={ "recipe-replace-" + strconv.Itoa(id) }/>
+						@GetUid("recipe-replace-" + strconv.Itoa(id))
+						<button type="submit" class="text-crust text-center rounded bg-sky p-2 border border-crust">
+							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
+								<g fill="currentColor">
+									<path
+										d="M13.937 4.211a1 1 0 0 1-1.126 1.653A5 5 0 1 0 15 10a1 1 0 1 1 2 0a7 7 0 1 1-3.063-5.789"
+									></path>
+									<path d="M13.539 12.506a1 1 0 1 1-1.078-1.685l3.482-2.227a1 1 0 0 1 1.077 1.685z"></path>
+									<path d="M18.903 12.41a1 1 0 0 1-1.826.815l-1.508-3.38a1 1 0 1 1 1.826-.815z"></path>
+								</g>
+							</svg>
+						</button>
+					</form>
+					<form
+						hx-get={ "/recipes/delete/" + strconv.Itoa(id) }
+						hx-target={ "#recipe-" + strconv.Itoa(id) }
+						hx-swap="outerHTML"
+					>
+						<input type="hidden" name="uid" id={ "recipe-delete-" + strconv.Itoa(id) }/>
+						@GetUid("recipe-delete-" + strconv.Itoa(id))
+						<button type="submit" class="text-crust text-center rounded bg-red p-2 border border-crust">
+							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+								<path
+									fill="currentColor"
+									d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"
+								></path>
+							</svg>
+						</button>
+					</form>
+				</div>
+			</div>
+			<div
+				_={ "on click from #toggle-recipe-" + strconv.Itoa(id) + " toggle .hidden" }
+				class="bg-surface0 mt-2 p-1 sm:p-2 rounded hidden"
+			>
+				<div class="bg-green sm:m-2 sm:p-4 m-1 p-2 rounded">
+					<ul class="list-disc list-inside grid sm:grid-cols-2">
+						for _, ingredient := range recipe.Ingredients {
+							<li class="text-crust">{ ingredient }</li>
+						}
+					</ul>
+				</div>
+				<div class="bg-blue sm:m-2 sm:p-2 m-1 p-1 rounded">
+					<ol type="1">
+						for i, step := range recipe.Steps {
+							<li>
+								if i == len(recipe.Steps) - 1 {
+									<div class="p-1">
+										<span class="text-crust">{ step }</span>
+									</div>
+								} else {
+									<div class="border-b border-crust p-1">
+										<span class="text-crust">{ step }</span>
+									</div>
+								}
+							</li>
+						}
+					</ol>
+				</div>
+			</div>
+		</div>
+	</div>
+}

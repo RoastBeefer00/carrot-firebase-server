@@ -1,0 +1,6 @@
+runtime: go122
+env: standard
+# service_account: firebase-adminsdk-u546v@r-j-magenta-carrot-42069.iam.gserviceaccount.com
+
+runtime_config:
+  operating_system: "ubuntu22"
