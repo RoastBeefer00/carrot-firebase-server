@@ -34,7 +34,8 @@ templ Index() {
 
                 auth.onAuthStateChanged(async u => {
                     if (u) {
-                        token = await u.getIdToken(true);
+                        let token = await u.getIdToken(true);
+                        document.cookie = `token=${token}; path=/;`;
                         window.uid = u.uid;
                         window.token = token;
 

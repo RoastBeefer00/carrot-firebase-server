@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/gob"
-	// "fmt"
+	"fmt"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -63,8 +63,8 @@ func main() {
 		return Render(c, http.StatusOK, index)
 	})
 	e.GET("/login", func(c echo.Context) error {
-        // cook := c.Cookies()
-        // fmt.Println("COOKIES: ", cook)
+        cook, _ := c.Cookie("token")
+        fmt.Println("TOKEN: ", cook.Value)
 		uid := c.QueryParam("uid")
 		token := c.QueryParam("token")
         // fmt.Println("Token: ", token)

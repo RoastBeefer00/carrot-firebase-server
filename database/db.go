@@ -39,5 +39,9 @@ func ValidateUser(idToken string) {
 	}
 
 	log.Printf("Verified ID token: %v\n", token)
-	log.Printf("Verified ID claims: %v\n", token.Claims)
+    claims := token.Claims
+	log.Printf("Verified ID claims: %v\n", claims)
+	log.Printf("Email: %v\n", claims["email"])
+	log.Printf("Name: %v\n", claims["name"])
+	log.Printf("ID: %v\n", claims["user_id"])
 }
