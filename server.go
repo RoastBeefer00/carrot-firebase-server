@@ -1,19 +1,16 @@
 package main
 
 import (
-	"encoding/gob"
+	"log"
 	"net/http"
 
 	"github.com/a-h/templ"
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/time/rate"
 
+	"github.com/RoastBeefer00/carrot-firebase-server/database"
 	"github.com/RoastBeefer00/carrot-firebase-server/handlers"
-	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 )
 
@@ -31,20 +28,6 @@ func main() {
 	index := views.Index()
 
 	e := echo.New()
-	authKeyOne := securecookie.GenerateRandomKey(64)
-	encryptionKeyOne := securecookie.GenerateRandomKey(32)
-
-    store := sessions.NewFilesystemStore(
-		"",
-		authKeyOne,
-		encryptionKeyOne,
-	)
-
-    store.MaxLength(10000000)
-
-	e.Use(session.Middleware(store))
-	gob.Register(services.Recipe{})
-	gob.Register([]services.Recipe{})
 
 	e.Static("/dist", "dist")
 	// Little bit of middlewares for housekeeping
@@ -61,15 +44,17 @@ func main() {
 		return Render(c, http.StatusOK, index)
 	})
 	e.GET("/login", func(c echo.Context) error {
-		uid := c.QueryParam("uid")
+        token, err := database.GetToken(c)
+        if err != nil {
+            log.Println(err)
+        }
 
-		sess, _ := session.Get(uid, c)
-		sess.Options = &sessions.Options{
-			Path:     "/",
-			MaxAge:   86400 * 30,
-			HttpOnly: false,
-		}
-		sess.Save(c.Request(), c.Response())
+        user, err := database.ValidateUser(token)
+        if err != nil {
+            log.Println(err)
+        }
+        log.Println("LOGGED IN: ", user)
+
 		return Render(c, http.StatusOK, views.Page())
 	})
     e.GET("/refresh", handlers.GetRecipes)

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"slices"
@@ -9,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/RoastBeefer00/carrot-firebase-server/database"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
@@ -61,17 +60,12 @@ func getIngredientItem(ingredient string) (string, error) {
 }
 
 func CombineIngredients(c echo.Context) error {
-    uid := c.FormValue("uid")
-    sess, err := session.Get(uid, c)
+    state, err := database.GetState(c)
     if err != nil {
-        fmt.Println("Unable to get session")
+        return err
     }
 
-    recipes, ok := sess.Values["recipes"].([]services.Recipe)
-    if !ok {
-        fmt.Println("Unable to get recipes")
-    }
-
+    recipes := state.Recipes
 	var ingredients []services.Ingredient
 
 	for _, recipe := range recipes {

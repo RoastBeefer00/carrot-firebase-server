@@ -12,8 +12,8 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 	"github.com/a-h/templ"
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 type IDs struct {
@@ -67,28 +67,23 @@ func filterRecipes(recipes []services.Recipe, function func(services.Recipe) boo
 }
 
 func GetRecipes(c echo.Context) error {
-    uid := c.QueryParam("uid")
-    fmt.Println("uid: ", uid)
-    sess, err := session.Get(uid, c)
+    state, err := database.GetState(c)
     if err != nil {
-        fmt.Println("Unable to get session")
         return err
     }
 
-    recipes, ok := sess.Values["recipes"].([]services.Recipe)
-    fmt.Println("refresh recipes: ", recipes)
-    if !ok {
-        fmt.Println("STORE IS NOT A SLICE")
-        fmt.Println(sess.Values["recipes"])
-        return c.NoContent(200)
-    }
-    fmt.Println("no errors, refreshing recipes")
-    return Render(c, http.StatusOK, views.Recipes(recipes, true))
+    log.Printf("Refreshing recipes for user %s with email %s", state.User.DisplayName, state.User.Email)
+    return Render(c, http.StatusOK, views.Recipes(state.Recipes, true))
 }
 
 func SearchRecipesByName(c echo.Context) error {
+    state, err := database.GetState(c)
+    if err != nil {
+        return err
+    }
+
 	filter := c.FormValue("search")
-	uid := c.FormValue("uid")
+    log.Printf("Searching for recipes with name %s for user %s with email %s", filter, state.User.DisplayName, state.User.Email)
 
 	recipes, err := getAll()
 	if err != nil {
@@ -104,31 +99,23 @@ func SearchRecipesByName(c echo.Context) error {
 	}
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
+    err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
+    if err != nil {
+        return err
+    }
 
-	sess, err := session.Get(uid, c)
-
-	if sess.Values["recipes"] == nil {
-		sess.Values["recipes"] = filteredRecipes
-		sess.Save(c.Request(), c.Response())
-	} else {
-		store, ok := sess.Values["recipes"].([]services.Recipe)
-		if !ok {
-			fmt.Println("STORE IS NOT A SLICE")
-		}
-		recipes := append(store, filteredRecipes...)
-		sess.Values["recipes"] = recipes
-		err = sess.Save(c.Request(), c.Response())
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	return Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
+    state.Recipes = append(state.Recipes, filteredRecipes...)
+    return database.UpdateState(state)
 }
 
 func SearchRecipesByIngredient(c echo.Context) error {
+    state, err := database.GetState(c)
+    if err != nil {
+        return err
+    }
+
 	filter := c.FormValue("search")
-	uid := c.FormValue("uid")
+    log.Printf("Searching for recipes with ingredient %s for user %s with email %s", filter, state.User.DisplayName, state.User.Email)
 
 	recipes, err := getAll()
 	if err != nil {
@@ -147,32 +134,22 @@ func SearchRecipesByIngredient(c echo.Context) error {
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
 
-	sess, err := session.Get(uid, c)
-
-	if sess.Values["recipes"] == nil {
-		sess.Values["recipes"] = filteredRecipes
-		sess.Save(c.Request(), c.Response())
-	} else {
-		store, ok := sess.Values["recipes"].([]services.Recipe)
-		if !ok {
-			fmt.Println("STORE IS NOT A SLICE")
-		}
-		recipes := append(store, filteredRecipes...)
-		sess.Values["recipes"] = recipes
-		err = sess.Save(c.Request(), c.Response())
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	return Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
+    err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
+    if err != nil {
+        return err
+    }
+    state.AddRecipes(filteredRecipes)
+    return database.UpdateState(state)
 }
 
 func ReplaceRecipe(c echo.Context) error {
+    state, err := database.GetState(c)
+    if err != nil {
+        return err
+    }
+
 	param := c.Param("id")
     fmt.Println(param)
-	uid := c.FormValue("uid")
-    fmt.Println(uid)
 
 	id, err := strconv.Atoi(param)
 	if err != nil {
@@ -200,33 +177,26 @@ func ReplaceRecipe(c echo.Context) error {
 	doc.DataTo(&recipe)
 
 	recipe.AddId()
-	sess, _ := session.Get(uid, c)
 
-	store, ok := sess.Values["recipes"].([]services.Recipe)
-	if !ok {
-		fmt.Println("STORE IS NOT A SLICE")
-	}
+    log.Printf("Replacing recipe with id %d with recipe %s for user %s with email %s", id, recipe.Name, state.User.DisplayName, state.User.Email)
+    err = Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id, false))
+    if err != nil {
+        return err
+    }
 
-	for i, r := range store {
-		if r.Id == id {
-			store[i] = recipe
-			break
-		}
-	}
-
-	sess.Values["recipes"] = store
-	err = sess.Save(c.Request(), c.Response())
-	if err != nil {
-		fmt.Println("failed to save session")
-	}
-
-	return Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id, false))
+    state.ReplaceRecipe(id, recipe)
+    return database.UpdateState(state)
 }
 
 func GetRandomRecipes(c echo.Context) error {
+    state, err := database.GetState(c)
+    if err != nil {
+        return err
+    }
+
 	var randomRecipes []services.Recipe
 	amount := c.FormValue("amount")
-	uid := c.FormValue("uid")
+    log.Printf("Fetching %s random recipes for user %s with email %s", amount, state.User.DisplayName, state.User.Email)
 
 	amountInt, err := strconv.Atoi(amount)
 	if err != nil {
@@ -266,78 +236,50 @@ func GetRandomRecipes(c echo.Context) error {
 	}
 	wg.Wait()
 
-	sess, _ := session.Get(uid, c)
-
-	if sess.Values["recipes"] == nil {
-		sess.Values["recipes"] = randomRecipes
-		sess.Save(c.Request(), c.Response())
-	} else {
-		store, ok := sess.Values["recipes"].([]services.Recipe)
-		if !ok {
-			fmt.Println("STORE IS NOT A SLICE")
-		}
-		recipes := append(store, randomRecipes...)
-		sess.Values["recipes"] = recipes
-		err = sess.Save(c.Request(), c.Response())
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	return Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
+    err = Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
+    if err != nil {
+        return err
+    }
+    state.AddRecipes(randomRecipes)
+    return database.UpdateState(state)
 }
 
 func DeleteRecipe(c echo.Context) error {
+    state, err := database.GetState(c)
+    if err != nil {
+        return err
+    }
+
 	param := c.Param("id")
     fmt.Println(param)
-	uid := c.FormValue("uid")
-    fmt.Println(uid)
 
 	id, err := strconv.Atoi(param)
 	if err != nil {
 		return err
 	}
 
-	sess, err := session.Get(uid, c)
-	if err != nil {
-		fmt.Println("failed to get session")
-	}
-
-	store, ok := sess.Values["recipes"].([]services.Recipe)
-	if !ok {
-		fmt.Println("STORE IS NOT A SLICE")
-	}
-	for i, recipe := range store {
-		if recipe.Id == id {
-			store = append(store[:i], store[i+1:]...)
-			break
-		}
-	}
-	sess.Values["recipes"] = store
-	err = sess.Save(c.Request(), c.Response())
-	if err != nil {
-		fmt.Println("failed to save session")
-	}
-
-    fmt.Println(sess.Values["recipes"])
-	return c.NoContent(200)
+    log.Printf("Deleting recipe with id %d for user %s with email %s", id, state.User.DisplayName, state.User.Email)
+    err = c.NoContent(200)
+    if err != nil {
+        return err
+    }
+    state.DeleteRecipe(id)
+    return database.UpdateState(state)
 }
 
 func DeleteAllRecipes(c echo.Context) error {
-    uid := c.FormValue("uid")
-    fmt.Println()
-    fmt.Println("uid:", uid)
-    fmt.Println()
-    sess, _ := session.Get(uid, c)
+    state, err := database.GetState(c)
+    if err != nil {
+        return err
+    }
 
-    sess.Values["recipes"] = []services.Recipe{}
-    err := sess.Save(c.Request(), c.Response())
-	if err != nil {
-		fmt.Println("failed to save session")
-	}
-
-    fmt.Println(sess.Values["recipes"])
-	return c.NoContent(200)
+    log.Printf("Deleting all recipes for user %s with email %s", state.User.DisplayName, state.User.Email)
+    err = c.NoContent(200)
+    if err != nil {
+        return err
+    }
+    state.Recipes = make([]services.Recipe, 0)
+    return database.UpdateState(state)
 }
 
 func ChangeFilter(c echo.Context) error {

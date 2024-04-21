@@ -30,33 +30,17 @@ templ Index() {
                 const auth = getAuth(app);
                 const provider = new GoogleAuthProvider();
 
-                var uid;
-
                 auth.onAuthStateChanged(async u => {
                     if (u) {
-                        console.log(u);
-                        console.log(u.accessToken);
-                        console.log(u.displayName);
-                        console.log(u.email);
-                        console.log(u.uid);
-                        window.uid = u.uid;
-                        window.email = u.email;
+                        let token = await u.getIdToken(true);
+                        document.cookie = `token=${token}; path=/;`;
 
                         htmx.ajax('GET', '/login', {
                             target:'#page', 
-                            values: {
-                                token: u.accessToken,
-                                displayName: u.displayName,
-                                email: u.email,
-                                uid: u.uid
-                            }
                         });
                         htmx.ajax('GET', '/refresh', {
                             target:'#recipes', 
                             swap: 'innerHTML',
-                            values: {
-                                uid: u.uid
-                            }
                         });
                     } else {
                         signInWithPopup(auth, provider);
