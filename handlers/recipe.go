@@ -72,8 +72,8 @@ func GetRecipes(c echo.Context) error {
         return err
     }
 
-    log.Printf("Refreshing recipes for user %s with email %s", state.User.DisplayName, state.User.Email)
-    return Render(c, http.StatusOK, views.Recipes(state.Recipes, true))
+    log.Printf("Refreshing %d recipes for user %s with email %s", len(state.Recipes), state.User.DisplayName, state.User.Email)
+    return Render(c, http.StatusOK, views.Recipes(state.Recipes, false))
 }
 
 func SearchRecipesByName(c echo.Context) error {

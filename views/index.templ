@@ -7,6 +7,7 @@ templ Index() {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/dist/tailwind.css"/>
+            <link rel="icon" href="/dist/favicon.ico" />
 			<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 			<script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
 			<script type="module">
@@ -33,14 +34,11 @@ templ Index() {
                 auth.onAuthStateChanged(async u => {
                     if (u) {
                         let token = await u.getIdToken(true);
-                        document.cookie = `token=${token}; path=/;`;
+                        document.cookie = `token=${token}; path=/; SameSite=None; Secure;`;
 
-                        htmx.ajax('GET', '/login', {
-                            target:'#page', 
-                        });
                         htmx.ajax('GET', '/refresh', {
                             target:'#recipes', 
-                            swap: 'innerHTML',
+                            swap: 'innerHTML'
                         });
                     } else {
                         signInWithPopup(auth, provider);

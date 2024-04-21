@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -9,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/time/rate"
 
-	"github.com/RoastBeefer00/carrot-firebase-server/database"
 	"github.com/RoastBeefer00/carrot-firebase-server/handlers"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 )
@@ -42,20 +40,6 @@ func main() {
 	// This will initiate our template renderer
 	e.GET("/", func(c echo.Context) error {
 		return Render(c, http.StatusOK, index)
-	})
-	e.GET("/login", func(c echo.Context) error {
-        token, err := database.GetToken(c)
-        if err != nil {
-            log.Println(err)
-        }
-
-        user, err := database.ValidateUser(token)
-        if err != nil {
-            log.Println(err)
-        }
-        log.Println("LOGGED IN: ", user)
-
-		return Render(c, http.StatusOK, views.Page())
 	})
     e.GET("/refresh", handlers.GetRecipes)
 	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)

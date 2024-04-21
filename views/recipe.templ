@@ -6,9 +6,6 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-templ AllRecipes() {
-}
-
 templ Recipes(recipes []services.Recipe, oob bool) {
 	for _, recipe := range recipes {
 		@Recipe(recipe, recipe.Id, oob)
