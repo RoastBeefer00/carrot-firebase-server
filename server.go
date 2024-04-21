@@ -44,8 +44,11 @@ func main() {
 		return Render(c, http.StatusOK, index)
 	})
 	e.GET("/login", func(c echo.Context) error {
-        cook, _ := c.Cookie("token")
-        token := cook.Value
+        token, err := database.GetToken(c)
+        if err != nil {
+            log.Println(err)
+        }
+
         user, err := database.ValidateUser(token)
         if err != nil {
             log.Println(err)

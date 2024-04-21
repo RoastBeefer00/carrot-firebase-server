@@ -7,7 +7,18 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
+	"github.com/labstack/echo/v4"
 )
+
+func GetToken(c echo.Context) ( string, error ) {
+        cook, err := c.Cookie("token")
+        if err != nil {
+            return "", err
+        }
+        token := cook.Value
+
+        return token, nil
+}
 
 func GetClient() (*firestore.Client, context.Context, error) {
 	ctx := context.Background()
@@ -52,7 +63,7 @@ func ValidateUser(idToken string) (services.User, error) {
 	return user, nil
 }
 
-func UpdateUser(state services.State) error {
+func UpdateState(state services.State) error {
 	client, ctx, err := GetClient()
 	if err != nil {
 		return err
@@ -66,35 +77,44 @@ func UpdateUser(state services.State) error {
 	return err
 }
 
-func UserExists(user services.User) (bool, error) {
-    client, ctx, err := GetClient()
+func GetState(c echo.Context) (services.State, error) {
+    new_state := services.State{
+        User: services.User{},
+        Recipes: []services.Recipe{},
+    }
+    token, err := GetToken(c)
     if err != nil {
-        return false, err
+        return new_state, err
     }
 
-    doc, err := client.Collection("users").Doc(user.Uid).Get(ctx)
+    user, err := ValidateUser(token)
     if err != nil {
-        return false, err
+        return new_state, err
     }
+    new_state.User = user
 
-    return doc.Exists(), nil
-}
-
-func GetUser(user services.User) (services.User, error) {
 	client, ctx, err := GetClient()
 	if err != nil {
-		return services.User{}, err
+		return new_state, err
 	}
 
     doc, err := client.Collection("users").Doc(user.Uid).Get(ctx)
 	if err != nil {
-		return services.User{}, err
+        if doc.Exists() == false {
+            log.Printf("User %s with email %s does not exist in database... adding", user.DisplayName, user.Email)
+            err := UpdateState(new_state)
+            if err != nil {
+                return new_state, err
+            }
+        }
+		return new_state, err
 	}
 
-    var dbuser services.User 
+
+    var dbuser services.State 
     err = doc.DataTo(&dbuser)
 	if err != nil {
-		return services.User{}, err
+		return new_state, err
 	}
 
 	return dbuser, err

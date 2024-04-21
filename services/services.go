@@ -2,12 +2,11 @@ package services
 
 var Id = 0
 var Filter = "name"
-var AllRecipes = Recipes{}
 var AllIngredients = []Ingredient{}
 
 type State struct {
     User User
-    Recipes Recipes
+    Recipes []Recipe
 }
 
 type User struct {
@@ -16,27 +15,27 @@ type User struct {
     DisplayName string
 }
 
-type Recipes struct {
-	Recipes []Recipe
+func (s *State) AddRecipe(recipe Recipe) {
+    s.Recipes = append(s.Recipes, recipe)
 }
 
-func (r *Recipes) AddRecipe(recipe Recipe) {
-    r.Recipes = append(r.Recipes, recipe)
+func (s *State) AddRecipes(recipes []Recipe) {
+    s.Recipes = append(s.Recipes, recipes...)
 }
 
-func (r *Recipes) DeleteRecipe(id int) {
-    for i, recipe := range r.Recipes {
+func (s *State) DeleteRecipe(id int) {
+    for i, recipe := range s.Recipes {
         if recipe.Id == id {
-            r.Recipes = append(r.Recipes[:i], r.Recipes[i+1:]...)
+            s.Recipes = append(s.Recipes[:i], s.Recipes[i+1:]...)
             break
         }
     }
 }
 
-func (r *Recipes) ReplaceRecipe(id int, newRecipe Recipe) {
-    for i, recipe := range r.Recipes {
+func (s *State) ReplaceRecipe(id int, newRecipe Recipe) {
+    for i, recipe := range s.Recipes {
         if recipe.Id == id {
-            r.Recipes[i] = newRecipe
+            s.Recipes[i] = newRecipe
             break
         }
     }
