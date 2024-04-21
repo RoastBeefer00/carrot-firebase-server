@@ -45,8 +45,6 @@ templ Recipe(recipe services.Recipe, id int, oob bool) {
 						hx-target={ "#recipe-" + strconv.Itoa(id) }
 						hx-swap="outerHTML"
 					>
-						<input type="hidden" name="uid" id={ "recipe-replace-" + strconv.Itoa(id) }/>
-						@GetUid("recipe-replace-" + strconv.Itoa(id))
 						<button type="submit" class="text-crust text-center rounded bg-sky p-2 border border-crust">
 							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
 								<g fill="currentColor">
@@ -64,8 +62,6 @@ templ Recipe(recipe services.Recipe, id int, oob bool) {
 						hx-target={ "#recipe-" + strconv.Itoa(id) }
 						hx-swap="outerHTML"
 					>
-						<input type="hidden" name="uid" id={ "recipe-delete-" + strconv.Itoa(id) }/>
-						@GetUid("recipe-delete-" + strconv.Itoa(id))
 						<button type="submit" class="text-crust text-center rounded bg-red p-2 border border-crust">
 							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 								<path

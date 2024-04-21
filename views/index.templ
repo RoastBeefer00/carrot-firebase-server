@@ -30,30 +30,17 @@ templ Index() {
                 const auth = getAuth(app);
                 const provider = new GoogleAuthProvider();
 
-                var uid;
-
                 auth.onAuthStateChanged(async u => {
                     if (u) {
                         let token = await u.getIdToken(true);
                         document.cookie = `token=${token}; path=/;`;
-                        window.uid = u.uid;
-                        window.token = token;
 
                         htmx.ajax('GET', '/login', {
                             target:'#page', 
-                            values: {
-                                token: u.accessToken,
-                                displayName: u.displayName,
-                                email: u.email,
-                                uid: u.uid
-                            }
                         });
                         htmx.ajax('GET', '/refresh', {
                             target:'#recipes', 
                             swap: 'innerHTML',
-                            values: {
-                                uid: u.uid
-                            }
                         });
                     } else {
                         signInWithPopup(auth, provider);
