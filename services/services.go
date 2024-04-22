@@ -4,6 +4,11 @@ var Id = 0
 var Filter = "name"
 var AllIngredients = []Ingredient{}
 
+var Admins = []string{
+    "roastbeefer000@gmail.com",
+    "rjudes123@gmail.com",
+}
+
 type State struct {
     User User
     Recipes []Recipe

@@ -23,7 +23,7 @@ func Render(ctx echo.Context, statusCode int, t templ.Component) error {
 }
 
 func main() {
-	index := views.Index()
+	index := views.Index(false)
 
 	e := echo.New()
 
@@ -41,6 +41,8 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return Render(c, http.StatusOK, index)
 	})
+    e.GET("/login", handlers.Login)
+    e.GET("/admin", handlers.AdminHandler)
     e.GET("/refresh", handlers.GetRecipes)
 	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)
 	e.GET("/recipes/random", handlers.GetRandomRecipes)

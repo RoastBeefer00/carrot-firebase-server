@@ -1,0 +1,25 @@
+package views
+
+import (
+
+)
+
+templ Admin() {
+    <div class="flex flex-col bg-lavender p-4 mx-auto w-3/4 mt-16 sm:mt-28 rounded">
+        <div>
+            <h1 class="text-3xl font-bold mb-2">Add A New Recipe</h1>
+        </div>
+        <div>
+            <form class="flex flex-col">
+                <label for="name">Name</label>
+                <input type="text" name="name" placeholder="Recipe Name" class="p-2 mb-2" />
+                <label for="time">Time</label>
+                <input type="text" name="time" placeholder="Time e.g. '30 min'" class="p-2 mb-2"  />
+                <label for="ingredients">Ingredients</label>
+                <input type="text" name="ingredients" placeholder="Ingredients" class="p-2 mb-2"  />
+                <label for="steps">Steps</label>
+                <input type="text" name="steps" placeholder="Steps" class="p-2 mb-2"  />
+            </form>
+        </div>
+    </div>
+}

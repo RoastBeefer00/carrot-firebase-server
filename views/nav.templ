@@ -2,24 +2,26 @@ package views
 
 templ nav() {
 	<nav class="fixed top-0 z-30 w-full bg-base border-b border-rosewater">
-		<div class="px-3 py-3 lg:px-5 lg:pl-3">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center justify-start sm:justify-center w-full">
-					<button
-                        id="sidebar-button"
-                        _="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar"
-						class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-					>
-						<span class="sr-only">"Open sidebar" </span>
-						<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-							<path fill="currentColor" d="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"></path>
-						</svg>
-					</button>
-					<h1 class="text-lavender lg:text-5xl text-4xl m-2 text-center font-extrabold">
+		<div class="flex p-4 items-center justify-between w-full">
+			<div class="flex items-center">
+				<button
+					id="sidebar-button"
+					_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar"
+					class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+				>
+					<span class="sr-only">"Open sidebar" </span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+						<path fill="currentColor" d="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"></path>
+					</svg>
+				</button>
+				<img src="/dist/favicon.ico" class="w-8 h-8"/>
+				<a href="/">
+					<h1 class="text-lavender lg:text-5xl text-2xl m-2 text-center font-extrabold">
 						R&J Meals
 					</h1>
-				</div>
+				</a>
 			</div>
+			<div id="user" class="justify-end"></div>
 		</div>
 	</nav>
 }

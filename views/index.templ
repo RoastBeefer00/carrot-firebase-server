@@ -1,55 +1,61 @@
 package views
 
-templ Index() {
+templ Index(admin bool) {
 	<!DOCTYPE html>
 	<html lang="en" class="mocha">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/dist/tailwind.css"/>
-            <link rel="icon" href="/dist/favicon.ico" />
+			<link rel="icon" href="/dist/favicon.ico"/>
 			<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 			<script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
 			<script type="module">
-                // Import the functions you need from the SDKs you need
-                import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js';
-                import {getAuth, getRedirectResult, signInWithPopup, GoogleAuthProvider} from 'https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js';
+        // Import the functions you need from the SDKs you need
+        import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js';
+        import {getAuth, getRedirectResult, signInWithPopup, GoogleAuthProvider} from 'https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js';
 
-                // Your web app's Firebase configuration
-                // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-                const firebaseConfig = {
-                    apiKey: 'AIzaSyAwYYAbVrDERwdpRp4kOU8fh5lW6fqFt0s',
-                    authDomain: 'r-j-magenta-carrot-42069.firebaseapp.com',
-                    projectId: 'r-j-magenta-carrot-42069',
-                    // storageBucket: 'r-j-magenta-carrot-42069.appspot.com',
-                    // messagingSenderId: '441356283577',
-                    // appId: '1:441356283577:web:cce7891fec089402bbb568',
-                };
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: 'AIzaSyAwYYAbVrDERwdpRp4kOU8fh5lW6fqFt0s',
+            authDomain: 'r-j-magenta-carrot-42069.firebaseapp.com',
+            projectId: 'r-j-magenta-carrot-42069',
+            // storageBucket: 'r-j-magenta-carrot-42069.appspot.com',
+            // messagingSenderId: '441356283577',
+            // appId: '1:441356283577:web:cce7891fec089402bbb568',
+        };
 
-                // Initialize Firebase
-                const app = initializeApp(firebaseConfig);
-                const auth = getAuth(app);
-                const provider = new GoogleAuthProvider();
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
-                auth.onAuthStateChanged(async u => {
-                    if (u) {
-                        let token = await u.getIdToken(true);
-                        document.cookie = `token=${token}; path=/; SameSite=None; Secure;`;
+        auth.onAuthStateChanged(async u => {
+            if (u) {
+                let token = await u.getIdToken(true);
+                document.cookie = `token=${token}; path=/; SameSite=None; Secure;`;
 
-                        htmx.ajax('GET', '/refresh', {
-                            target:'#recipes', 
-                            swap: 'innerHTML'
-                        });
-                    } else {
-                        signInWithPopup(auth, provider);
-                    }
-                });
+                if (window.location.pathname === '/') {
+                    htmx.ajax('GET', '/login', {
+                        target: '#user',
+                        swap: 'innerHTML'
+                    });
+                    htmx.ajax('GET', '/refresh', {
+                        target: '#recipes',
+                        swap: 'innerHTML'
+                    });
+                }
+            } else {
+                signInWithPopup(auth, provider);
+            }
+        });
 
-            </script>
+    </script>
 			<title>Magenta Carrot</title>
 		</head>
 		<body id="body" class="bg-base">
-			@Page()
+			@Page(admin)
 		</body>
 	</html>
 }
