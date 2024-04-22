@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -287,4 +288,66 @@ func ChangeFilter(c echo.Context) error {
 	fmt.Println(filter)
 	services.SetFilter(filter)
 	return Render(c, http.StatusOK, views.Search(filter))
+}
+
+func AddRecipeToDatabase(c echo.Context) error {
+    recipe := services.Recipe{}
+    state, err := database.GetState(c)
+    if err != nil {
+        return err
+    }
+
+    if !slices.Contains(services.Admins, state.User.Email) {
+        return c.NoContent(200)
+    }
+
+    formParams, err := c.FormParams()
+    if err != nil {
+        return err
+    }
+
+    for key, value := range formParams {
+        if strings.HasPrefix(key, "name") {
+            recipe.Name = value[0]
+        } else if strings.HasPrefix(key, "time") {
+            recipe.Time = value[0]
+        } else if strings.HasPrefix(key, "ingredient") {
+            recipe.Ingredients = append(recipe.Ingredients, value[0])
+        } else if strings.HasPrefix(key, "step") {
+            recipe.Steps = append(recipe.Steps, value[0])
+        }
+    }
+
+    log.Printf("User %s with email %s is adding recipe %s: ", state.User.DisplayName, state.User.Email, recipe)
+    client, ctx, err := database.GetClient()
+    if err != nil {
+        return err
+    }
+    defer client.Close()
+
+    doc, _, err := client.Collection("recipes").Add(ctx, recipe)
+    if err != nil {
+        return err
+    }
+    log.Print(doc.ID)
+
+    idDoc, err := client.Collection("ids").Doc("hHjqXrWMhH7WDTPEwlkN").Get(ctx)
+    if err != nil {
+        return err
+    }
+
+    var ids IDs
+    err = idDoc.DataTo(&ids)
+    if err != nil {
+        return err
+    }
+
+    ids.IDs = append(ids.IDs, doc.ID)
+
+    _, err = client.Collection("ids").Doc("hHjqXrWMhH7WDTPEwlkN").Set(ctx, ids)
+    if err != nil {
+        return err
+    }
+
+    return Render(c, http.StatusOK, views.Admin())
 }
