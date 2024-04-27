@@ -1,26 +1,28 @@
 package views
 
 templ nav() {
-	<nav class="fixed top-0 z-30 w-full bg-base border-b border-rosewater">
-		<div class="flex p-2 items-center justify-between w-full">
-			<div class="flex items-center">
-				<button
-					id="sidebar-button"
-					_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar"
-					class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-				>
-					<span class="sr-only">"Open sidebar" </span>
-					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-						<path fill="currentColor" d="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"></path>
-					</svg>
-				</button>
-				<a href="/">
-					<h1 class="text-lavender lg:text-5xl text-2xl m-2 text-center font-extrabold">
-						R&J Meals
-					</h1>
-				</a>
+	<div class="sticky top-0 z-30">
+		<nav class="z-30 w-full bg-base border-b border-rosewater">
+			<div class="flex p-2 items-center justify-between w-full">
+				<div class="flex items-center">
+					<button
+						id="sidebar-button"
+						_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar"
+						class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+					>
+						<span class="sr-only">"Open sidebar" </span>
+						<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+							<path fill="currentColor" d="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z"></path>
+						</svg>
+					</button>
+					<a href="/">
+						<h1 class="text-lavender lg:text-5xl text-2xl m-2 text-center font-extrabold">
+							R&J Meals
+						</h1>
+					</a>
+				</div>
+				<div id="user" class="justify-end"></div>
 			</div>
-			<div id="user" class="justify-end"></div>
-		</div>
-	</nav>
+		</nav>
+	</div>
 }

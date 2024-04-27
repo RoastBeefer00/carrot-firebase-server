@@ -607,6 +607,14 @@ video {
   position: absolute;
 }
 
+.relative {
+  position: relative;
+}
+
+.sticky {
+  position: sticky;
+}
+
 .inset-0 {
   inset: 0px;
 }
@@ -748,6 +756,10 @@ video {
   width: 100%;
 }
 
+.w-screen {
+  width: 100vw;
+}
+
 .max-w-\[90\%\] {
   max-width: 90%;
 }
@@ -808,6 +820,10 @@ video {
 
 .overflow-y-auto {
   overflow-y: auto;
+}
+
+.overflow-y-scroll {
+  overflow-y: scroll;
 }
 
 .truncate {
@@ -1177,6 +1193,10 @@ video {
 
   .sm\:w-1\/2 {
     width: 50%;
+  }
+
+  .sm\:w-3\/4 {
+    width: 75%;
   }
 
   .sm\:translate-x-0 {
