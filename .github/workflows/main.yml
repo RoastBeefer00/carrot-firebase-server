@@ -13,4 +13,4 @@ jobs:
     - uses: 'google-github-actions/auth@v2'
       with:
         project_id: 'r-j-magenta-carrot-42069'
-        credentials_json: ${{ secrets.CARROT_DEPLOY_KEY }}
+        credentials_json: '${{ secrets.CARROT_DEPLOY_KEY }}'
