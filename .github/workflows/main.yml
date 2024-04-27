@@ -1,0 +1,16 @@
+name: Carrot Deploy
+run-name: ${{ github.actor }} is deploying carrot app
+on:
+  push:
+    branches:
+      - main
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: 'actions/checkout@v4'
+  
+    - uses: 'google-github-actions/auth@v2'
+      with:
+        project_id: 'r-j-magenta-carrot-42069'
+        credentials_json: ${{ secrets.CARROT_DEPLOY_KEY }}
