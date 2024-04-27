@@ -23,7 +23,7 @@ func Render(ctx echo.Context, statusCode int, t templ.Component) error {
 }
 
 func main() {
-	index := views.Index()
+	index := views.Index(false)
 
 	e := echo.New()
 
@@ -41,15 +41,22 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return Render(c, http.StatusOK, index)
 	})
+    e.GET("/login", handlers.Login)
+    e.GET("/admin", handlers.AdminHandler)
     e.GET("/refresh", handlers.GetRecipes)
 	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)
 	e.GET("/recipes/random", handlers.GetRandomRecipes)
+	e.GET("/recipes/add", handlers.AddRecipeToDatabase)
 	e.GET("/recipes/name", handlers.SearchRecipesByName)
 	e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)
 	e.GET("/recipes/filter", handlers.ChangeFilter)
 	e.GET("/recipes/delete/:id", handlers.DeleteRecipe)
 	e.GET("/recipes/delete/all", handlers.DeleteAllRecipes)
 	e.GET("/groceries", handlers.CombineIngredients)
+    e.GET("/ingredient/add/:id", handlers.AddIngredient)
+    e.GET("/ingredient/delete/:id", handlers.DeleteIngredient)
+    e.GET("/step/add/:id", handlers.AddStep)
+    e.GET("/step/delete/:id", handlers.DeleteStep)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

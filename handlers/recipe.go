@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net/http"
+	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -67,23 +69,23 @@ func filterRecipes(recipes []services.Recipe, function func(services.Recipe) boo
 }
 
 func GetRecipes(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
-    log.Printf("Refreshing %d recipes for user %s with email %s", len(state.Recipes), state.User.DisplayName, state.User.Email)
-    return Render(c, http.StatusOK, views.Recipes(state.Recipes, false))
+	log.Printf("Refreshing %d recipes for user %s with email %s", len(state.Recipes), state.User.DisplayName, state.User.Email)
+	return Render(c, http.StatusOK, views.Recipes(state.Recipes, false))
 }
 
 func SearchRecipesByName(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
 	filter := c.FormValue("search")
-    log.Printf("Searching for recipes with name %s for user %s with email %s", filter, state.User.DisplayName, state.User.Email)
+	log.Printf("Searching for recipes with name %s for user %s with email %s", filter, state.User.DisplayName, state.User.Email)
 
 	recipes, err := getAll()
 	if err != nil {
@@ -99,23 +101,23 @@ func SearchRecipesByName(c echo.Context) error {
 	}
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
-    err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
-    if err != nil {
-        return err
-    }
+	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
+	if err != nil {
+		return err
+	}
 
-    state.Recipes = append(state.Recipes, filteredRecipes...)
-    return database.UpdateState(state)
+	state.Recipes = append(state.Recipes, filteredRecipes...)
+	return database.UpdateState(state)
 }
 
 func SearchRecipesByIngredient(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
 	filter := c.FormValue("search")
-    log.Printf("Searching for recipes with ingredient %s for user %s with email %s", filter, state.User.DisplayName, state.User.Email)
+	log.Printf("Searching for recipes with ingredient %s for user %s with email %s", filter, state.User.DisplayName, state.User.Email)
 
 	recipes, err := getAll()
 	if err != nil {
@@ -134,22 +136,22 @@ func SearchRecipesByIngredient(c echo.Context) error {
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
 
-    err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
-    if err != nil {
-        return err
-    }
-    state.AddRecipes(filteredRecipes)
-    return database.UpdateState(state)
+	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
+	if err != nil {
+		return err
+	}
+	state.AddRecipes(filteredRecipes)
+	return database.UpdateState(state)
 }
 
 func ReplaceRecipe(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
 	param := c.Param("id")
-    fmt.Println(param)
+	fmt.Println(param)
 
 	id, err := strconv.Atoi(param)
 	if err != nil {
@@ -178,25 +180,25 @@ func ReplaceRecipe(c echo.Context) error {
 
 	recipe.AddId()
 
-    log.Printf("Replacing recipe with id %d with recipe %s for user %s with email %s", id, recipe.Name, state.User.DisplayName, state.User.Email)
-    err = Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id, false))
-    if err != nil {
-        return err
-    }
+	log.Printf("Replacing recipe with id %d with recipe %s for user %s with email %s", id, recipe.Name, state.User.DisplayName, state.User.Email)
+	err = Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id, false))
+	if err != nil {
+		return err
+	}
 
-    state.ReplaceRecipe(id, recipe)
-    return database.UpdateState(state)
+	state.ReplaceRecipe(id, recipe)
+	return database.UpdateState(state)
 }
 
 func GetRandomRecipes(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
 	var randomRecipes []services.Recipe
 	amount := c.FormValue("amount")
-    log.Printf("Fetching %s random recipes for user %s with email %s", amount, state.User.DisplayName, state.User.Email)
+	log.Printf("Fetching %s random recipes for user %s with email %s", amount, state.User.DisplayName, state.User.Email)
 
 	amountInt, err := strconv.Atoi(amount)
 	if err != nil {
@@ -236,50 +238,50 @@ func GetRandomRecipes(c echo.Context) error {
 	}
 	wg.Wait()
 
-    err = Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
-    if err != nil {
-        return err
-    }
-    state.AddRecipes(randomRecipes)
-    return database.UpdateState(state)
+	err = Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
+	if err != nil {
+		return err
+	}
+	state.AddRecipes(randomRecipes)
+	return database.UpdateState(state)
 }
 
 func DeleteRecipe(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
 	param := c.Param("id")
-    fmt.Println(param)
+	fmt.Println(param)
 
 	id, err := strconv.Atoi(param)
 	if err != nil {
 		return err
 	}
 
-    log.Printf("Deleting recipe with id %d for user %s with email %s", id, state.User.DisplayName, state.User.Email)
-    err = c.NoContent(200)
-    if err != nil {
-        return err
-    }
-    state.DeleteRecipe(id)
-    return database.UpdateState(state)
+	log.Printf("Deleting recipe with id %d for user %s with email %s", id, state.User.DisplayName, state.User.Email)
+	err = c.NoContent(200)
+	if err != nil {
+		return err
+	}
+	state.DeleteRecipe(id)
+	return database.UpdateState(state)
 }
 
 func DeleteAllRecipes(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
-    log.Printf("Deleting all recipes for user %s with email %s", state.User.DisplayName, state.User.Email)
-    err = c.NoContent(200)
-    if err != nil {
-        return err
-    }
-    state.Recipes = make([]services.Recipe, 0)
-    return database.UpdateState(state)
+	log.Printf("Deleting all recipes for user %s with email %s", state.User.DisplayName, state.User.Email)
+	err = c.NoContent(200)
+	if err != nil {
+		return err
+	}
+	state.Recipes = make([]services.Recipe, 0)
+	return database.UpdateState(state)
 }
 
 func ChangeFilter(c echo.Context) error {
@@ -287,4 +289,88 @@ func ChangeFilter(c echo.Context) error {
 	fmt.Println(filter)
 	services.SetFilter(filter)
 	return Render(c, http.StatusOK, views.Search(filter))
+}
+
+func AddRecipeToDatabase(c echo.Context) error {
+	recipe := services.Recipe{}
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains(services.Admins, state.User.Email) {
+		return c.NoContent(200)
+	}
+
+	formParams, err := c.FormParams()
+	if err != nil {
+		return err
+	}
+
+	ingredients := make(map[string]string)
+	steps := make(map[string]string)
+	for key, value := range formParams {
+		if strings.HasPrefix(key, "name") {
+			recipe.Name = value[0]
+		} else if strings.HasPrefix(key, "time") {
+			recipe.Time = value[0]
+		} else if strings.HasPrefix(key, "ingredient") {
+			ingredients[key] = value[0]
+		} else if strings.HasPrefix(key, "step") {
+			steps[key] = value[0]
+		}
+	}
+
+	ingKeys := make([]string, 0, len(ingredients))
+	for k := range ingredients {
+		ingKeys = append(ingKeys, k)
+	}
+	sort.Strings(ingKeys)
+
+	for _, k := range ingKeys {
+        recipe.Ingredients = append(recipe.Ingredients, ingredients[k])
+	}
+
+	stepKeys := make([]string, 0, len(steps))
+	for k := range steps {
+		stepKeys = append(stepKeys, k)
+	}
+	sort.Strings(stepKeys)
+
+	for _, k := range stepKeys {
+        recipe.Steps = append(recipe.Steps, steps[k])
+	}
+
+	log.Printf("User %s with email %s is adding recipe %s: ", state.User.DisplayName, state.User.Email, recipe)
+	client, ctx, err := database.GetClient()
+	if err != nil {
+	    return err
+	}
+	defer client.Close()
+
+	doc, _, err := client.Collection("recipes").Add(ctx, recipe)
+	if err != nil {
+	    return err
+	}
+	log.Print(doc.ID)
+
+	idDoc, err := client.Collection("ids").Doc("hHjqXrWMhH7WDTPEwlkN").Get(ctx)
+	if err != nil {
+	    return err
+	}
+
+	var ids IDs
+	err = idDoc.DataTo(&ids)
+	if err != nil {
+	    return err
+	}
+
+	ids.IDs = append(ids.IDs, doc.ID)
+
+	_, err = client.Collection("ids").Doc("hHjqXrWMhH7WDTPEwlkN").Set(ctx, ids)
+	if err != nil {
+	    return err
+	}
+
+	return Render(c, http.StatusOK, views.Admin())
 }
