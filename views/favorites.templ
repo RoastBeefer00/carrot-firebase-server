@@ -1,0 +1,15 @@
+package views
+
+import (
+
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+)
+
+templ Favorites(favorites []services.Recipe) {
+    <div class="flex flex-col">
+        <div class="p-2 bg-red w-3/4 sm:w-1/2 justify-center mx-auto rounded">
+            <h1 class="text-3xl text-crust text-center font-bold">Favorites</h1>
+        </div>
+        @Recipes(favorites, false)
+    </div>
+}

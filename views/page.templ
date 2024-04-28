@@ -9,7 +9,7 @@ templ Page(admin bool) {
 		@nav()
 		if !admin {
 			@sidebar()
-			<div class="p-4 sm:ml-64 relative overflow-y-scroll">
+			<div id="page" class="p-4 sm:ml-64 relative overflow-y-scroll">
 				<div id="search" class="mt-4 sm:mt-0">
 					@Search(services.Filter)
 				</div>

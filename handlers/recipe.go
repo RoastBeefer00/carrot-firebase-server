@@ -99,6 +99,11 @@ func SearchRecipesByName(c echo.Context) error {
 	}
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
+    for i, recipe := range filteredRecipes {
+        if state.IsFavorite(recipe.Id) {
+            filteredRecipes[i].Favorite = true
+        }
+    }
 	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
 	if err != nil {
 		return err
@@ -133,6 +138,11 @@ func SearchRecipesByIngredient(c echo.Context) error {
 	}
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
+    for i, recipe := range filteredRecipes {
+        if state.IsFavorite(recipe.Id) {
+            filteredRecipes[i].Favorite = true
+        }
+    }
 
 	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
 	if err != nil {
@@ -169,9 +179,12 @@ func ReplaceRecipe(c echo.Context) error {
 	}
 	var recipe services.Recipe
 	doc.DataTo(&recipe)
+    if state.IsFavorite(recipe.Id) {
+        recipe.Favorite = true
+    }
 
 	log.Printf("Replacing recipe with id %d with recipe %s for user %s with email %s", id, recipe.Name, state.User.DisplayName, state.User.Email)
-	err = Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id, false))
+	err = Render(c, http.StatusOK, views.Recipe(recipe, false))
 	if err != nil {
 		return err
 	}
@@ -226,6 +239,12 @@ func GetRandomRecipes(c echo.Context) error {
 		}()
 	}
 	wg.Wait()
+
+    for i, recipe := range randomRecipes {
+        if state.IsFavorite(recipe.Id) {
+            randomRecipes[i].Favorite = true
+        }
+    }
 
 	err = Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
 	if err != nil {

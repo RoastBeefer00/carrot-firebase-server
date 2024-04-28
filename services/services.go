@@ -1,5 +1,7 @@
 package services
 
+import "slices"
+
 var Filter = "name"
 var AllIngredients = []Ingredient{}
 
@@ -11,6 +13,7 @@ var Admins = []string{
 type State struct {
     User User
     Recipes []Recipe
+    Favorites []string
 }
 
 type User struct {
@@ -21,6 +24,19 @@ type User struct {
 
 func (s *State) AddRecipe(recipe Recipe) {
     s.Recipes = append(s.Recipes, recipe)
+}
+
+func (s *State) AddFavorite(id string) {
+    if !slices.Contains(s.Favorites, id) {
+        s.Favorites = append(s.Favorites, id)
+    }
+
+    for i, recipe := range s.Recipes {
+        if recipe.Id == id {
+            s.Recipes[i].Favorite = true
+            break
+        }
+    }
 }
 
 func (s *State) AddRecipes(recipes []Recipe) {
@@ -36,6 +52,22 @@ func (s *State) DeleteRecipe(id string) {
     }
 }
 
+func (s *State) DeleteFavorite(id string) {
+    for i, favorite := range s.Favorites {
+        if favorite == id {
+            s.Favorites = append(s.Favorites[:i], s.Favorites[i+1:]...)
+            break
+        }
+    }
+
+    for i, recipe := range s.Recipes {
+        if recipe.Id == id {
+            s.Recipes[i].Favorite = false
+            break
+        }
+    }
+}
+
 func (s *State) ReplaceRecipe(id string, newRecipe Recipe) {
     for i, recipe := range s.Recipes {
         if recipe.Id == id {
@@ -43,6 +75,10 @@ func (s *State) ReplaceRecipe(id string, newRecipe Recipe) {
             break
         }
     }
+}
+
+func (s *State) IsFavorite(id string) bool {
+    return slices.Contains(s.Favorites, id)
 }
 
 type Recipe struct {
