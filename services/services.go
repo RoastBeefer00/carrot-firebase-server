@@ -1,6 +1,5 @@
 package services
 
-var Id = 0
 var Filter = "name"
 var AllIngredients = []Ingredient{}
 
@@ -28,7 +27,7 @@ func (s *State) AddRecipes(recipes []Recipe) {
     s.Recipes = append(s.Recipes, recipes...)
 }
 
-func (s *State) DeleteRecipe(id int) {
+func (s *State) DeleteRecipe(id string) {
     for i, recipe := range s.Recipes {
         if recipe.Id == id {
             s.Recipes = append(s.Recipes[:i], s.Recipes[i+1:]...)
@@ -37,7 +36,7 @@ func (s *State) DeleteRecipe(id int) {
     }
 }
 
-func (s *State) ReplaceRecipe(id int, newRecipe Recipe) {
+func (s *State) ReplaceRecipe(id string, newRecipe Recipe) {
     for i, recipe := range s.Recipes {
         if recipe.Id == id {
             s.Recipes[i] = newRecipe
@@ -51,12 +50,12 @@ type Recipe struct {
 	Time        string
 	Ingredients []string
 	Steps       []string
-	Id          int
+	Id          string
+	Favorite    bool
 }
 
-func (r *Recipe) AddId() {
-    Id++
-    r.Id = Id
+func (r *Recipe) AddId(id string) {
+    r.Id = id
 }
 
 type Ingredient struct {
