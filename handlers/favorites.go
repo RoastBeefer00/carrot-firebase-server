@@ -50,6 +50,13 @@ func Favorites(c echo.Context) error {
     }
     wg.Wait()
 
+    header := c.Request().Header
+
+
+    if header["Hx-Request"] == nil {
+        return Render(c, http.StatusOK, views.Index(views.Favorites(favorites)))
+    }
+
     return Render(c, http.StatusOK, views.Favorites(favorites))
 }
 

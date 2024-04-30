@@ -23,8 +23,6 @@ func Render(ctx echo.Context, statusCode int, t templ.Component) error {
 }
 
 func main() {
-	index := views.Index(false)
-
 	e := echo.New()
 
 	e.Static("/dist", "dist")
@@ -39,7 +37,7 @@ func main() {
 
 	// This will initiate our template renderer
 	e.GET("/", func(c echo.Context) error {
-		return Render(c, http.StatusOK, index)
+        return Render(c, http.StatusOK, views.Index(views.Page()))
 	})
     e.GET("/login", handlers.Login)
     e.GET("/admin", handlers.AdminHandler)

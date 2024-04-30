@@ -26,9 +26,9 @@ func AdminHandler(c echo.Context) error {
 
     if slices.Contains(services.Admins, state.User.Email) {
         if header["Hx-Request"] == nil {
-            return Render(c, http.StatusOK, views.Index(true))
+            return Render(c, http.StatusOK, views.Index(views.Admin()))
         } else {
-            return Render(c, http.StatusOK, views.Page(true))
+            return Render(c, http.StatusOK, views.Admin())
         }
     } else {
         return c.NoContent(403)

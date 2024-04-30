@@ -1,6 +1,6 @@
 package views
 
-templ Index(admin bool) {
+templ Index(page templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en" class="mocha">
 		<head>
@@ -55,7 +55,10 @@ templ Index(admin bool) {
 			<title>Magenta Carrot</title>
 		</head>
 		<body id="body" class="bg-base">
-			@Page(admin)
+            @nav()
+            <div id="page">
+                @page
+            </div>
 		</body>
 	</html>
 }
