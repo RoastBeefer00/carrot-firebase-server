@@ -4,22 +4,15 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-templ Page(admin bool) {
+templ Page() {
 	<div class="flex flex-col h-screen w-screen">
-		@nav()
-		if !admin {
-			@sidebar()
-			<div id="page" class="p-4 sm:ml-64 relative overflow-y-scroll">
-				<div id="search" class="mt-4 sm:mt-0">
-					@Search(services.Filter)
-				</div>
-				<div id="recipes" class="mt-4"></div>
-			</div>
-		} else {
-            @Admin()
-        }
+        @sidebar()
+        <div class="p-4 sm:ml-64 relative overflow-y-scroll">
+            <div id="search" class="mt-4 sm:mt-0">
+                @Search(services.Filter)
+            </div>
+            <div id="recipes" class="mt-4"></div>
+        </div>
 	</div>
-    if !admin {
-        <div id="groceries" class="absolute mx-auto mt-10 z-40 w-[90vw] sm:w-1/2 m-4 inset-0 h-[80vh] hidden"></div>
-    }
+    <div id="groceries" class="absolute mx-auto mt-10 z-40 w-[90vw] sm:w-1/2 m-4 inset-0 h-[80vh] hidden"></div>
 }
