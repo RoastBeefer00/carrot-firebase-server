@@ -1,31 +1,53 @@
 package views
 
 import (
-	"strconv"
-
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
+templ FavoriteButton(favorite bool, id string) {
+	<form if !favorite {
+	hx-get={ "/recipes/favorites/add/" + id }
+} else {
+	hx-get={ "/recipes/favorites/delete/" + id }
+}>
+		<button type="submit" class="text-crust text-center rounded bg-green p-2 border border-crust">
+			if !favorite {
+				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+					<path
+						fill="currentColor"
+						d="M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125M11.05 6.75q-.725-1.025-1.55-1.563t-2-.537q-1.5 0-2.5 1t-1 2.5q0 1.3.925 2.763t2.213 2.837q1.287 1.375 2.65 2.575T12 18.3q.85-.775 2.213-1.975t2.65-2.575q1.287-1.375 2.212-2.837T20 8.15q0-1.5-1-2.5t-2.5-1q-1.175 0-2 .538T12.95 6.75q-.175.25-.425.375T12 7.25q-.275 0-.525-.125t-.425-.375m.95 4.725"
+					></path>
+				</svg>
+			} else {
+				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+					<path
+						fill="currentColor"
+						d="M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125"
+					></path>
+				</svg>
+			}
+		</button>
+	</form>
+}
+
 templ Recipes(recipes []services.Recipe, oob bool) {
 	for _, recipe := range recipes {
-		@Recipe(recipe, recipe.Id, oob)
+		@Recipe(recipe, oob)
 	}
 }
 
-templ Recipe(recipe services.Recipe, id int, oob bool) {
-	<div 
-        if oob {
-            hx-swap-oob="beforeend:#recipes"
-        }
-    >
-		<div class="bg-lavender sm:p-4 p-2 rounded mt-2" id={ "recipe-" + strconv.Itoa(id) }>
+templ Recipe(recipe services.Recipe, oob bool) {
+	<div if oob {
+	hx-swap-oob="beforeend:#recipes"
+}>
+		<div class="bg-lavender sm:p-4 p-2 rounded mt-2" id={ "recipe-" + recipe.Id }>
 			<div class="flex mb-2">
 				<h1 class="text-mantle text-3xl font-bold mr-2">{ recipe.Name }</h1>
 				<span class="text-mantle mt-2">{ recipe.Time }</span>
 			</div>
 			<div class="flex justify-between">
 				<button
-					id={ "toggle-recipe-" + strconv.Itoa(id) }
+					id={ "toggle-recipe-" + recipe.Id }
 					_="on click toggle .hidden on <svg/> in me"
 					class="text-crust text-center rounded bg-green p-2 border border-crust"
 				>
@@ -37,9 +59,10 @@ templ Recipe(recipe services.Recipe, id int, oob bool) {
 					</svg>
 				</button>
 				<div class="flex gap-2">
+					@FavoriteButton(recipe.Favorite, recipe.Id)
 					<form
-						hx-get={ "/recipes/replace/" + strconv.Itoa(id) }
-						hx-target={ "#recipe-" + strconv.Itoa(id) }
+						hx-get={ "/recipes/replace/" + recipe.Id }
+						hx-target={ "#recipe-" + recipe.Id }
 						hx-swap="outerHTML"
 					>
 						<button type="submit" class="text-crust text-center rounded bg-sky p-2 border border-crust">
@@ -55,8 +78,8 @@ templ Recipe(recipe services.Recipe, id int, oob bool) {
 						</button>
 					</form>
 					<form
-						hx-get={ "/recipes/delete/" + strconv.Itoa(id) }
-						hx-target={ "#recipe-" + strconv.Itoa(id) }
+						hx-get={ "/recipes/delete/" + recipe.Id }
+						hx-target={ "#recipe-" + recipe.Id }
 						hx-swap="outerHTML"
 					>
 						<button type="submit" class="text-crust text-center rounded bg-red p-2 border border-crust">
@@ -71,7 +94,7 @@ templ Recipe(recipe services.Recipe, id int, oob bool) {
 				</div>
 			</div>
 			<div
-				_={ "on click from #toggle-recipe-" + strconv.Itoa(id) + " toggle .hidden" }
+				_={ "on click from #toggle-recipe-" + recipe.Id + " toggle .hidden" }
 				class="bg-surface0 mt-2 p-1 sm:p-2 rounded hidden"
 			>
 				<div class="bg-green sm:m-2 sm:p-4 m-1 p-2 rounded">

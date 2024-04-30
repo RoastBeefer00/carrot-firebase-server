@@ -48,7 +48,6 @@ func getAll() ([]services.Recipe, error) {
 			return nil, err
 		}
 
-		recipe.AddId()
 		recipes = append(recipes, recipe)
 	}
 
@@ -60,7 +59,6 @@ func filterRecipes(recipes []services.Recipe, function func(services.Recipe) boo
 
 	for _, recipe := range recipes {
 		if function(recipe) {
-			recipe.AddId()
 			filteredRecipes = append(filteredRecipes, recipe)
 		}
 	}
@@ -101,6 +99,11 @@ func SearchRecipesByName(c echo.Context) error {
 	}
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
+    for i, recipe := range filteredRecipes {
+        if state.IsFavorite(recipe.Id) {
+            filteredRecipes[i].Favorite = true
+        }
+    }
 	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
 	if err != nil {
 		return err
@@ -135,6 +138,11 @@ func SearchRecipesByIngredient(c echo.Context) error {
 	}
 
 	filteredRecipes = filterRecipes(recipes, filterFunc)
+    for i, recipe := range filteredRecipes {
+        if state.IsFavorite(recipe.Id) {
+            filteredRecipes[i].Favorite = true
+        }
+    }
 
 	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
 	if err != nil {
@@ -150,13 +158,7 @@ func ReplaceRecipe(c echo.Context) error {
 		return err
 	}
 
-	param := c.Param("id")
-	fmt.Println(param)
-
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		return err
-	}
+	id := c.Param("id")
 
 	client, ctx, err := database.GetClient()
 	if err != nil {
@@ -177,11 +179,12 @@ func ReplaceRecipe(c echo.Context) error {
 	}
 	var recipe services.Recipe
 	doc.DataTo(&recipe)
-
-	recipe.AddId()
+    if state.IsFavorite(recipe.Id) {
+        recipe.Favorite = true
+    }
 
 	log.Printf("Replacing recipe with id %d with recipe %s for user %s with email %s", id, recipe.Name, state.User.DisplayName, state.User.Email)
-	err = Render(c, http.StatusOK, views.Recipe(recipe, recipe.Id, false))
+	err = Render(c, http.StatusOK, views.Recipe(recipe, false))
 	if err != nil {
 		return err
 	}
@@ -231,12 +234,17 @@ func GetRandomRecipes(c echo.Context) error {
 			var recipe services.Recipe
 			doc.DataTo(&recipe)
 
-			recipe.AddId()
 			randomRecipes = append(randomRecipes, recipe)
 			return nil
 		}()
 	}
 	wg.Wait()
+
+    for i, recipe := range randomRecipes {
+        if state.IsFavorite(recipe.Id) {
+            randomRecipes[i].Favorite = true
+        }
+    }
 
 	err = Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
 	if err != nil {
@@ -252,13 +260,7 @@ func DeleteRecipe(c echo.Context) error {
 		return err
 	}
 
-	param := c.Param("id")
-	fmt.Println(param)
-
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		return err
-	}
+	id := c.Param("id")
 
 	log.Printf("Deleting recipe with id %d for user %s with email %s", id, state.User.DisplayName, state.User.Email)
 	err = c.NoContent(200)
@@ -353,6 +355,12 @@ func AddRecipeToDatabase(c echo.Context) error {
 	    return err
 	}
 	log.Print(doc.ID)
+
+    recipe.Id = doc.ID
+    _, err = client.Collection("recipes").Doc(doc.ID).Set(ctx, recipe)
+	if err != nil {
+	    return err
+	}
 
 	idDoc, err := client.Collection("ids").Doc("hHjqXrWMhH7WDTPEwlkN").Get(ctx)
 	if err != nil {
