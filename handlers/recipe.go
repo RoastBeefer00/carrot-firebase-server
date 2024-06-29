@@ -76,6 +76,15 @@ func GetRecipes(c echo.Context) error {
 	return Render(c, http.StatusOK, views.Recipes(state.Recipes, false))
 }
 
+func GetAllRecipes(c echo.Context) error {
+    recipes, err := getAll()
+    if err != nil {
+        return err
+    }
+
+    return c.JSON(http.StatusOK, recipes)
+}
+
 func SearchRecipesByName(c echo.Context) error {
 	state, err := database.GetState(c)
 	if err != nil {

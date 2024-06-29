@@ -45,6 +45,7 @@ func main() {
 	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)
 	e.GET("/recipes/random", handlers.GetRandomRecipes)
 	e.GET("/recipes/add", handlers.AddRecipeToDatabase)
+	e.GET("/recipes/all", handlers.GetAllRecipes)
 	e.GET("/recipes/name", handlers.SearchRecipesByName)
 	e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)
 	e.GET("/recipes/filter", handlers.ChangeFilter)
