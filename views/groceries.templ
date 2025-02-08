@@ -2,7 +2,17 @@ package views
 
 import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
+
+    "strconv"
+    "math"
+	"fmt"
 )
+
+var doubledQuantity = false
+
+func toggleQuantity() {
+    doubledQuantity = !doubledQuantity
+}
 
 templ Groceries(ingredients []services.Ingredient) {
 	<div class="h-full w-full rounded bg-crust p-2"
@@ -12,13 +22,37 @@ templ Groceries(ingredients []services.Ingredient) {
 			<div class="bg-crust text-text p-4">
 				<h1 class="text-3xl font-bold">Groceries</h1>
 			</div>
-			<div class="p-4 overflow-y-auto">
+            <div>
+                <button
+                class="rounded p-2 bg-green border border-black m-4"
+                _="on click toggle .hidden on <span/> in #ingredients">Toggle Quantity</button>
+            </div>
+			<div class="p-4 overflow-y-auto" id="ingredients">
 				for _, ingredient := range ingredients {
+                    {{ 
+                        quantity, _ := strconv.ParseFloat(ingredient.Quantity, 64) 
+                        quantity = quantity * 2
+                    }}
 					<div class="flex p-2">
 						<input type="checkbox"/>
 						<span class="ml-2">
                             { ingredient.Quantity + " " + ingredient.Measurement + " " + ingredient.Item }
                         </span>
+                        if quantity > 0 {
+                            if quantity == math.Trunc(quantity) {
+                                <span class="ml-2 hidden">
+                                { fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " + ingredient.Item }
+                                </span>
+                            } else {
+                                <span class="ml-2 hidden">
+                                { fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " + ingredient.Item }
+                                </span>
+                            }
+                        } else {
+                            <span class="ml-2 hidden">
+                            { ingredient.Measurement + " " + ingredient.Item }
+                            </span>
+                        }
 					</div>
 				}
 			</div>
