@@ -60,12 +60,12 @@ func getIngredientItem(ingredient string) (string, error) {
 }
 
 func CombineIngredients(c echo.Context) error {
-    state, err := database.GetState(c)
-    if err != nil {
-        return err
-    }
+	state, err := database.GetState(c)
+	if err != nil {
+		return err
+	}
 
-    recipes := state.Recipes
+	recipes := state.Recipes
 	var ingredients []services.Ingredient
 
 	for _, recipe := range recipes {
@@ -94,8 +94,10 @@ func CombineIngredients(c echo.Context) error {
 		ingredientI := ingredients[i]
 		ingredientJ := ingredients[j]
 
-		if strings.Contains(ingredientI.Item, ingredientJ.Item) || strings.Contains(ingredientJ.Item, ingredientI.Item) {
-			if (ingredientI.Measurement == "" && ingredientJ.Measurement == "") || ((strings.Contains(ingredientI.Measurement, ingredientJ.Measurement) && ingredientJ.Measurement != "") || (strings.Contains(ingredientJ.Measurement, ingredientI.Measurement) && ingredientI.Measurement != "")) {
+		if strings.Contains(ingredientI.Item, ingredientJ.Item) ||
+			strings.Contains(ingredientJ.Item, ingredientI.Item) {
+			if (ingredientI.Measurement == "" && ingredientJ.Measurement == "") ||
+				((strings.Contains(ingredientI.Measurement, ingredientJ.Measurement) && ingredientJ.Measurement != "") || (strings.Contains(ingredientJ.Measurement, ingredientI.Measurement) && ingredientI.Measurement != "")) {
 				insert := services.Ingredient{}
 				if ingredientI.Quantity != "" {
 					if len(ingredientI.Quantity) > len(ingredientJ.Quantity) {
@@ -110,7 +112,8 @@ func CombineIngredients(c echo.Context) error {
 						insert.Measurement = ingredientI.Measurement
 					}
 
-					if strings.Contains(ingredientI.Quantity, ".") || strings.Contains(ingredientJ.Quantity, ".") {
+					if strings.Contains(ingredientI.Quantity, ".") ||
+						strings.Contains(ingredientJ.Quantity, ".") {
 						floatI, _ := strconv.ParseFloat(ingredientI.Quantity, 64)
 						floatJ, _ := strconv.ParseFloat(ingredientJ.Quantity, 64)
 						added := floatI + floatJ
@@ -122,18 +125,18 @@ func CombineIngredients(c echo.Context) error {
 						insert.Quantity = strconv.Itoa(added)
 					}
 				}
-                ingredients = append(ingredients[:j], ingredients[j+1:]...)
-                if insert.Item != "" {
-                    ingredients = slices.Insert(ingredients, j, insert)
-                    ingredients = append(ingredients[:i], ingredients[i+1:]...)
-                }
-                i--
-                max--
+				ingredients = append(ingredients[:j], ingredients[j+1:]...)
+				if insert.Item != "" {
+					ingredients = slices.Insert(ingredients, j, insert)
+					ingredients = append(ingredients[:i], ingredients[i+1:]...)
+				}
+				i--
+				max--
 			}
 		}
-        i++
+		i++
 	}
 
-    // services.AllIngredients = ingredients
-    return Render(c, http.StatusOK, views.Groceries(ingredients))
+	// services.AllIngredients = ingredients
+	return Render(c, http.StatusOK, views.Groceries(ingredients))
 }

@@ -37,11 +37,11 @@ func main() {
 
 	// This will initiate our template renderer
 	e.GET("/", func(c echo.Context) error {
-        return Render(c, http.StatusOK, views.Index(views.Page()))
+		return Render(c, http.StatusOK, views.Index(views.Page()))
 	})
-    e.GET("/login", handlers.Login)
-    e.GET("/admin", handlers.AdminHandler)
-    e.GET("/refresh", handlers.GetRecipes)
+	e.GET("/login", handlers.Login)
+	e.GET("/admin", handlers.AdminHandler)
+	e.GET("/refresh", handlers.GetRecipes)
 	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)
 	e.GET("/recipes/random", handlers.GetRandomRecipes)
 	e.GET("/recipes/add", handlers.AddRecipeToDatabase)
@@ -51,14 +51,15 @@ func main() {
 	e.GET("/recipes/filter", handlers.ChangeFilter)
 	e.GET("/recipes/delete/:id", handlers.DeleteRecipe)
 	e.GET("/recipes/delete/all", handlers.DeleteAllRecipes)
-    e.GET("/recipes/favorites", handlers.Favorites)
-    e.GET("/recipes/favorites/add/:id", handlers.AddFavorite)
-    e.GET("/recipes/favorites/delete/:id", handlers.DeleteFavorite)
+	e.GET("/recipes/favorites", handlers.Favorites)
+	e.GET("/recipes/favorites/add/:id", handlers.AddFavorite)
+	e.GET("/recipes/favorites/delete/:id", handlers.DeleteFavorite)
 	e.GET("/groceries", handlers.CombineIngredients)
-    e.GET("/ingredient/add/:id", handlers.AddIngredient)
-    e.GET("/ingredient/delete/:id", handlers.DeleteIngredient)
-    e.GET("/step/add/:id", handlers.AddStep)
-    e.GET("/step/delete/:id", handlers.DeleteStep)
+	e.GET("/ingredient/add/:id", handlers.AddIngredient)
+	e.GET("/ingredient/delete/:id", handlers.DeleteIngredient)
+	e.GET("/step/add/:id", handlers.AddStep)
+	e.GET("/step/delete/:id", handlers.DeleteStep)
 
+	e.Logger.Info("Starting server at localhost:8080...")
 	e.Logger.Fatal(e.Start(":8080"))
 }
