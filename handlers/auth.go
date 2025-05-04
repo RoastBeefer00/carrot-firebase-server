@@ -200,7 +200,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 		DisplayName: userName,
 	}
 
-	_, err = GetState(c)
+	_, err = GetStateFromId(userID)
 	if err != nil {
 		log.Printf(
 			"User %s with email %s does not exist in database... adding",

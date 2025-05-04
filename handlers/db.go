@@ -46,6 +46,34 @@ func UpdateState(state services.State) error {
 	return err
 }
 
+func GetStateFromId(uid string) (services.State, error) {
+	var state services.State
+
+	client, ctx, err := GetClient()
+	if err != nil {
+		return state, err
+	}
+
+	doc, err := client.Collection("users").Doc(uid).Get(ctx)
+	if err != nil {
+		if doc.Exists() == false {
+			// err := UpdateState(new_state)
+			// if err != nil {
+			return state, err
+			// }
+		}
+		return state, err
+	}
+
+	var dbuser services.State
+	err = doc.DataTo(&dbuser)
+	if err != nil {
+		return state, err
+	}
+
+	return dbuser, err
+}
+
 func GetState(c echo.Context) (services.State, error) {
 	var state services.State
 	uid, err := getUserIDFromCookie(c)
