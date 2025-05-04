@@ -60,7 +60,7 @@ COPY --from=builder /app/app .
 # Copy static assets and templates
 COPY --from=builder /app/dist ./dist
 # COPY --from=builder /app/templates ./templates
-COPY --from=builder /app/static ./static
+# COPY --from=builder /app/static ./static
 
 # Expose the port your application runs on
 EXPOSE 8080
