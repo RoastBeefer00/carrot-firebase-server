@@ -66,8 +66,8 @@ func HandleLogin(c echo.Context) error {
 		Path:     "/oauth2/callback",              // Restrict cookie path to the callback URL
 		Expires:  time.Now().Add(5 * time.Minute), // State cookie should be short-lived
 		HttpOnly: true,                            // Prevent client-side JavaScript access
-		// Secure:   true, // Uncomment in production with HTTPS
-		SameSite: http.SameSiteLaxMode, // Recommended for CSRF protection
+		Secure:   true,                            // Uncomment in production with HTTPS
+		SameSite: http.SameSiteLaxMode,            // Recommended for CSRF protection
 	}
 	c.SetCookie(stateCookie)
 	log.Printf("Set state cookie: %s", state)
@@ -118,7 +118,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 		Path:     "/oauth2/callback",
 		Expires:  time.Unix(0, 0), // Set expiry to the past to delete it
 		HttpOnly: true,
-		// Secure:   true, // Uncomment in production with HTTPS
+		Secure:   true, // Uncomment in production with HTTPS
 	}
 	c.SetCookie(deleteStateCookie)
 	log.Println("State cookie removed.")
@@ -239,8 +239,8 @@ func HandleOAuth2Callback(c echo.Context) error {
 		Path:     "/",                                // Accessible across the site
 		Expires:  time.Now().Add(7 * 24 * time.Hour), // Example: Valid for 7 days
 		HttpOnly: true,                               // Prevent client-side JavaScript access
-		// Secure:   true, // Uncomment in production with HTTPS
-		SameSite: http.SameSiteLaxMode, // Recommended
+		Secure:   true,                               // Uncomment in production with HTTPS
+		SameSite: http.SameSiteLaxMode,               // Recommended
 	}
 	c.SetCookie(userIDCookie)
 	log.Println("Encrypted user ID cookie set.")
