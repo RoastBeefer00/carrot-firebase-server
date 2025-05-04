@@ -11,6 +11,7 @@ COPY package*.json ./
 # Copy Tailwind and CSS related files
 COPY tailwind.config.js ./
 COPY dist/main.css ./dist/
+COPY views/ ./views/
 
 # Install npm dependencies
 RUN npm install
