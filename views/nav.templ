@@ -1,6 +1,10 @@
 package views
 
-templ nav() {
+import (
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+)
+
+templ nav(user services.User) {
 	<div class="sticky top-0 z-30">
 		<nav class="z-30 w-full bg-base border-b border-rosewater">
 			<div class="flex p-2 items-center justify-between w-full">
@@ -21,7 +25,7 @@ templ nav() {
 						</h1>
 					</a>
 				</div>
-				<div id="user" class="justify-end"></div>
+				@User(user)
 			</div>
 		</nav>
 	</div>

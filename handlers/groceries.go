@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/RoastBeefer00/carrot-firebase-server/database"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 	"github.com/labstack/echo/v4"
@@ -60,7 +59,7 @@ func getIngredientItem(ingredient string) (string, error) {
 }
 
 func CombineIngredients(c echo.Context) error {
-	state, err := database.GetState(c)
+	state, err := GetState(c)
 	if err != nil {
 		return err
 	}

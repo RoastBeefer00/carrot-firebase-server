@@ -31,9 +31,11 @@ templ FavoriteButton(favorite bool, id string) {
 }
 
 templ Recipes(recipes []services.Recipe, oob bool) {
-	for _, recipe := range recipes {
-		@Recipe(recipe, oob)
-	}
+    <div class="flex flex-col" id="recipes">
+        for _, recipe := range recipes {
+            @Recipe(recipe, oob)
+        }
+    </div>
 }
 
 templ Recipe(recipe services.Recipe, oob bool) {
