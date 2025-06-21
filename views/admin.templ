@@ -2,6 +2,7 @@ package views
 
 import (
 	"strconv"
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
 templ Admin() {
@@ -10,26 +11,28 @@ templ Admin() {
 			<h1 class="text-3xl font-bold mb-2">Add A New Recipe</h1>
 		</div>
 		<div>
-			<form 
-                class="flex flex-col"
-                hx-get="/recipes/add"
-                hx-target="#admin-panel"
-                hx-swap="outerHTML"
+            <form 
+                hx-post="/recipes/file" 
+                hx-target="#add-recipe-form" 
+                hx-swap="outerHTML" 
+                hx-indicator="#processing-recipe" 
+                hx-on::before-request="document.getElementById('file-submit').style.display = 'none';"
+                hx-on::after-request="document.getElementById('file-submit').style.display = '';"
+                hx-validate="true"
+                class="flex flex-col" 
+                enctype="multipart/form-data"
             >
-				<span>Name</span>
-				<input type="text" name="name" placeholder="Recipe Name" class="p-2 mb-2"/>
-				<span>Time</span>
-				<input type="text" name="time" placeholder="Time e.g. '30 min'" class="p-2 mb-2"/>
-				<div class="flex flex-col" id="admin-ingredients">
-					<span>Ingredients</span>
-					@Ingredient(1)
-				</div>
-				<div class="flex flex-col" id="admin-steps">
-					<span>Steps</span>
-					@Step(1)
-				</div>
-				<button class="rounded bg-green p-2" type="submit">Add Recipe</button>
-			</form>
+                <input type="file" name="file" accept="image/*,.pdf" required />
+                <button 
+                    id="file-submit"
+                    type="submit" 
+                    class="p-2 bg-green mt-2 rounded"
+                >
+                    Process Recipe File
+                </button>
+                <button id="processing-recipe" disabled class="p-2 bg-gray-400 mt-2 rounded htmx-indicator">Processing recipe... this may take a few seconds</button>
+            </form>
+            @AddRecipeForm(services.Recipe{})
 		</div>
 	</div>
     <div class="bg-green rounded mt-4 mx-auto p-4 w-3/4">
@@ -60,9 +63,69 @@ templ Admin() {
     </div>
 }
 
+templ AddRecipeForm(r services.Recipe) {
+    <div id="add-recipe-form">
+        <form 
+            class="flex flex-col"
+            hx-get="/recipes/add"
+            hx-target="#admin-panel"
+            hx-swap="outerHTML"
+            hx-validate="true"
+        >
+            <span>Name</span>
+            <input type="text" name="name" placeholder="Recipe Name" class="p-2 mb-2" value={r.Name} required />
+            <span>Time</span>
+            <input type="text" name="time" placeholder="Time e.g. '30 min'" class="p-2 mb-2" value={r.Time} required />
+            <div class="flex flex-col" id="admin-ingredients">
+                <span>Ingredients</span>
+                if len(r.Ingredients) == 0 {
+                    @Ingredient(1)
+                } else {
+                    for i, ingredient := range r.Ingredients {
+                        @IngredientWithValue(i+1, ingredient)
+                    }
+                }
+            </div>
+            <div class="flex flex-col" id="admin-steps">
+                <span>Steps</span>
+                if len(r.Steps) == 0 {
+                    @Step(1)
+                } else {
+                    for i, step := range r.Steps {
+                        @StepWithValue(i+1, step)
+                    }
+                }
+            </div>
+            <button class="rounded bg-green p-2" type="submit">Add Recipe</button>
+        </form>
+    </div>
+
+}
+
 templ Ingredient(id int) {
 	<div class="flex" id={"ingredient-" + strconv.Itoa(id)}>
-		<input type="text" name={ "ingredient-" + strconv.Itoa(id) } placeholder="Ingredient" class="p-2 mb-2"/>
+		<input type="text" name={ "ingredient-" + strconv.Itoa(id) } placeholder="Ingredient" class="p-2 mb-2 flex-1" required />
+		<button
+			class="rounded bg-green p-2 mb-2 ml-2"
+			hx-get={ "ingredient/add/" + strconv.Itoa(id+1) }
+			hx-target="#admin-ingredients"
+			hx-swap="beforeend"
+		>
+			+
+		</button>
+		<button
+			class="rounded bg-red p-2 mb-2 ml-2"
+			hx-get={ "ingredient/delete/" + strconv.Itoa(id) }
+            hx-target={"#ingredient-" + strconv.Itoa(id)}
+		>
+			-
+		</button>
+	</div>
+}
+
+templ IngredientWithValue(id int, v string) {
+	<div class="flex" id={"ingredient-" + strconv.Itoa(id)}>
+		<input type="text" name={ "ingredient-" + strconv.Itoa(id) } placeholder="Ingredient" class="p-2 mb-2 flex-1" value={v} required />
 		<button
 			class="rounded bg-green p-2 mb-2 ml-2"
 			hx-get={ "ingredient/add/" + strconv.Itoa(id+1) }
@@ -83,7 +146,33 @@ templ Ingredient(id int) {
 
 templ Step(id int) {
 	<div class="flex" id={"step-" + strconv.Itoa(id)}>
-		<input type="text" name={ "step-" + strconv.Itoa(id) } placeholder="Step" class="p-2 mb-2"/>
+		<input type="text" name={ "step-" + strconv.Itoa(id) } placeholder="Step" class="p-2 mb-2 flex-1" required />
+		<button
+			class="rounded bg-green p-2 mb-2 ml-2"
+			hx-get={ "step/add/" + strconv.Itoa(id+1) }
+			hx-target="#admin-steps"
+			hx-swap="beforeend"
+		>
+			+
+		</button>
+		<button
+			class="rounded bg-red p-2 mb-2 ml-2"
+			hx-get={ "step/delete/" + strconv.Itoa(id) }
+            hx-target={"#step-" + strconv.Itoa(id)}
+		>
+			-
+		</button>
+	</div>
+}
+
+templ StepWithValue(id int, v string) {
+	<div class="flex" id={"step-" + strconv.Itoa(id)}>
+        <textarea
+            name={ "step-" + strconv.Itoa(id) }
+            rows="3"
+            class="p-2 mb-2 flex-1"
+            required
+        >{v}</textarea>
 		<button
 			class="rounded bg-green p-2 mb-2 ml-2"
 			hx-get={ "step/add/" + strconv.Itoa(id+1) }

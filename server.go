@@ -89,6 +89,7 @@ func main() {
 	e.GET("/recipes/all", handlers.GetAllRecipes)
 	e.GET("/recipes/name", handlers.SearchRecipesByName)
 	e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)
+	e.POST("/recipes/file", handlers.ProcessRecipeFile)
 	e.GET("/recipes/filter", handlers.ChangeFilter)
 	e.GET("/recipes/delete/:id", handlers.DeleteRecipe)
 	e.GET("/recipes/delete/all", handlers.DeleteAllRecipes)

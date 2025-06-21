@@ -768,6 +768,10 @@ video {
   max-width: 90%;
 }
 
+.flex-1 {
+  flex: 1 1 0%;
+}
+
 .flex-initial {
   flex: 0 1 auto;
 }
@@ -917,6 +921,11 @@ video {
 .bg-crust {
   --tw-bg-opacity: 1;
   background-color: rgba(var(--ctp-crust), var(--tw-bg-opacity));
+}
+
+.bg-gray-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(156 163 175 / var(--tw-bg-opacity));
 }
 
 .bg-gray-50 {
