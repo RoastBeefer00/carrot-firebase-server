@@ -17,8 +17,7 @@ import (
 )
 
 //go:generate templ generate
-//go:generate npm i
-//go:generate npx tailwindcss -i ./dist/main.css -o ./dist/tailwind.css
+//go:generate tailwindcss -i ./dist/main.css -o ./dist/tailwind.css
 
 func Render(ctx echo.Context, statusCode int, t templ.Component) error {
 	ctx.Response().Writer.WriteHeader(statusCode)
