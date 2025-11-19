@@ -1,8 +1,6 @@
 package views
 
-import (
-	"github.com/RoastBeefer00/carrot-firebase-server/services"
-)
+import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
 templ FavoriteButton(favorite bool, id string) {
 	<form if !favorite {
@@ -12,30 +10,31 @@ templ FavoriteButton(favorite bool, id string) {
 }>
 		<button type="submit" class="text-crust text-center rounded bg-green p-2 border border-crust">
 			if !favorite {
-				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="button-icon">
 					<path
 						fill="currentColor"
 						d="M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125M11.05 6.75q-.725-1.025-1.55-1.563t-2-.537q-1.5 0-2.5 1t-1 2.5q0 1.3.925 2.763t2.213 2.837q1.287 1.375 2.65 2.575T12 18.3q.85-.775 2.213-1.975t2.65-2.575q1.287-1.375 2.212-2.837T20 8.15q0-1.5-1-2.5t-2.5-1q-1.175 0-2 .538T12.95 6.75q-.175.25-.425.375T12 7.25q-.275 0-.525-.125t-.425-.375m.95 4.725"
 					></path>
 				</svg>
 			} else {
-				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="button-icon">
 					<path
 						fill="currentColor"
 						d="M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125"
 					></path>
 				</svg>
 			}
+			@LoadingSpinner("32")
 		</button>
 	</form>
 }
 
 templ Recipes(recipes []services.Recipe, oob bool) {
-    <div class="flex flex-col" id="recipes">
-        for _, recipe := range recipes {
-            @Recipe(recipe, oob)
-        }
-    </div>
+	<div class="flex flex-col" id="recipes">
+		for _, recipe := range recipes {
+			@Recipe(recipe, oob)
+		}
+	</div>
 }
 
 templ Recipe(recipe services.Recipe, oob bool) {
@@ -47,17 +46,29 @@ templ Recipe(recipe services.Recipe, oob bool) {
 				<h1 class="text-mantle text-3xl font-bold mr-2">{ recipe.Name }</h1>
 				<span class="text-mantle mt-2">{ recipe.Time }</span>
 			</div>
-			<div class="flex justify-between">
+			<div class="flex justify-between" id="button-container">
 				<button
 					id={ "toggle-recipe-" + recipe.Id }
 					_="on click toggle .hidden on <svg/> in me"
 					class="text-crust text-center rounded bg-green p-2 border border-crust"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-						<path fill="currentColor" d="m12 18l-6-6l1.4-1.4l3.6 3.575V6h2v8.175l3.6-3.575L18 12Z"></path>
+						<path
+							fill="currentColor"
+							d="m12 18l-6-6l1.4-1.4l3.6 3.575V6h2v8.175l3.6-3.575L18 12Z"
+						></path>
 					</svg>
-					<svg class="hidden" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-						<path fill="currentColor" d="M11 18V9.825L7.4 13.4L6 12l6-6l6 6l-1.4 1.4L13 9.825V18Z"></path>
+					<svg
+						class="hidden"
+						xmlns="http://www.w3.org/2000/svg"
+						width="32"
+						height="32"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M11 18V9.825L7.4 13.4L6 12l6-6l6 6l-1.4 1.4L13 9.825V18Z"
+						></path>
 					</svg>
 				</button>
 				<div class="flex gap-2">
@@ -67,16 +78,30 @@ templ Recipe(recipe services.Recipe, oob bool) {
 						hx-target={ "#recipe-" + recipe.Id }
 						hx-swap="outerHTML"
 					>
-						<button type="submit" class="text-crust text-center rounded bg-sky p-2 border border-crust">
-							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
+						<button
+							type="submit"
+							class="text-crust text-center rounded bg-sky p-2 border border-crust"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="32"
+								height="32"
+								viewBox="0 0 20 20"
+								class="button-icon"
+							>
 								<g fill="currentColor">
 									<path
 										d="M13.937 4.211a1 1 0 0 1-1.126 1.653A5 5 0 1 0 15 10a1 1 0 1 1 2 0a7 7 0 1 1-3.063-5.789"
 									></path>
-									<path d="M13.539 12.506a1 1 0 1 1-1.078-1.685l3.482-2.227a1 1 0 0 1 1.077 1.685z"></path>
-									<path d="M18.903 12.41a1 1 0 0 1-1.826.815l-1.508-3.38a1 1 0 1 1 1.826-.815z"></path>
+									<path
+										d="M13.539 12.506a1 1 0 1 1-1.078-1.685l3.482-2.227a1 1 0 0 1 1.077 1.685z"
+									></path>
+									<path
+										d="M18.903 12.41a1 1 0 0 1-1.826.815l-1.508-3.38a1 1 0 1 1 1.826-.815z"
+									></path>
 								</g>
 							</svg>
+							@LoadingSpinner("32")
 						</button>
 					</form>
 					<form
@@ -84,13 +109,23 @@ templ Recipe(recipe services.Recipe, oob bool) {
 						hx-target={ "#recipe-" + recipe.Id }
 						hx-swap="outerHTML"
 					>
-						<button type="submit" class="text-crust text-center rounded bg-red p-2 border border-crust">
-							<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+						<button
+							type="submit"
+							class="text-crust text-center rounded bg-red p-2 border border-crust"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="32"
+								height="32"
+								viewBox="0 0 24 24"
+								class="button-icon"
+							>
 								<path
 									fill="currentColor"
 									d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"
 								></path>
 							</svg>
+							@LoadingSpinner("32")
 						</button>
 					</form>
 				</div>
