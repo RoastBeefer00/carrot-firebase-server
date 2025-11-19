@@ -7,18 +7,16 @@ WORKDIR /app
 # Install curl for downloading Tailwind CLI
 RUN apk --no-cache add curl
 
-# Download standalone Tailwind CLI
+# Download standalone Tailwind CLI and make it executable
 RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 && \
-        chmod +x tailwindcss-linux-x64 && \
-        mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
+        chmod +x tailwindcss-linux-x64
 
 # Copy Tailwind config and CSS files
-# COPY tailwind.config.js ./
 COPY dist/main.css ./dist/
 COPY views/ ./views/
 
-# Generate CSS with standalone Tailwind CLI
-RUN tailwindcss -i ./dist/main.css -o ./dist/tailwind.css --minify
+# Generate CSS with standalone Tailwind CLI (using relative path)
+RUN ./tailwindcss-linux-x64 -i ./dist/main.css -o ./dist/tailwind.css --minify
 
 ######################################
 # STAGE 2: Templ generation and Go build
