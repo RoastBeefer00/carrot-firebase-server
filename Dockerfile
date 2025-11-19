@@ -1,29 +1,29 @@
 ######################################
 # STAGE 1: Frontend asset generation
 ######################################
-FROM node:18-alpine AS frontend-builder
-
+FROM alpine:3.18 AS frontend-builder
 WORKDIR /app
 
-# Copy package.json and package-lock.json for npm install
-COPY package*.json ./
+# Install curl for downloading Tailwind CLI
+RUN apk --no-cache add curl
 
-# Copy Tailwind and CSS related files
-COPY tailwind.config.js ./
+# Download standalone Tailwind CLI
+RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 && \
+        chmod +x tailwindcss-linux-x64 && \
+        mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
+
+# Copy Tailwind config and CSS files
+# COPY tailwind.config.js ./
 COPY dist/main.css ./dist/
 COPY views/ ./views/
 
-# Install npm dependencies
-RUN npm install
-
-# Run Tailwind to generate CSS
-RUN npx tailwindcss -i ./dist/main.css -o ./dist/tailwind.css
+# Generate CSS with standalone Tailwind CLI
+RUN tailwindcss -i ./dist/main.css -o ./dist/tailwind.css --minify
 
 ######################################
 # STAGE 2: Templ generation and Go build
 ######################################
 FROM golang:1.24-alpine AS builder
-
 WORKDIR /app
 
 # Install Templ
@@ -49,7 +49,6 @@ RUN CGO_ENABLED=0 go build -o app .
 # STAGE 3: Final runtime image
 ######################################
 FROM alpine:3.18
-
 WORKDIR /app
 
 # Install CA certificates for HTTPS
@@ -58,10 +57,8 @@ RUN apk --no-cache add ca-certificates
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/app .
 
-# Copy static assets and templates
+# Copy static assets
 COPY --from=builder /app/dist ./dist
-# COPY --from=builder /app/templates ./templates
-# COPY --from=builder /app/static ./static
 
 # Expose the port your application runs on
 EXPOSE 8080
