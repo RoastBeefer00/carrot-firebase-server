@@ -1,18 +1,15 @@
 ######################################
 # STAGE 1: Frontend asset generation
 ######################################
-FROM alpine:3.18 AS frontend-builder
+FROM debian:12-slim AS frontend-builder
 WORKDIR /app
 
 # Install curl for downloading Tailwind CLI
-RUN apk --no-cache add curl
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Download standalone Tailwind CLI for Linux x64 (musl/Alpine compatible)
+# Download standalone Tailwind CLI
 RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 && \
         chmod +x tailwindcss-linux-x64
-
-# Install glibc compatibility for Alpine
-RUN apk --no-cache add gcompat
 
 # Copy Tailwind config and CSS files
 COPY dist/main.css ./dist/
