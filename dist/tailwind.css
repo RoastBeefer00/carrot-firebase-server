@@ -33,7 +33,6 @@
     --font-weight-extrabold: 800;
     --radius-lg: 0.5rem;
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
-    --animate-spin: spin 1s linear infinite;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
@@ -310,9 +309,6 @@
   .inline-flex {
     display: inline-flex;
   }
-  .h-5 {
-    height: calc(var(--spacing) * 5);
-  }
   .h-\[80vh\] {
     height: 80vh;
   }
@@ -327,9 +323,6 @@
   }
   .w-3\/4 {
     width: calc(3/4 * 100%);
-  }
-  .w-5 {
-    width: calc(var(--spacing) * 5);
   }
   .w-64 {
     width: calc(var(--spacing) * 64);
@@ -356,9 +349,6 @@
   .translate-x-0 {
     --tw-translate-x: calc(var(--spacing) * 0);
     translate: var(--tw-translate-x) var(--tw-translate-y);
-  }
-  .animate-spin {
-    animation: var(--animate-spin);
   }
   .list-inside {
     list-style-position: inside;
@@ -980,11 +970,6 @@
 @property --tw-ease {
   syntax: "*";
   inherits: false;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {

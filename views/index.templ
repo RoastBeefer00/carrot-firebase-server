@@ -21,4 +21,22 @@ templ Index(page templ.Component, state services.State) {
 			</div>
 		</body>
 	</html>
+	<style>
+	.button-icon {
+		display: inline-block;
+	}
+
+	.button-spinner {
+		display: none;
+	}
+
+	.htmx-request .button-icon {
+		display: none;
+	}
+
+	.htmx-request .button-spinner {
+		display: inline-block;
+		animation: spin 1s linear infinite;
+	}
+</style>
 }
