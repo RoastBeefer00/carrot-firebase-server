@@ -8,7 +8,10 @@ templ FavoriteButton(favorite bool, id string) {
 } else {
 	hx-get={ "/recipes/favorites/delete/" + id }
 }>
-		<button type="submit" class="text-crust text-center rounded bg-green p-2 border border-crust">
+		<button
+			type="submit"
+			class="text-crust text-center rounded bg-green p-2 border border-crust hover:cursor-pointer"
+		>
 			if !favorite {
 				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="button-icon">
 					<path
@@ -50,7 +53,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 				<button
 					id={ "toggle-recipe-" + recipe.Id }
 					_="on click toggle .hidden on <svg/> in me"
-					class="text-crust text-center rounded bg-green p-2 border border-crust"
+					class="text-crust text-center rounded bg-green p-2 border border-crust hover:cursor-pointer"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 						<path
@@ -80,7 +83,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 					>
 						<button
 							type="submit"
-							class="text-crust text-center rounded bg-sky p-2 border border-crust"
+							class="text-crust text-center rounded bg-sky p-2 border border-crust hover:cursor-pointer"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -111,7 +114,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 					>
 						<button
 							type="submit"
-							class="text-crust text-center rounded bg-red p-2 border border-crust"
+							class="text-crust text-center rounded bg-red p-2 border border-crust hover:cursor-pointer"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
