@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.24.0
 
 require (
+	cloud.google.com/go/documentai v1.25.0
 	cloud.google.com/go/firestore v1.15.0
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/a-h/templ v0.3.960
@@ -13,6 +14,7 @@ require (
 	github.com/labstack/gommon v0.4.2
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/time v0.5.0
+	google.golang.org/api v0.167.0
 )
 
 require (

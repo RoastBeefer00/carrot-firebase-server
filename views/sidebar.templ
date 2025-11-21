@@ -14,7 +14,7 @@ templ sidebar() {
 						hx-target="#groceries"
 						hx-swap="innerHTML"
 						type="submit"
-						class="flex text-center p-2 text-crust rounded-lg bg-sky w-full"
+						class="flex text-center p-2 text-crust rounded-lg bg-sky w-full hover:cursor-pointer"
 						id="groceries-button"
 						_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar 
                             then toggle .hidden on #groceries 
@@ -33,7 +33,7 @@ templ sidebar() {
 						hx-swap="innerHTML"
 						hx-push-url="true"
 						type="submit"
-						class="flex text-center p-2 text-crust rounded-lg bg-lavender w-full"
+						class="flex text-center p-2 text-crust rounded-lg bg-lavender w-full hover:cursor-pointer"
 						id="favorites-button"
 						_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar"
 					>
@@ -45,7 +45,9 @@ templ sidebar() {
 				</li>
 				<li class="border-b border-b-rosewater">
 					<form hx-get="/recipes/delete/all" hx-target="#recipes">
-						<button class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full">
+						<button
+							class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full hover:cursor-pointer "
+						>
 							<span class="ml-4 mr-2">Remove All </span>
 							<div class="flex items-center">
 								@LoadingSpinner("16")
@@ -63,7 +65,7 @@ templ sidebar() {
 						</label>
 						<select
 							id="filters"
-							class="bg-gray-50 mb-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lavender focus:border-lavender block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+							class="bg-gray-50 mb-2 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lavender focus:border-lavender block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white hover:cursor-pointer"
 							hx-get="recipes/filter"
 							hx-target="#search"
 							hx-swap="innerHTML"
@@ -93,7 +95,7 @@ templ sidebar() {
 							<button
 								type="submit"
 								_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar"
-								class="p-1.5 rounded bg-gray-700 text-white float-right"
+								class="p-1.5 rounded bg-gray-700 text-white float-right hover:cursor-pointer"
 								id="random-num-button"
 							>
 								<span class="button-icon">Add</span>
