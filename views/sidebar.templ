@@ -20,7 +20,10 @@ templ sidebar() {
                             then toggle .hidden on #groceries 
                             then toggle @disabled on #groceries-button"
 					>
-						<span class="ml-4">Grocery List </span>
+						<span class="ml-4 mr-2">Grocery List </span>
+						<div class="flex items-center">
+							@LoadingSpinner("16")
+						</div>
 					</button>
 				</li>
 				<li>
@@ -34,19 +37,28 @@ templ sidebar() {
 						id="favorites-button"
 						_="on click toggle between .-translate-x-full and .translate-x-0 on #sidebar"
 					>
-						<span class="ml-4">Favorites</span>
+						<span class="ml-4 mr-2">Favorites</span>
+						<div class="flex items-center">
+							@LoadingSpinner("16")
+						</div>
 					</button>
 				</li>
 				<li class="border-b border-b-rosewater">
 					<form hx-get="/recipes/delete/all" hx-target="#recipes">
 						<button class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full">
-							<span class="ml-4">Remove All </span>
+							<span class="ml-4 mr-2">Remove All </span>
+							<div class="flex items-center">
+								@LoadingSpinner("16")
+							</div>
 						</button>
 					</form>
 				</li>
 				<li class="border-b border-b-rosewater">
 					<form>
-						<label for="filters" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+						<label
+							for="filters"
+							class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+						>
 							Search by:
 						</label>
 						<select
@@ -84,7 +96,8 @@ templ sidebar() {
 								class="p-1.5 rounded bg-gray-700 text-white float-right"
 								id="random-num-button"
 							>
-								Add
+								<span class="button-icon">Add</span>
+								@LoadingSpinner("16")
 							</button>
 						</form>
 					</div>

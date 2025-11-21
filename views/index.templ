@@ -1,8 +1,6 @@
 package views
 
-import (
-	"github.com/RoastBeefer00/carrot-firebase-server/services"
-)
+import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
 templ Index(page templ.Component, state services.State) {
 	<!DOCTYPE html>
@@ -13,14 +11,32 @@ templ Index(page templ.Component, state services.State) {
 			<link rel="stylesheet" href="/dist/tailwind.css"/>
 			<link rel="icon" href="/dist/favicon.ico"/>
 			<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
-			<script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
 			<title>Magenta Carrot</title>
 		</head>
 		<body id="body" class="bg-base">
-            @nav(state.User)
-            <div id="page">
-                @Page(state.Recipes)
-            </div>
+			@nav(state.User)
+			<div id="page">
+				@Page(state.Recipes)
+			</div>
 		</body>
 	</html>
+	<style>
+	.button-icon {
+		display: inline-block;
+	}
+
+	.button-spinner {
+		display: none;
+	}
+
+	.htmx-request .button-icon {
+		display: none;
+	}
+
+	.htmx-request .button-spinner {
+		display: inline-block;
+		animation: spin 1s linear infinite;
+	}
+</style>
 }
