@@ -93,7 +93,7 @@ func main() {
 
 	// Authentication routes
 	e.GET("/login", handlers.HandleLogin)
-	e.GET("/oauth2/callback", handlers.HandleOAuth2Callback)
+	e.GET("/oauth2/callback", handlers.HandleOAuth2Callback, middlewares.DatabaseMiddleware(client))
 
 	// API routes
 	apis := e.Group("/api")

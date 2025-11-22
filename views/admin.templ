@@ -6,9 +6,9 @@ import (
 )
 
 templ Admin() {
-	<div class="flex flex-col bg-lavender p-4 mx-auto sm:w-3/4 mt-16 sm:mt-28 rounded" id="admin-panel">
+	<div class="flex flex-col bg-surface0 p-4 mx-auto sm:w-3/4 mt-16 sm:mt-28 rounded" id="admin-panel">
 		<div>
-			<h1 class="text-3xl font-bold mb-2">Add A New Recipe</h1>
+			<h1 class="text-3xl font-bold mb-2 text-text">Add A New Recipe</h1>
 		</div>
 		<div>
 			<form
@@ -82,7 +82,7 @@ templ AddRecipeForm(r services.Recipe) {
 			hx-swap="outerHTML"
 			hx-validate="true"
 		>
-			<span>Name</span>
+			<span class="text-lavender">Name</span>
 			<input
 				type="text"
 				name="name"
@@ -91,7 +91,7 @@ templ AddRecipeForm(r services.Recipe) {
 				value={ r.Name }
 				required
 			/>
-			<span>Time</span>
+			<span class="text-lavender">Time</span>
 			<input
 				type="text"
 				name="time"
@@ -101,7 +101,7 @@ templ AddRecipeForm(r services.Recipe) {
 				required
 			/>
 			<div class="flex flex-col" id="admin-ingredients">
-				<span>Ingredients</span>
+				<span class="text-lavender">Ingredients</span>
 				if len(r.Ingredients) == 0 {
 					@Ingredient(1)
 				} else {
@@ -110,8 +110,8 @@ templ AddRecipeForm(r services.Recipe) {
 					}
 				}
 			</div>
-			<div class="flex flex-col" id="admin-steps">
-				<span>Steps</span>
+			<div class=" flex flex-col" id="admin-steps">
+				<span class="text-lavender">Steps</span>
 				if len(r.Steps) == 0 {
 					@Step(1)
 				} else {
@@ -120,7 +120,7 @@ templ AddRecipeForm(r services.Recipe) {
 					}
 				}
 			</div>
-			<button class="rounded bg-green p-2 hover:cursor-pointer" type="submit">Add Recipe</button>
+			<button class=" rounded bg-green p-2 hover:cursor-pointer" type="submit">Add Recipe</button>
 		</form>
 	</div>
 }

@@ -1,17 +1,14 @@
 package views
 
-import (
-
-	"github.com/RoastBeefer00/carrot-firebase-server/services"
-)
+import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
 templ Favorites(favorites []services.Recipe) {
-    <div class="p-4 flex flex-col h-screen w-screen">
-        <div class="p-2 bg-red w-3/4 sm:w-1/2 justify-center mx-auto rounded">
-            <h1 class="text-3xl text-crust text-center font-bold">Favorites</h1>
-        </div>
-        <div class="flex flex-col overflow-y-scroll">
-            @Recipes(favorites, false)
-        </div>
-    </div>
+	<div class="p-4 flex flex-col h-screen w-screen">
+		<div class="p-2 bg-red w-3/4 sm:w-1/2 justify-center mx-auto rounded mb-2">
+			<h1 class="text-3xl text-crust text-center font-bold">Favorites</h1>
+		</div>
+		<div class="flex flex-col overflow-y-scroll">
+			@Recipes(favorites, false)
+		</div>
+	</div>
 }
