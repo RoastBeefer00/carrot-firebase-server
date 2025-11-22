@@ -43,11 +43,13 @@ templ Groceries(ingredients []services.Ingredient) {
 						if quantity > 0 {
 							if quantity == math.Trunc(quantity) {
 								<span class="ml-2 hidden">
-									{ fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " + ingredient.Item }
+									{ fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " +
+					ingredient.Item }
 								</span>
 							} else {
 								<span class="ml-2 hidden">
-									{ fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " + ingredient.Item }
+									{ fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " +
+					ingredient.Item }
 								</span>
 							}
 						} else {

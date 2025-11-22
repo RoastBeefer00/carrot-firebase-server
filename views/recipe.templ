@@ -3,11 +3,14 @@ package views
 import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
 templ FavoriteButton(favorite bool, id string) {
-	<form if !favorite {
-	hx-get={ "/api/recipes/favorites/add/" + id }
-} else {
-	hx-get={ "/api/recipes/favorites/delete/" + id }
-}>
+	<form
+		if !favorite {
+			hx-get={ "/api/recipes/favorites/add/" + id }
+		} else {
+			hx-get={ "/api/recipes/favorites/delete/" +
+	id }
+		}
+	>
 		<button
 			type="submit"
 			class="text-mantle text-center rounded bg-green p-2 border border-surface0 hover:cursor-pointer hover:bg-opacity-75 transition-all"
