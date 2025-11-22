@@ -3,14 +3,14 @@ package views
 templ sidebar() {
 	<aside
 		id="sidebar"
-		class="fixed top-0 left-0 z-20 w-64 pt-20 h-screen transition-transform sm:translate-x-0 -translate-x-full"
+		class="fixed top-0 left-0 z-20 w-64 sm:pt-10 pt-18 h-screen transition-transform sm:translate-x-0 -translate-x-full"
 		aria-label="Sidebar"
 	>
 		<div class="h-full px-3 sm:py-4 overflow-y-auto bg-base border-r border-r-rosewater">
 			<ul class="pt-4 sm:mt-4 space-y-2 font-medium">
 				<li>
 					<button
-						hx-get="/groceries"
+						hx-get="/api/groceries"
 						hx-target="#groceries"
 						hx-swap="innerHTML"
 						type="submit"
@@ -28,7 +28,7 @@ templ sidebar() {
 				</li>
 				<li>
 					<button
-						hx-get="/recipes/favorites"
+						hx-get="/api/recipes/favorites"
 						hx-target="#page"
 						hx-swap="innerHTML"
 						hx-push-url="true"
@@ -44,7 +44,7 @@ templ sidebar() {
 					</button>
 				</li>
 				<li class="border-b border-b-rosewater">
-					<form hx-get="/recipes/delete/all" hx-target="#recipes">
+					<form hx-get="/api/recipes/delete/all" hx-target="#recipes">
 						<button
 							class="flex items-center p-2 mb-2 text-crust rounded-lg bg-red w-full hover:cursor-pointer "
 						>
@@ -78,9 +78,9 @@ templ sidebar() {
 				</li>
 				<li>
 					<div class="justify-between">
-						<form hx-get="/recipes/random" hx-target="#recipes" hx-swap="beforeend">
+						<form hx-get="/api/recipes/random" hx-target="#recipes" hx-swap="beforeend">
 							<label
-								for="exampleFormControlInputNumber"
+								for="add-random-recipes"
 								class="pointer-events-none mb-0 max-w-[90%] truncate pt-[0.37rema] leading-[1.6] text-white transition-all duration-200 ease-out peer-focus:-translate-y-[0.9rem] peer-focus:scale-[0.8] peer-focus:text-primary peer-data-[te-input-state-active]:-translate-y-[0.9rem] peer-data-[te-input-state-active]:scale-[0.8] motion-reduce:transition-none dark:text-neutral-200 dark:peer-focus:text-primary"
 							>
 								Add random recipes:
@@ -89,6 +89,7 @@ templ sidebar() {
 								type="number"
 								min="0"
 								name="amount"
+								id="add-random-recipes"
 								value="1"
 								class="peer min-h-[auto] w-3/4 rounded border-0 bg-gray-700 px-3 py-[0.32rem] leading-[1.6] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 peer-focus:text-primary data-[te-input-state-active]:placeholder:opacity-100 motion-reduce:transition-none dark:text-white dark:placeholder:text-white dark:peer-focus:text-primary [&:not([data-te-input-placeholder-active])]:placeholder:opacity-0"
 							/>

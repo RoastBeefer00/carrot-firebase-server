@@ -7,9 +7,9 @@ func getFilter(t string) string {
 templ Search(t string) {
 	<form
 		if t=="name" {
-			hx-get="/recipes/name"
+			hx-get="/api/recipes/name"
 		} else {
-			hx-get="/recipes/ingredients"
+			hx-get="/api/recipes/ingredients"
 		}
 		hx-target="#recipes"
 		hx-swap="beforeend"

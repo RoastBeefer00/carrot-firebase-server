@@ -3,56 +3,60 @@ package views
 import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 
-    "strconv"
-    "math"
 	"fmt"
+	"math"
+	"strconv"
 )
 
 var doubledQuantity = false
 
 func toggleQuantity() {
-    doubledQuantity = !doubledQuantity
+	doubledQuantity = !doubledQuantity
 }
 
 templ Groceries(ingredients []services.Ingredient) {
-	<div class="h-full w-full rounded bg-crust p-2"
-        _="on click from elsewhere remove me then toggle .hidden on #groceries then toggle @disabled on #groceries-button"
-    >
-		<div class="flex flex-col rounded bg-lavender h-full">
+	<div
+		class="h-full w-full rounded bg-crust p-2"
+		_="on click from elsewhere remove me then toggle .hidden on #groceries then toggle @disabled on #groceries-button"
+	>
+		<div class="flex flex-col rounded bg-surface0 h-full text-lavender">
 			<div class="bg-crust text-text p-4">
 				<h1 class="text-3xl font-bold">Groceries</h1>
 			</div>
-            <div>
-                <button
-                class="rounded p-2 bg-green border border-black m-4"
-                _="on click toggle .hidden on <span/> in #ingredients">Toggle Quantity</button>
-            </div>
+			<div>
+				<button
+					class="rounded p-2 bg-green border border-black m-4 text-crust"
+					_="on click toggle .hidden on <span/> in #ingredients"
+				>Toggle Quantity</button>
+			</div>
 			<div class="p-4 overflow-y-auto" id="ingredients">
 				for _, ingredient := range ingredients {
-                    {{ 
-                        quantity, _ := strconv.ParseFloat(ingredient.Quantity, 64) 
-                        quantity = quantity * 2
-                    }}
+					{{
+						quantity, _ := strconv.ParseFloat(ingredient.Quantity, 64)
+						quantity = quantity * 2
+					}}
 					<div class="flex p-2">
 						<input type="checkbox"/>
 						<span class="ml-2">
-                            { ingredient.Quantity + " " + ingredient.Measurement + " " + ingredient.Item }
-                        </span>
-                        if quantity > 0 {
-                            if quantity == math.Trunc(quantity) {
-                                <span class="ml-2 hidden">
-                                { fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " + ingredient.Item }
-                                </span>
-                            } else {
-                                <span class="ml-2 hidden">
-                                { fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " + ingredient.Item }
-                                </span>
-                            }
-                        } else {
-                            <span class="ml-2 hidden">
-                            { ingredient.Measurement + " " + ingredient.Item }
-                            </span>
-                        }
+							{ ingredient.Quantity + " " + ingredient.Measurement + " " + ingredient.Item }
+						</span>
+						if quantity > 0 {
+							if quantity == math.Trunc(quantity) {
+								<span class="ml-2 hidden">
+									{ fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " +
+					ingredient.Item }
+								</span>
+							} else {
+								<span class="ml-2 hidden">
+									{ fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " +
+					ingredient.Item }
+								</span>
+							}
+						} else {
+							<span class="ml-2 hidden">
+								{ ingredient.Measurement + " " + ingredient.Item }
+							</span>
+						}
 					</div>
 				}
 			</div>

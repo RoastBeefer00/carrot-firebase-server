@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 	"github.com/labstack/echo/v4"
@@ -25,26 +26,17 @@ var (
 	RedirectURL         string
 	EncryptionKeyBase64 string
 
-	OauthConfig   *oauth2.Config
-	EncryptionKey []byte // Decoded encryption key
+	OauthConfig *oauth2.Config
 
 	// Cookie Names
 	oauthStateCookieName = "oauthstate"
-	userIDCookieName     = "userid"
 )
 
 // handleIndex serves a simple page with a login link.
 func HandleIndex(c echo.Context) error {
-	// Check if the user is already logged in by checking the user ID cookie
-	state, err := GetState(c)
-	if err == nil {
-		// User is logged in, redirect to profile
-		log.Printf("User is logged in with ID: %s", state.User.Uid)
-		return Render(c, http.StatusOK, views.Index(views.Page(state.Recipes), state))
-	}
+	state := GetStateFromContext(c)
 
-	// User is not logged in
-	return c.Redirect(http.StatusTemporaryRedirect, "/login")
+	return Render(c, http.StatusOK, views.Index(views.Page(state.Recipes), state))
 }
 
 // HandleLogin initiates the Google OAuth 2.0 flow.
@@ -200,7 +192,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 		DisplayName: userName,
 	}
 
-	_, err = GetStateFromId(userID)
+	_, err = db.GetStateFromId(userID, c)
 	if err != nil {
 		log.Printf(
 			"Error fetching user state from database: %v",
@@ -216,7 +208,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 			User:    dbUser,
 			Recipes: []services.Recipe{},
 		}
-		err := UpdateState(state)
+		err := db.UpdateState(state, c)
 		if err != nil {
 			log.Print("Error: Unable to update state")
 			return echo.NewHTTPError(
@@ -227,7 +219,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 	}
 
 	// 8. Encrypt the user ID
-	encryptedUserID, err := encryptUserID(userID, EncryptionKey)
+	encryptedUserID, err := encryptUserID(userID, db.EncryptionKey)
 	if err != nil {
 		log.Printf("Error encrypting user ID: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to encrypt user ID")
@@ -236,7 +228,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 
 	// 9. Store the encrypted user ID in a new, persistent cookie
 	userIDCookie := &http.Cookie{
-		Name: userIDCookieName,
+		Name: db.UserIDCookieName,
 		Value: base64.URLEncoding.EncodeToString(
 			encryptedUserID,
 		), // Base64 encode for cookie safety
@@ -327,60 +319,4 @@ func encryptUserID(userID string, key []byte) ([]byte, error) {
 	encryptedData := append(nonce, ciphertext...)
 
 	return encryptedData, nil
-}
-
-// decryptUserID decrypts the encrypted data using AES-GCM.
-func decryptUserID(encryptedData []byte, key []byte) (string, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return "", fmt.Errorf("could not create AES cipher: %w", err)
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", fmt.Errorf("could not create GCM: %w", err)
-	}
-
-	nonceSize := gcm.NonceSize()
-	if len(encryptedData) < nonceSize {
-		return "", fmt.Errorf("encrypted data too short")
-	}
-
-	nonce, ciphertextWithTag := encryptedData[:nonceSize], encryptedData[nonceSize:]
-
-	// Open decrypts and authenticates ciphertext.
-	plaintext, err := gcm.Open(nil, nonce, ciphertextWithTag, nil)
-	if err != nil {
-		// This error likely means the data was tampered with or the key is wrong
-		return "", fmt.Errorf("could not decrypt or authenticate data: %w", err)
-	}
-
-	return string(plaintext), nil
-}
-
-// getUserIDFromCookie reads, decodes, and decrypts the user ID cookie using Echo context.
-func getUserIDFromCookie(c echo.Context) (string, error) {
-	cookie, err := c.Cookie(userIDCookieName)
-	if err != nil {
-		if err == http.ErrNoCookie {
-			return "", fmt.Errorf("user ID cookie not found")
-		}
-		return "", fmt.Errorf("error reading user ID cookie: %w", err)
-	}
-
-	// Decode the Base64 encoded cookie value
-	encryptedData, err := base64.URLEncoding.DecodeString(cookie.Value)
-	if err != nil {
-		return "", fmt.Errorf("failed to decode user ID cookie: %w", err)
-	}
-
-	// Decrypt the data
-	userID, err := decryptUserID(encryptedData, EncryptionKey)
-	if err != nil {
-		// Decryption failed, cookie is invalid or tampered
-		// In a real app, you might want to clear the invalid cookie here.
-		return "", fmt.Errorf("failed to decrypt user ID cookie: %w", err)
-	}
-
-	return userID, nil
 }

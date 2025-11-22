@@ -17,11 +17,21 @@ templ Index(page templ.Component, state services.State) {
 		<body id="body" class="bg-base">
 			@nav(state.User)
 			<div id="page">
-				@Page(state.Recipes)
+				@page
 			</div>
 		</body>
 	</html>
 	<style>
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
 	.button-icon {
 		display: inline-block;
 	}

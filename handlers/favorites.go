@@ -7,22 +7,16 @@ import (
 	"sync"
 
 	"cloud.google.com/go/firestore"
+	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 	"github.com/labstack/echo/v4"
 )
 
 func Favorites(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
-
-	client, ctx, err := GetClient()
-	if err != nil {
-		return err
-	}
-	defer client.Close()
+	ctx := c.Request().Context()
+	state := GetStateFromContext(c)
+	client := GetDbClient(c)
 
 	var favorites []services.Recipe
 	var wg sync.WaitGroup
@@ -59,10 +53,7 @@ func Favorites(c echo.Context) error {
 }
 
 func AddFavorite(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	id := c.Param("id")
 
@@ -72,20 +63,17 @@ func AddFavorite(c echo.Context) error {
 		state.User.DisplayName,
 		state.User.Email,
 	)
-	err = Render(c, http.StatusOK, views.FavoriteButton(true, id))
+	err := Render(c, http.StatusOK, views.FavoriteButton(true, id))
 	if err != nil {
 		return err
 	}
 
 	state.AddFavorite(id)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }
 
 func DeleteFavorite(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	id := c.Param("id")
 
@@ -95,11 +83,11 @@ func DeleteFavorite(c echo.Context) error {
 		state.User.DisplayName,
 		state.User.Email,
 	)
-	err = Render(c, http.StatusOK, views.FavoriteButton(false, id))
+	err := Render(c, http.StatusOK, views.FavoriteButton(false, id))
 	if err != nil {
 		return err
 	}
 
 	state.DeleteFavorite(id)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }

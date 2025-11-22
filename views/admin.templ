@@ -6,13 +6,13 @@ import (
 )
 
 templ Admin() {
-	<div class="flex flex-col bg-lavender p-4 mx-auto sm:w-3/4 mt-16 sm:mt-28 rounded" id="admin-panel">
+	<div class="flex flex-col bg-surface0 p-4 mx-auto sm:w-3/4 mt-16 sm:mt-28 rounded" id="admin-panel">
 		<div>
-			<h1 class="text-3xl font-bold mb-2">Add A New Recipe</h1>
+			<h1 class="text-3xl font-bold mb-2 text-text">Add A New Recipe</h1>
 		</div>
 		<div>
 			<form
-				hx-post="/recipes/file"
+				hx-post="/api/recipes/file"
 				hx-target="#add-recipe-form"
 				hx-swap="outerHTML"
 				hx-indicator="#processing-recipe"
@@ -75,10 +75,23 @@ templ Admin() {
 
 templ AddRecipeForm(r services.Recipe) {
 	<div id="add-recipe-form">
-		<form class="flex flex-col" hx-get="/recipes/add" hx-target="#admin-panel" hx-swap="outerHTML" hx-validate="true">
-			<span>Name</span>
-			<input type="text" name="name" placeholder="Recipe Name" class="p-2 mb-2 bg-white" value={ r.Name } required/>
-			<span>Time</span>
+		<form
+			class="flex flex-col"
+			hx-get="/api/recipes/add"
+			hx-target="#admin-panel"
+			hx-swap="outerHTML"
+			hx-validate="true"
+		>
+			<span class="text-lavender">Name</span>
+			<input
+				type="text"
+				name="name"
+				placeholder="Recipe Name"
+				class="p-2 mb-2 bg-white"
+				value={ r.Name }
+				required
+			/>
+			<span class="text-lavender">Time</span>
 			<input
 				type="text"
 				name="time"
@@ -88,7 +101,7 @@ templ AddRecipeForm(r services.Recipe) {
 				required
 			/>
 			<div class="flex flex-col" id="admin-ingredients">
-				<span>Ingredients</span>
+				<span class="text-lavender">Ingredients</span>
 				if len(r.Ingredients) == 0 {
 					@Ingredient(1)
 				} else {
@@ -97,8 +110,8 @@ templ AddRecipeForm(r services.Recipe) {
 					}
 				}
 			</div>
-			<div class="flex flex-col" id="admin-steps">
-				<span>Steps</span>
+			<div class=" flex flex-col" id="admin-steps">
+				<span class="text-lavender">Steps</span>
 				if len(r.Steps) == 0 {
 					@Step(1)
 				} else {
@@ -107,7 +120,7 @@ templ AddRecipeForm(r services.Recipe) {
 					}
 				}
 			</div>
-			<button class="rounded bg-green p-2 hover:cursor-pointer" type="submit">Add Recipe</button>
+			<button class=" rounded bg-green p-2 hover:cursor-pointer" type="submit">Add Recipe</button>
 		</form>
 	</div>
 }
@@ -123,7 +136,8 @@ templ Ingredient(id int) {
 		/>
 		<button
 			class="rounded bg-green p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "ingredient/add/" + strconv.Itoa(id+1) }
+			hx-get={ "/api/ingredient/add/" +
+		strconv.Itoa(id+1) }
 			hx-target="#admin-ingredients"
 			hx-swap="beforeend"
 		>
@@ -131,7 +145,8 @@ templ Ingredient(id int) {
 		</button>
 		<button
 			class="rounded bg-red p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "ingredient/delete/" + strconv.Itoa(id) }
+			hx-get={ "/api/ingredient/delete/" +
+		strconv.Itoa(id) }
 			hx-target={ "#ingredient-" + strconv.Itoa(id) }
 		>
 			-
@@ -151,7 +166,8 @@ templ IngredientWithValue(id int, v string) {
 		/>
 		<button
 			class="rounded bg-green p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "ingredient/add/" + strconv.Itoa(id+1) }
+			hx-get={ "/api/ingredient/add/" +
+		strconv.Itoa(id+1) }
 			hx-target="#admin-ingredients"
 			hx-swap="beforeend"
 		>
@@ -159,7 +175,8 @@ templ IngredientWithValue(id int, v string) {
 		</button>
 		<button
 			class="rounded bg-red p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "ingredient/delete/" + strconv.Itoa(id) }
+			hx-get={ "/api/ingredient/delete/" +
+		strconv.Itoa(id) }
 			hx-target={ "#ingredient-" + strconv.Itoa(id) }
 		>
 			-
@@ -178,7 +195,8 @@ templ Step(id int) {
 		/>
 		<button
 			class="rounded bg-green p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "step/add/" + strconv.Itoa(id+1) }
+			hx-get={ "/api/step/add/" +
+		strconv.Itoa(id+1) }
 			hx-target="#admin-steps"
 			hx-swap="beforeend"
 		>
@@ -186,7 +204,8 @@ templ Step(id int) {
 		</button>
 		<button
 			class="rounded bg-red p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "step/delete/" + strconv.Itoa(id) }
+			hx-get={ "/api/step/delete/" +
+		strconv.Itoa(id) }
 			hx-target={ "#step-" + strconv.Itoa(id) }
 		>
 			-
@@ -196,10 +215,13 @@ templ Step(id int) {
 
 templ StepWithValue(id int, v string) {
 	<div class="flex" id={ "step-" + strconv.Itoa(id) }>
-		<textarea name={ "step-" + strconv.Itoa(id) } rows="3" class="p-2 mb-2 flex-1 bg-white" required>{ v }</textarea>
+		<textarea name={ "step-" + strconv.Itoa(id) } rows="3" class="p-2 mb-2 flex-1 bg-white" required>
+			{ v }
+		</textarea>
 		<button
 			class="rounded bg-green p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "step/add/" + strconv.Itoa(id+1) }
+			hx-get={ "/api/step/add/" +
+		strconv.Itoa(id+1) }
 			hx-target="#admin-steps"
 			hx-swap="beforeend"
 		>
@@ -207,7 +229,8 @@ templ StepWithValue(id int, v string) {
 		</button>
 		<button
 			class="rounded bg-red p-2 mb-2 ml-2 hover:cursor-pointer"
-			hx-get={ "step/delete/" + strconv.Itoa(id) }
+			hx-get={ "/api/step/delete/" +
+		strconv.Itoa(id) }
 			hx-target={ "#step-" + strconv.Itoa(id) }
 		>
 			-

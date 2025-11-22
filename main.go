@@ -13,7 +13,9 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/time/rate"
 
+	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/handlers"
+	"github.com/RoastBeefer00/carrot-firebase-server/middlewares"
 )
 
 //go:generate templ generate
@@ -49,11 +51,11 @@ func main() {
 	}
 
 	// --- Decode Encryption Key ---
-	handlers.EncryptionKey, err = base64.URLEncoding.DecodeString(handlers.EncryptionKeyBase64)
+	db.EncryptionKey, err = base64.URLEncoding.DecodeString(handlers.EncryptionKeyBase64)
 	if err != nil {
 		log.Fatalf("Failed to decode encryption key: %v", err)
 	}
-	if len(handlers.EncryptionKey) != 32 { // AES-256 requires a 32-byte key
+	if len(db.EncryptionKey) != 32 { // AES-256 requires a 32-byte key
 		log.Fatalf("Encryption key must be 32 bytes long (decoded)")
 	}
 
@@ -76,30 +78,52 @@ func main() {
 		rate.Limit(20),
 	)))
 
-	// This will initiate our template renderer
-	e.GET("/", handlers.HandleIndex)
+	client, _, err := db.GetClient()
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+
+	// Page routes
+	pages := e.Group("")
+	pages.Use(middlewares.DatabaseMiddleware(client))
+	pages.Use(middlewares.StateMiddleware)
+	pages.GET("/", handlers.HandleIndex)
+	pages.GET("/admin", handlers.AdminHandler)
+
+	// Authentication routes
 	e.GET("/login", handlers.HandleLogin)
-	e.GET("/oauth2/callback", handlers.HandleOAuth2Callback)
-	e.GET("/admin", handlers.AdminHandler)
-	e.GET("/refresh", handlers.GetRecipes)
-	e.GET("/recipes/replace/:id", handlers.ReplaceRecipe)
-	e.GET("/recipes/random", handlers.GetRandomRecipes)
-	e.GET("/recipes/add", handlers.AddRecipeToDatabase)
-	e.GET("/recipes/all", handlers.GetAllRecipes)
-	e.GET("/recipes/name", handlers.SearchRecipesByName)
-	e.GET("/recipes/ingredients", handlers.SearchRecipesByIngredient)
-	e.POST("/recipes/file", handlers.ProcessRecipeFile)
-	e.GET("/recipes/filter", handlers.ChangeFilter)
-	e.GET("/recipes/delete/:id", handlers.DeleteRecipe)
-	e.GET("/recipes/delete/all", handlers.DeleteAllRecipes)
-	e.GET("/recipes/favorites", handlers.Favorites)
-	e.GET("/recipes/favorites/add/:id", handlers.AddFavorite)
-	e.GET("/recipes/favorites/delete/:id", handlers.DeleteFavorite)
-	e.GET("/groceries", handlers.CombineIngredients)
-	e.GET("/ingredient/add/:id", handlers.AddIngredient)
-	e.GET("/ingredient/delete/:id", handlers.DeleteIngredient)
-	e.GET("/step/add/:id", handlers.AddStep)
-	e.GET("/step/delete/:id", handlers.DeleteStep)
+	e.GET("/oauth2/callback", handlers.HandleOAuth2Callback, middlewares.DatabaseMiddleware(client))
+
+	// API routes
+	apis := e.Group("/api")
+	apis.Use(middlewares.DatabaseMiddleware(client))
+	apis.Use(middlewares.StateMiddleware)
+
+	recipes := apis.Group("/recipes")
+	recipes.GET("/replace/:id", handlers.ReplaceRecipe)
+	recipes.GET("/random", handlers.GetRandomRecipes)
+	recipes.GET("/add", handlers.AddRecipeToDatabase)
+	recipes.GET("/all", handlers.GetAllRecipes)
+	recipes.GET("/name", handlers.SearchRecipesByName)
+	recipes.GET("/ingredients", handlers.SearchRecipesByIngredient)
+	recipes.POST("/file", handlers.ProcessRecipeFile)
+	recipes.GET("/filter", handlers.ChangeFilter)
+	recipes.GET("/delete/:id", handlers.DeleteRecipe)
+	recipes.GET("/delete/all", handlers.DeleteAllRecipes)
+	recipes.GET("/favorites", handlers.Favorites)
+	recipes.GET("/favorites/add/:id", handlers.AddFavorite)
+	recipes.GET("/favorites/delete/:id", handlers.DeleteFavorite)
+
+	apis.GET("/groceries", handlers.CombineIngredients)
+
+	ingredient := apis.Group("/ingredient")
+	ingredient.GET("/add/:id", handlers.AddIngredient)
+	ingredient.GET("/delete/:id", handlers.DeleteIngredient)
+
+	step := apis.Group("/step")
+	step.GET("/add/:id", handlers.AddStep)
+	step.GET("/delete/:id", handlers.DeleteStep)
 
 	e.Logger.Info("Starting server at localhost:8080...")
 	e.Logger.Fatal(e.Start(":8080"))

@@ -3,11 +3,14 @@ package views
 import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
 templ FavoriteButton(favorite bool, id string) {
-	<form if !favorite {
-	hx-get={ "/recipes/favorites/add/" + id }
-} else {
-	hx-get={ "/recipes/favorites/delete/" + id }
-}>
+	<form
+		if !favorite {
+			hx-get={ "/api/recipes/favorites/add/" + id }
+		} else {
+			hx-get={ "/api/recipes/favorites/delete/" +
+	id }
+		}
+	>
 		<button
 			type="submit"
 			class="text-mantle text-center rounded bg-green p-2 border border-surface0 hover:cursor-pointer hover:bg-opacity-75 transition-all"
@@ -77,7 +80,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 				<div class="flex gap-2">
 					@FavoriteButton(recipe.Favorite, recipe.Id)
 					<form
-						hx-get={ "/recipes/replace/" + recipe.Id }
+						hx-get={ "/api/recipes/replace/" + recipe.Id }
 						hx-target={ "#recipe-" + recipe.Id }
 						hx-swap="outerHTML"
 					>
@@ -108,7 +111,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 						</button>
 					</form>
 					<form
-						hx-get={ "/recipes/delete/" + recipe.Id }
+						hx-get={ "/api/recipes/delete/" + recipe.Id }
 						hx-target={ "#recipe-" + recipe.Id }
 						hx-swap="outerHTML"
 					>
