@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"math/rand/v2"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"cloud.google.com/go/firestore"
+	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 	"github.com/a-h/templ"
@@ -27,13 +30,7 @@ func Render(ctx echo.Context, statusCode int, t templ.Component) error {
 	return t.Render(ctx.Request().Context(), ctx.Response().Writer)
 }
 
-func getAll() ([]services.Recipe, error) {
-	client, ctx, err := GetClient()
-	if err != nil {
-		return nil, err
-	}
-	defer client.Close()
-
+func getAll(client *firestore.Client, ctx context.Context) ([]services.Recipe, error) {
 	docs, err := client.Collection("recipes").Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
@@ -69,10 +66,7 @@ func filterRecipes(
 }
 
 func GetRecipes(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	log.Printf(
 		"Refreshing %d recipes for user %s with email %s",
@@ -84,7 +78,8 @@ func GetRecipes(c echo.Context) error {
 }
 
 func GetAllRecipes(c echo.Context) error {
-	recipes, err := getAll()
+	client := GetDbClient(c)
+	recipes, err := getAll(client, c.Request().Context())
 	if err != nil {
 		return err
 	}
@@ -93,10 +88,8 @@ func GetAllRecipes(c echo.Context) error {
 }
 
 func SearchRecipesByName(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
+	client := GetDbClient(c)
 
 	filter := c.FormValue("search")
 	log.Printf(
@@ -106,7 +99,7 @@ func SearchRecipesByName(c echo.Context) error {
 		state.User.Email,
 	)
 
-	recipes, err := getAll()
+	recipes, err := getAll(client, c.Request().Context())
 	if err != nil {
 		return err
 	}
@@ -131,14 +124,12 @@ func SearchRecipesByName(c echo.Context) error {
 	}
 
 	state.Recipes = append(state.Recipes, filteredRecipes...)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }
 
 func SearchRecipesByIngredient(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
+	client := GetDbClient(c)
 
 	filter := c.FormValue("search")
 	log.Printf(
@@ -148,7 +139,7 @@ func SearchRecipesByIngredient(c echo.Context) error {
 		state.User.Email,
 	)
 
-	recipes, err := getAll()
+	recipes, err := getAll(client, c.Request().Context())
 	if err != nil {
 		return err
 	}
@@ -175,22 +166,15 @@ func SearchRecipesByIngredient(c echo.Context) error {
 		return err
 	}
 	state.AddRecipes(filteredRecipes)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }
 
 func ReplaceRecipe(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
+	client := GetDbClient(c)
+	ctx := c.Request().Context()
 
 	id := c.Param("id")
-
-	client, ctx, err := GetClient()
-	if err != nil {
-		return err
-	}
-	defer client.Close()
 
 	docs, err := client.Collection("ids").Documents(ctx).GetAll()
 	if err != nil {
@@ -222,14 +206,13 @@ func ReplaceRecipe(c echo.Context) error {
 	}
 
 	state.ReplaceRecipe(id, recipe)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }
 
 func GetRandomRecipes(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	ctx := c.Request().Context()
+	state := GetStateFromContext(c)
+	client := GetDbClient(c)
 
 	var randomRecipes []services.Recipe
 	amount := c.FormValue("amount")
@@ -244,12 +227,6 @@ func GetRandomRecipes(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
-	client, ctx, err := GetClient()
-	if err != nil {
-		return err
-	}
-	defer client.Close()
 
 	docs, err := client.Collection("ids").Documents(ctx).GetAll()
 	if err != nil {
@@ -288,14 +265,11 @@ func GetRandomRecipes(c echo.Context) error {
 		return err
 	}
 	state.AddRecipes(randomRecipes)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }
 
 func DeleteRecipe(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	id := c.Param("id")
 
@@ -305,31 +279,28 @@ func DeleteRecipe(c echo.Context) error {
 		state.User.DisplayName,
 		state.User.Email,
 	)
-	err = c.NoContent(200)
+	err := c.NoContent(200)
 	if err != nil {
 		return err
 	}
 	state.DeleteRecipe(id)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }
 
 func DeleteAllRecipes(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	log.Printf(
 		"Deleting all recipes for user %s with email %s",
 		state.User.DisplayName,
 		state.User.Email,
 	)
-	err = c.NoContent(200)
+	err := c.NoContent(200)
 	if err != nil {
 		return err
 	}
 	state.Recipes = make([]services.Recipe, 0)
-	return UpdateState(state)
+	return db.UpdateState(state, c)
 }
 
 func ChangeFilter(c echo.Context) error {
@@ -341,10 +312,7 @@ func ChangeFilter(c echo.Context) error {
 
 func AddRecipeToDatabase(c echo.Context) error {
 	recipe := services.Recipe{}
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	if !slices.Contains(services.Admins, state.User.Email) {
 		return c.NoContent(200)
@@ -395,7 +363,7 @@ func AddRecipeToDatabase(c echo.Context) error {
 		state.User.Email,
 		recipe,
 	)
-	client, ctx, err := GetClient()
+	client, ctx, err := db.GetClient()
 	if err != nil {
 		return err
 	}

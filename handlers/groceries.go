@@ -59,10 +59,7 @@ func getIngredientItem(ingredient string) (string, error) {
 }
 
 func CombineIngredients(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	recipes := state.Recipes
 	var ingredients []services.Ingredient

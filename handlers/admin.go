@@ -20,10 +20,7 @@ import (
 )
 
 func AdminHandler(c echo.Context) error {
-	state, err := GetState(c)
-	if err != nil {
-		return err
-	}
+	state := GetStateFromContext(c)
 
 	header := c.Request().Header
 	log.Println(header)
