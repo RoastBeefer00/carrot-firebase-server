@@ -526,8 +526,8 @@
   .pt-4 {
     padding-top: calc(var(--spacing) * 4);
   }
-  .pt-18 {
-    padding-top: calc(var(--spacing) * 18);
+  .pt-20 {
+    padding-top: calc(var(--spacing) * 20);
   }
   .pt-\[0\.37rema\] {
     padding-top: 0.37rema;
