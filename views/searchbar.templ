@@ -15,10 +15,9 @@ templ Search(t string) {
 		hx-swap="beforeend"
 	>
 		<input
-			class="flex-initial w-full shadow rounded appearance-none border-8 border-lavender p-2 outline-none bg-gray-100"
+			class="flex-initial w-full shadow rounded appearance-none border-4 border-lavender focus:border-blue p-2 outline-none bg-gray-100"
 			type="text"
 			name="search"
-			value=""
 			placeholder={ getFilter(t) }
 			hx-trigger="keyup[keyCode==13]"
 			_="on htmx:afterRequest set my value to ''"

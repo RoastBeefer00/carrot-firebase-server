@@ -10,7 +10,7 @@ templ FavoriteButton(favorite bool, id string) {
 }>
 		<button
 			type="submit"
-			class="text-crust text-center rounded bg-green p-2 border border-crust hover:cursor-pointer"
+			class="text-mantle text-center rounded bg-green p-2 border border-surface0 hover:cursor-pointer hover:bg-opacity-75 transition-all"
 		>
 			if !favorite {
 				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="button-icon">
@@ -44,16 +44,16 @@ templ Recipe(recipe services.Recipe, oob bool) {
 	<div if oob {
 	hx-swap-oob="beforeend:#recipes"
 }>
-		<div class="bg-lavender sm:p-4 p-2 rounded mt-2" id={ "recipe-" + recipe.Id }>
+		<div class="bg-surface0 sm:p-4 p-2 rounded-lg mt-2" id={ "recipe-" + recipe.Id }>
 			<div class="flex mb-2">
-				<h1 class="text-mantle text-3xl font-bold mr-2">{ recipe.Name }</h1>
-				<span class="text-mantle mt-2">{ recipe.Time }</span>
+				<h1 class="text-text text-3xl font-bold mr-2">{ recipe.Name }</h1>
+				<span class="text-text opacity-75 mt-2">{ recipe.Time }</span>
 			</div>
 			<div class="flex justify-between" id="button-container">
 				<button
 					id={ "toggle-recipe-" + recipe.Id }
 					_="on click toggle .hidden on <svg/> in me"
-					class="text-crust text-center rounded bg-green p-2 border border-crust hover:cursor-pointer"
+					class="text-mantle text-center rounded bg-lavender p-2 border border-surface0 hover:cursor-pointer hover:bg-opacity-75 transition-all"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 						<path
@@ -83,7 +83,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 					>
 						<button
 							type="submit"
-							class="text-crust text-center rounded bg-sky p-2 border border-crust hover:cursor-pointer"
+							class="text-mantle text-center rounded bg-sky p-2 border border-surface0 hover:cursor-pointer hover:bg-opacity-75 transition-all"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -114,7 +114,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 					>
 						<button
 							type="submit"
-							class="text-crust text-center rounded bg-red p-2 border border-crust hover:cursor-pointer"
+							class="text-mantle text-center rounded bg-red p-2 border border-surface0 hover:cursor-pointer hover:bg-opacity-75 transition-all"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -135,31 +135,29 @@ templ Recipe(recipe services.Recipe, oob bool) {
 			</div>
 			<div
 				_={ "on click from #toggle-recipe-" + recipe.Id + " toggle .hidden" }
-				class="bg-surface0 mt-2 p-1 sm:p-2 rounded hidden"
+				class="mt-4 pt-4 border-t border-mantle hidden"
 			>
-				<div class="bg-green sm:m-2 sm:p-4 m-1 p-2 rounded">
-					<ul class="list-disc list-inside grid sm:grid-cols-2">
-						for _, ingredient := range recipe.Ingredients {
-							<li class="text-crust">{ ingredient }</li>
-						}
-					</ul>
+				<div class="mb-3">
+					<h2 class="text-green text-lg font-bold mb-2">Ingredients</h2>
+					<div class="bg-mantle p-3 rounded">
+						<ul class="list-disc list-inside grid sm:grid-cols-2 text-green">
+							for _, ingredient := range recipe.Ingredients {
+								<li>{ ingredient }</li>
+							}
+						</ul>
+					</div>
 				</div>
-				<div class="bg-blue sm:m-2 sm:p-2 m-1 p-1 rounded">
-					<ol type="1">
-						for i, step := range recipe.Steps {
-							<li>
-								if i == len(recipe.Steps) - 1 {
-									<div class="p-1">
-										<span class="text-crust">{ step }</span>
-									</div>
-								} else {
-									<div class="border-b border-crust p-1">
-										<span class="text-crust">{ step }</span>
-									</div>
-								}
-							</li>
-						}
-					</ol>
+				<div>
+					<h2 class="text-blue text-lg font-bold mb-2">Steps</h2>
+					<div class="bg-mantle p-3 rounded">
+						<ol class="space-y-2 list-decimal list-inside text-blue">
+							for _, step := range recipe.Steps {
+								<li>
+									{ step }
+								</li>
+							}
+						</ol>
+					</div>
 				</div>
 			</div>
 		</div>
