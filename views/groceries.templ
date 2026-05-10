@@ -16,50 +16,47 @@ func toggleQuantity() {
 
 templ Groceries(ingredients []services.Ingredient) {
 	<div
-		class="h-full w-full rounded bg-crust p-2"
-		_="on click from elsewhere remove me then toggle .hidden on #groceries then toggle @disabled on #groceries-button"
+		class="flex flex-col h-full w-full bg-surface0 rounded-2xl overflow-hidden"
+		_="on click from elsewhere remove me then toggle .hidden on #groceries then remove @disabled from #groceries-button"
 	>
-		<div class="flex flex-col rounded bg-surface0 h-full text-lavender">
-			<div class="bg-crust text-text p-4">
-				<h1 class="text-3xl font-bold">Groceries</h1>
-			</div>
-			<div>
-				<button
-					class="rounded p-2 bg-green border border-black m-4 text-crust"
-					_="on click toggle .hidden on <span/> in #ingredients"
-				>Toggle Quantity</button>
-			</div>
-			<div class="p-4 overflow-y-auto" id="ingredients">
-				for _, ingredient := range ingredients {
-					{{
-						quantity, _ := strconv.ParseFloat(ingredient.Quantity, 64)
-						quantity = quantity * 2
-					}}
-					<div class="flex p-2">
-						<input type="checkbox"/>
-						<span class="ml-2">
-							{ ingredient.Quantity + " " + ingredient.Measurement + " " + ingredient.Item }
-						</span>
-						if quantity > 0 {
-							if quantity == math.Trunc(quantity) {
-								<span class="ml-2 hidden">
-									{ fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " +
-					ingredient.Item }
-								</span>
-							} else {
-								<span class="ml-2 hidden">
-									{ fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " +
-					ingredient.Item }
-								</span>
-							}
+		<div class="flex items-center justify-between px-4 py-3 bg-mantle border-b border-surface1 shrink-0">
+			<h2 class="text-text font-semibold text-base">Grocery List</h2>
+			<button
+				class="px-3 py-1 text-xs font-medium rounded-lg bg-green text-crust hover:opacity-90 active:scale-[0.98] transition-all hover:cursor-pointer"
+				_="on click toggle .hidden on .qty-base in #ingredients then toggle .hidden on .qty-alt in #ingredients then toggle .hidden on .lbl-2x in me then toggle .hidden on .lbl-4x in me"
+			>
+				<span class="lbl-2x">2x</span>
+				<span class="lbl-4x hidden">4x</span>
+			</button>
+		</div>
+		<div class="flex-1 overflow-y-auto p-3" id="ingredients">
+			for _, ingredient := range ingredients {
+				{{
+					quantity, _ := strconv.ParseFloat(ingredient.Quantity, 64)
+					quantity = quantity * 2
+				}}
+				<label class="flex items-start gap-3 py-2 border-b border-surface1 last:border-0 cursor-pointer">
+					<input type="checkbox" class="mt-0.5 accent-lavender shrink-0"/>
+					<span class="qty-base text-text text-sm">
+						{ ingredient.Quantity + " " + ingredient.Measurement + " " + ingredient.Item }
+					</span>
+					if quantity > 0 {
+						if quantity == math.Trunc(quantity) {
+							<span class="qty-alt text-text text-sm hidden">
+								{ fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " + ingredient.Item }
+							</span>
 						} else {
-							<span class="ml-2 hidden">
-								{ ingredient.Measurement + " " + ingredient.Item }
+							<span class="qty-alt text-text text-sm hidden">
+								{ fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " + ingredient.Item }
 							</span>
 						}
-					</div>
-				}
-			</div>
+					} else {
+						<span class="qty-alt text-text text-sm hidden">
+							{ ingredient.Measurement + " " + ingredient.Item }
+						</span>
+					}
+				</label>
+			}
 		</div>
 	</div>
 }

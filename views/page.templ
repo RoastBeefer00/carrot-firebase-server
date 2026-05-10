@@ -3,14 +3,69 @@ package views
 import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
 templ Page(recipes []services.Recipe) {
-	<div class="flex flex-col h-screen w-screen">
-		@sidebar()
-		<div class="p-4 sm:ml-64 relative overflow-y-scroll">
-			<div id="search" class="mt-4 sm:mt-0">
+	@MobileNav("home", true)
+	<div class="min-h-[100dvh] w-full px-3 pt-3 pb-4">
+		<div class="flex gap-2 mb-2">
+			<div id="search" class="flex-1">
 				@Search(services.Filter)
 			</div>
-			@Recipes(recipes, false)
+			<select
+				hx-get="/recipes/filter"
+				hx-target="#search"
+				hx-swap="innerHTML"
+				name="filter"
+				class="bg-surface0 border border-surface1 text-text text-xs rounded-xl px-2 outline-none focus:ring-1 focus:ring-lavender shrink-0 hover:cursor-pointer"
+			>
+				<option selected value="name">Name</option>
+				<option value="ingredients">Ingredient</option>
+			</select>
 		</div>
+		<div class="flex gap-2 mb-3">
+			<button
+				hx-get="/api/groceries"
+				hx-target="#groceries"
+				hx-swap="innerHTML"
+				type="button"
+				_="on click toggle .hidden on #groceries"
+				class="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky text-crust text-sm font-medium rounded-lg hover:opacity-90 active:scale-[0.98] transition-all hover:cursor-pointer flex-1 sm:flex-none"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+					<path fill="currentColor" d="M7 22q-.825 0-1.412-.587T5 20q0-.825.588-1.412T7 18q.825 0 1.413.588T9 20q0 .825-.587 1.413T7 22m10 0q-.825 0-1.412-.587T15 20q0-.825.588-1.412T17 18q.825 0 1.413.588T20 20q0 .825-.587 1.413T17 22M6.15 6l2.4 5h7l2.75-5zM5.2 4h14.75q.575 0 .875.513t.025 1.037l-3.55 6.4q-.275.5-.737.775T15.55 13H8.1L7 15h11q.425 0 .713.288T19 16q0 .425-.288.713T18 17H7q-1.125 0-1.7-.988t-.05-1.962L6.6 11.6L3 4H2q-.425 0-.712-.288T1 3q0-.425.288-.712T2 2h1.625q.275 0 .525.15t.375.425z"></path>
+				</svg>
+				<span class="hidden sm:inline">Groceries</span>
+			</button>
+			<form hx-get="/api/recipes/random" hx-target="#recipes" hx-swap="beforeend" class="flex gap-1.5 flex-1 sm:flex-none">
+				<input
+					type="number"
+					min="1"
+					name="amount"
+					value="1"
+					class="w-14 bg-surface0 border border-surface1 text-text text-sm rounded-lg px-2 py-2 text-center outline-none focus:ring-1 focus:ring-lavender focus:border-lavender"
+				/>
+				<button
+					type="submit"
+					class="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-surface1 text-text text-sm font-medium rounded-lg hover:bg-surface2 active:scale-[0.98] transition-all hover:cursor-pointer flex-1"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="button-icon">
+						<path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 0 0-8 8a8 8 0 0 0 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18a6 6 0 0 1-6-6a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"></path>
+					</svg>
+					@LoadingSpinner("16")
+					<span class="hidden sm:inline">Random</span>
+				</button>
+			</form>
+			<form hx-get="/api/recipes/delete/all" hx-target="#recipes" class="flex flex-1 sm:flex-none">
+				<button
+					type="submit"
+					class="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-red text-crust text-sm font-medium rounded-lg hover:opacity-90 active:scale-[0.98] transition-all hover:cursor-pointer flex-1"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="button-icon">
+						<path fill="currentColor" d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"></path>
+					</svg>
+					@LoadingSpinner("16")
+					<span class="hidden sm:inline">Clear All</span>
+				</button>
+			</form>
+		</div>
+		@Recipes(recipes, false)
 	</div>
-	<div id="groceries" class="absolute mx-auto mt-10 z-40 w-[90vw] sm:w-1/2 m-4 inset-0 h-[80vh] hidden"></div>
 }

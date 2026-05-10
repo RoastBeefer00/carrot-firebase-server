@@ -8,45 +8,44 @@ templ Index(page templ.Component, state services.State) {
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 			<link rel="stylesheet" href="/dist/tailwind.css"/>
 			<link rel="icon" href="/dist/favicon.ico"/>
 			<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
 			<title>Magenta Carrot</title>
 		</head>
-		<body id="body" class="bg-base">
+		<body id="body" class="bg-base pb-14 sm:pb-0">
 			@nav(state.User)
 			<div id="page">
 				@page
 			</div>
+			<div
+				id="groceries"
+				class="fixed z-50 w-[92vw] sm:w-[480px] h-[80vh] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden rounded-2xl overflow-hidden shadow-2xl"
+			></div>
 		</body>
 	</html>
 	<style>
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
+		* { font-family: 'Outfit', system-ui, -apple-system, sans-serif; }
+
+		@keyframes spin {
+			from { transform: rotate(0deg); }
+			to { transform: rotate(360deg); }
 		}
 
-		to {
-			transform: rotate(360deg);
+		.button-icon { display: inline-block; }
+		.button-spinner { display: none; }
+
+		.htmx-request .button-icon { display: none; }
+		.htmx-request .button-spinner {
+			display: inline-block;
+			animation: spin 1s linear infinite;
 		}
-	}
 
-	.button-icon {
-		display: inline-block;
-	}
-
-	.button-spinner {
-		display: none;
-	}
-
-	.htmx-request .button-icon {
-		display: none;
-	}
-
-	.htmx-request .button-spinner {
-		display: inline-block;
-		animation: spin 1s linear infinite;
-	}
-</style>
+		.mobile-nav-btn { color: #a6adc8; }
+		.mobile-nav-btn.nav-active { color: #b4befe; }
+	</style>
 }
