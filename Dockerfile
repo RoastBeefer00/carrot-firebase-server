@@ -21,7 +21,7 @@ RUN ./tailwindcss-linux-x64 -i ./dist/main.css -o ./dist/tailwind.css --minify
 ######################################
 # STAGE 2: Templ generation and Go build
 ######################################
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 WORKDIR /app
 
 # Install Templ
