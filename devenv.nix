@@ -6,13 +6,14 @@
 }:
 let
   templ-newer = pkgs.templ.overrideAttrs (oldAttrs: rec {
-    version = "0.3.960";
+    version = "0.3.1020";
     src = pkgs.fetchFromGitHub {
       owner = "a-h";
       repo = "templ";
       rev = "v${version}";
-      hash = "sha256-GCbqaRC9KipGdGfgnGjJu04/rJlg+2lgi2vluP05EV4="; # Run once to get the correct hash, then fill it in
+      hash = "sha256-wv7qKZfnavz8lxfaOaIJJySNsXsjke1ADJuv2kgQOHE=";
     };
+    vendorHash = "sha256-i4uDGZb3VZUvIyO2Tt53VR1Do/3OYtj6JccGoFnnlbs=";
   });
 in
 {

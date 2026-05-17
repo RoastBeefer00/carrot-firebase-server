@@ -7,11 +7,10 @@ import (
 )
 
 templ Favorites(favorites []services.Recipe) {
-	@MobileNav("favorites", true)
-	<div class="px-3 pt-3 pb-4 min-h-[100dvh]">
+	<div class="px-3 pt-4 pb-6 min-h-[100dvh]">
 		<div class="mb-4">
-			<h2 class="text-text font-semibold text-lg">Favorites</h2>
-			<p class="text-subtext0 text-xs">{ favoriteCount(favorites) } saved</p>
+			<h2 class="text-text font-semibold text-xl">Favorites</h2>
+			<p class="text-subtext0 text-sm">{ favoriteCount(favorites) } saved</p>
 		</div>
 		@Recipes(favorites, false)
 	</div>

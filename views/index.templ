@@ -2,7 +2,7 @@ package views
 
 import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
-templ Index(page templ.Component, state services.State) {
+templ Index(page templ.Component, state services.State, currentPage string) {
 	<!DOCTYPE html>
 	<html lang="en" class="mocha">
 		<head>
@@ -17,8 +17,8 @@ templ Index(page templ.Component, state services.State) {
 			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
 			<title>Magenta Carrot</title>
 		</head>
-		<body id="body" class="bg-base pb-14 sm:pb-0">
-			@nav(state.User)
+		<body id="body" class="bg-base pb-16 sm:pb-0 text-base">
+			@nav(state.User, currentPage)
 			<div id="page">
 				@page
 			</div>
@@ -45,7 +45,8 @@ templ Index(page templ.Component, state services.State) {
 			animation: spin 1s linear infinite;
 		}
 
-		.mobile-nav-btn { color: #a6adc8; }
+		.mobile-nav-btn { color: #a6adc8; transition: color 0.15s ease; }
 		.mobile-nav-btn.nav-active { color: #b4befe; }
+		.mobile-nav-btn.nav-active .nav-icon-bg { background-color: rgba(180, 190, 254, 0.15); }
 	</style>
 }

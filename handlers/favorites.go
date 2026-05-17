@@ -46,7 +46,7 @@ func Favorites(c echo.Context) error {
 	header := c.Request().Header
 
 	if header["Hx-Request"] == nil {
-		return Render(c, http.StatusOK, views.Index(views.Favorites(favorites), state))
+		return Render(c, http.StatusOK, views.Index(views.Favorites(favorites), state, "favorites"))
 	}
 
 	return Render(c, http.StatusOK, views.Favorites(favorites))
