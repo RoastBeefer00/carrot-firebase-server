@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
@@ -80,18 +79,8 @@ func CombineIngredients(c echo.Context) error {
 						insert.Measurement = ingredientI.Measurement
 					}
 
-					if strings.Contains(ingredientI.Quantity, ".") ||
-						strings.Contains(ingredientJ.Quantity, ".") {
-						floatI, _ := strconv.ParseFloat(ingredientI.Quantity, 64)
-						floatJ, _ := strconv.ParseFloat(ingredientJ.Quantity, 64)
-						added := floatI + floatJ
-						insert.Quantity = strconv.FormatFloat(added, 'f', 2, 64)
-					} else {
-						intI, _ := strconv.Atoi(ingredientI.Quantity)
-						intJ, _ := strconv.Atoi(ingredientJ.Quantity)
-						added := intI + intJ
-						insert.Quantity = strconv.Itoa(added)
-					}
+					added := services.ParseQuantity(ingredientI.Quantity) + services.ParseQuantity(ingredientJ.Quantity)
+					insert.Quantity = services.FormatDecimal(added)
 				}
 				ingredients = append(ingredients[:j], ingredients[j+1:]...)
 				if insert.Item != "" {

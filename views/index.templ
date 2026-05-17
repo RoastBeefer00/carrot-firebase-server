@@ -43,6 +43,9 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 		.favorite-btn.is-favorited .heart-outline { display: none; }
 		.favorite-btn.is-favorited .heart-filled { display: inline-block; }
 
+		.process-form.htmx-request .process-idle { display: none; }
+		.process-form.htmx-request .process-busy { display: inline-block; }
+
 		.htmx-request .button-icon { display: none; }
 		.htmx-request .button-spinner {
 			display: inline-block;

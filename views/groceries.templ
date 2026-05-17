@@ -2,10 +2,6 @@ package views
 
 import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
-
-	"fmt"
-	"math"
-	"strconv"
 )
 
 var doubledQuantity = false
@@ -17,7 +13,7 @@ func toggleQuantity() {
 templ Groceries(ingredients []services.Ingredient) {
 	<div
 		class="flex flex-col h-full w-full bg-surface0 rounded-2xl overflow-hidden"
-		_="on click from elsewhere remove me then toggle .hidden on #groceries then remove @disabled from #groceries-button"
+		_="on click from elsewhere remove me then toggle .hidden on #groceries"
 	>
 		<div class="flex items-center justify-between gap-2 px-4 py-3 bg-mantle border-b border-surface1 shrink-0">
 			<h2 class="text-text font-semibold text-lg">Grocery List</h2>
@@ -44,24 +40,22 @@ templ Groceries(ingredients []services.Ingredient) {
 		<div class="flex-1 overflow-y-auto p-3" id="ingredients">
 			for _, ingredient := range ingredients {
 				{{
-					quantity, _ := strconv.ParseFloat(ingredient.Quantity, 64)
-					quantity = quantity * 2
+					base := services.ParseQuantity(ingredient.Quantity)
+					doubled := base * 2
 				}}
 				<label class="flex items-start gap-3 py-2 border-b border-surface1 last:border-0 cursor-pointer">
 					<input type="checkbox" class="mt-0.5 accent-lavender shrink-0"/>
 					<span class="qty-base text-text text-sm">
-						{ ingredient.Quantity + " " + ingredient.Measurement + " " + ingredient.Item }
-					</span>
-					if quantity > 0 {
-						if quantity == math.Trunc(quantity) {
-							<span class="qty-alt text-text text-sm hidden">
-								{ fmt.Sprintf("%d", int(quantity)) + " " + ingredient.Measurement + " " + ingredient.Item }
-							</span>
+						if base > 0 {
+							{ services.FormatFraction(base) + " " + ingredient.Measurement + " " + ingredient.Item }
 						} else {
-							<span class="qty-alt text-text text-sm hidden">
-								{ fmt.Sprintf("%.2f", quantity) + " " + ingredient.Measurement + " " + ingredient.Item }
-							</span>
+							{ ingredient.Measurement + " " + ingredient.Item }
 						}
+					</span>
+					if doubled > 0 {
+						<span class="qty-alt text-text text-sm hidden">
+							{ services.FormatFraction(doubled) + " " + ingredient.Measurement + " " + ingredient.Item }
+						</span>
 					} else {
 						<span class="qty-alt text-text text-sm hidden">
 							{ ingredient.Measurement + " " + ingredient.Item }

@@ -97,7 +97,7 @@ templ Recipe(recipe services.Recipe, oob bool) {
 					for _, ingredient := range recipe.Ingredients {
 						<li class="text-text text-base flex items-start gap-2">
 							<span class="text-green mt-1 shrink-0">•</span>
-							{ ingredient }
+							{ services.FormatIngredient(ingredient) }
 						</li>
 					}
 				</ul>

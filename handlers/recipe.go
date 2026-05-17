@@ -303,7 +303,7 @@ func AddRecipeToDatabase(c echo.Context) error {
 	sort.Strings(ingKeys)
 
 	for _, k := range ingKeys {
-		recipe.Ingredients = append(recipe.Ingredients, ingredients[k])
+		recipe.Ingredients = append(recipe.Ingredients, services.NormalizeIngredient(ingredients[k]))
 	}
 
 	stepKeys := make([]string, 0, len(steps))
