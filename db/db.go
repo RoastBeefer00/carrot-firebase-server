@@ -6,8 +6,8 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
@@ -32,10 +32,14 @@ func GetToken(c echo.Context) (string, error) {
 
 func GetClient() (*firestore.Client, context.Context, error) {
 	ctx := context.Background()
-	conf := &firebase.Config{ProjectID: "r-j-magenta-carrot-42069"}
+	projectID := os.Getenv("FIRESTORE_PROJECT_ID")
+	if projectID == "" {
+		projectID = "r-j-magenta-carrot-42069"
+	}
+	conf := &firebase.Config{ProjectID: projectID}
 	app, err := firebase.NewApp(ctx, conf)
 	if err != nil {
-		log.Fatal(err)
+		return nil, ctx, err
 	}
 
 	client, err := app.Firestore(ctx)
@@ -90,12 +94,6 @@ func GetState(c echo.Context) (services.State, error) {
 
 	doc, err := client.Collection("users").Doc(uid).Get(c.Request().Context())
 	if err != nil {
-		if doc.Exists() == false {
-			// err := UpdateState(new_state)
-			// if err != nil {
-			return state, err
-			// }
-		}
 		return state, err
 	}
 
@@ -105,7 +103,11 @@ func GetState(c echo.Context) (services.State, error) {
 		return state, err
 	}
 
-	return dbuser, err
+	for i, r := range dbuser.Recipes {
+		dbuser.Recipes[i].Favorite = dbuser.IsFavorite(r.Id)
+	}
+
+	return dbuser, nil
 }
 
 // getUserIDFromCookie reads, decodes, and decrypts the user ID cookie using Echo context.

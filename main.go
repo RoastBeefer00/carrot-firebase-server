@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"log"
 	"os"
+	"time"
 
-	"github.com/a-h/templ"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -16,16 +17,11 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/handlers"
 	"github.com/RoastBeefer00/carrot-firebase-server/middlewares"
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
 //go:generate templ generate
 //go:generate tailwindcss -i ./dist/main.css -o ./dist/tailwind.css
-
-func Render(ctx echo.Context, statusCode int, t templ.Component) error {
-	ctx.Response().Writer.WriteHeader(statusCode)
-	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
-	return t.Render(ctx.Request().Context(), ctx.Response().Writer)
-}
 
 func main() {
 	// --- Load configuration from .env ---
@@ -84,6 +80,15 @@ func main() {
 	}
 	defer client.Close()
 
+	// --- Start recipe cache listener ---
+	cacheCtx, cacheCancel := context.WithCancel(context.Background())
+	defer cacheCancel()
+	handlers.Cache = services.NewRecipeCache()
+	handlers.Cache.Start(cacheCtx, client)
+	if !handlers.Cache.WaitReady(10 * time.Second) {
+		log.Println("Warning: recipe cache not ready after 10s; serving with empty cache")
+	}
+
 	// Page routes
 	pages := e.Group("")
 	pages.Use(middlewares.DatabaseMiddleware(client))
@@ -101,7 +106,7 @@ func main() {
 	apis.Use(middlewares.StateMiddleware)
 
 	recipes := apis.Group("/recipes")
-	recipes.GET("/replace/:id", handlers.ReplaceRecipe)
+	recipes.POST("/replace/:id", handlers.ReplaceRecipe)
 	recipes.GET("/random", handlers.GetRandomRecipes)
 	recipes.GET("/add", handlers.AddRecipeToDatabase)
 	recipes.GET("/all", handlers.GetAllRecipes)
@@ -109,11 +114,10 @@ func main() {
 	recipes.GET("/ingredients", handlers.SearchRecipesByIngredient)
 	recipes.POST("/file", handlers.ProcessRecipeFile)
 	recipes.GET("/filter", handlers.ChangeFilter)
-	recipes.GET("/delete/:id", handlers.DeleteRecipe)
-	recipes.GET("/delete/all", handlers.DeleteAllRecipes)
+	recipes.DELETE("/all", handlers.DeleteAllRecipes)
+	recipes.DELETE("/:id", handlers.DeleteRecipe)
 	recipes.GET("/favorites", handlers.Favorites)
-	recipes.GET("/favorites/add/:id", handlers.AddFavorite)
-	recipes.GET("/favorites/delete/:id", handlers.DeleteFavorite)
+	recipes.POST("/favorites/:id", handlers.ToggleFavorite)
 
 	apis.GET("/groceries", handlers.CombineIngredients)
 

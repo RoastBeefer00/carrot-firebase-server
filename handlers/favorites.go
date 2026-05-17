@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"sync"
 
-	"cloud.google.com/go/firestore"
 	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
@@ -18,76 +16,57 @@ func Favorites(c echo.Context) error {
 	state := GetStateFromContext(c)
 	client := GetDbClient(c)
 
-	var favorites []services.Recipe
+	results := make([]services.Recipe, len(state.Favorites))
+	errs := make([]error, len(state.Favorites))
 	var wg sync.WaitGroup
-	for _, id := range state.Favorites {
+	for i, id := range state.Favorites {
 		wg.Add(1)
-		go func(id string, client *firestore.Client, ctx context.Context) {
+		go func(i int, id string) {
 			defer wg.Done()
-			var recipe services.Recipe
 			doc, err := client.Collection("recipes").Doc(id).Get(ctx)
 			if err != nil {
-				log.Printf("Failed to get recipe: %s", err)
+				errs[i] = err
 				return
 			}
-
-			err = doc.DataTo(&recipe)
-			if err != nil {
-				log.Printf("Failed to get recipe: %s", err)
+			if err := doc.DataTo(&results[i]); err != nil {
+				errs[i] = err
 				return
 			}
-
-			recipe.Favorite = true
-			favorites = append(favorites, recipe)
-		}(id, client, ctx)
+			results[i].Favorite = true
+		}(i, id)
 	}
 	wg.Wait()
 
-	header := c.Request().Header
+	favorites := make([]services.Recipe, 0, len(results))
+	for i, r := range results {
+		if errs[i] != nil {
+			log.Printf("Failed to get favorite %s: %v", state.Favorites[i], errs[i])
+			continue
+		}
+		favorites = append(favorites, r)
+	}
 
-	if header["Hx-Request"] == nil {
+	if c.Request().Header.Get("Hx-Request") == "" {
 		return Render(c, http.StatusOK, views.Index(views.Favorites(favorites), state, "favorites"))
 	}
 
 	return Render(c, http.StatusOK, views.Favorites(favorites))
 }
 
-func AddFavorite(c echo.Context) error {
+func ToggleFavorite(c echo.Context) error {
 	state := GetStateFromContext(c)
-
 	id := c.Param("id")
 
-	log.Printf(
-		"Adding favorite recipe with id %s for user %s with email %s",
-		id,
-		state.User.DisplayName,
-		state.User.Email,
-	)
-	err := Render(c, http.StatusOK, views.FavoriteButton(true, id))
-	if err != nil {
-		return err
+	if state.IsFavorite(id) {
+		log.Printf("Removing favorite %s for %s", id, state.User.Email)
+		state.DeleteFavorite(id)
+	} else {
+		log.Printf("Adding favorite %s for %s", id, state.User.Email)
+		state.AddFavorite(id)
 	}
 
-	state.AddFavorite(id)
-	return db.UpdateState(state, c)
-}
-
-func DeleteFavorite(c echo.Context) error {
-	state := GetStateFromContext(c)
-
-	id := c.Param("id")
-
-	log.Printf(
-		"Removing favorite recipe with id %s for user %s with email %s",
-		id,
-		state.User.DisplayName,
-		state.User.Email,
-	)
-	err := Render(c, http.StatusOK, views.FavoriteButton(false, id))
-	if err != nil {
+	if err := db.UpdateState(state, c); err != nil {
 		return err
 	}
-
-	state.DeleteFavorite(id)
-	return db.UpdateState(state, c)
+	return c.NoContent(http.StatusNoContent)
 }

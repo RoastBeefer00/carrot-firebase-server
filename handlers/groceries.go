@@ -13,49 +13,26 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func getIngredientQuantity(ingredient string) (string, error) {
-	r, err := regexp.Compile("^\\d*[^a-zA-Z \\*]?\\d*")
-	if err != nil {
-		return "", err
-	}
+var (
+	quantityRE    = regexp.MustCompile(`^\d*[^a-zA-Z \*]?\d*`)
+	measurementRE = regexp.MustCompile(`tbsps?|tsps?|cups?|cans?|packages?|packets?|ozs?|pounds?`)
+	itemRE        = regexp.MustCompile(`\*?[a-zA-Z].*`)
+)
 
-	match := r.FindString(ingredient)
-
-	return match, nil
+func getIngredientQuantity(ingredient string) string {
+	return quantityRE.FindString(ingredient)
 }
 
-func getIngredientMeasurement(ingredient string) (string, error) {
-	r, err := regexp.Compile("tbsps?|tsps?|cups?|cans?|packages?|packets?|ozs?|pounds?")
-	if err != nil {
-		return "", err
-	}
-
-	match := r.FindString(ingredient)
-
-	return match, nil
+func getIngredientMeasurement(ingredient string) string {
+	return measurementRE.FindString(ingredient)
 }
 
-func getIngredientItem(ingredient string) (string, error) {
-	measurement, _ := getIngredientMeasurement(ingredient)
+func getIngredientItem(ingredient string) string {
+	measurement := getIngredientMeasurement(ingredient)
 	if measurement == "" {
-		r, err := regexp.Compile("\\*?[a-zA-Z].*")
-		if err != nil {
-			return "", err
-		}
-
-		match := r.FindString(ingredient)
-		return match, nil
-	} else {
-		ing_wo_measurement := strings.ReplaceAll(ingredient, measurement, "")
-
-		r, err := regexp.Compile("\\*?[a-zA-Z].*")
-		if err != nil {
-			return "", err
-		}
-
-		match := r.FindString(ing_wo_measurement)
-		return match, nil
+		return itemRE.FindString(ingredient)
 	}
+	return itemRE.FindString(strings.ReplaceAll(ingredient, measurement, ""))
 }
 
 func CombineIngredients(c echo.Context) error {
@@ -66,16 +43,11 @@ func CombineIngredients(c echo.Context) error {
 
 	for _, recipe := range recipes {
 		for _, ing := range recipe.Ingredients {
-			quantity, _ := getIngredientQuantity(ing)
-			measurement, _ := getIngredientMeasurement(ing)
-			item, _ := getIngredientItem(ing)
-			ingredient := services.Ingredient{
-				Quantity:    quantity,
-				Measurement: measurement,
-				Item:        item,
-			}
-
-			ingredients = append(ingredients, ingredient)
+			ingredients = append(ingredients, services.Ingredient{
+				Quantity:    getIngredientQuantity(ing),
+				Measurement: getIngredientMeasurement(ing),
+				Item:        getIngredientItem(ing),
+			})
 		}
 	}
 

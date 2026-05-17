@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/RoastBeefer00/carrot-firebase-server/db"
@@ -18,6 +19,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 )
+
+func secureCookies() bool {
+	return os.Getenv("INSECURE_COOKIES") != "true"
+}
 
 // Configuration (Loaded from .env)
 var (
@@ -36,7 +41,7 @@ var (
 func HandleIndex(c echo.Context) error {
 	state := GetStateFromContext(c)
 
-	return Render(c, http.StatusOK, views.Index(views.Page(state.Recipes), state, "home"))
+	return Render(c, http.StatusOK, views.Index(views.Page(state.Recipes, state.GetFilter()), state, "home"))
 }
 
 // HandleLogin initiates the Google OAuth 2.0 flow.
@@ -58,17 +63,14 @@ func HandleLogin(c echo.Context) error {
 		Path:     "/oauth2/callback",              // Restrict cookie path to the callback URL
 		Expires:  time.Now().Add(5 * time.Minute), // State cookie should be short-lived
 		HttpOnly: true,                            // Prevent client-side JavaScript access
-		Secure:   true,                            // Uncomment in production with HTTPS
+		Secure:   secureCookies(),
 		SameSite: http.SameSiteLaxMode,            // Recommended for CSRF protection
 	}
 	c.SetCookie(stateCookie)
 	log.Printf("Set state cookie: %s", state)
 
 	// 3. Construct the Google OAuth authorization URL and redirect the user
-	authURL := OauthConfig.AuthCodeURL(
-		state,
-		oauth2.AccessTypeOffline,
-	) // AccessTypeOffline gets a refresh token (optional)
+	authURL := OauthConfig.AuthCodeURL(state)
 	return c.Redirect(http.StatusTemporaryRedirect, authURL)
 }
 
@@ -110,7 +112,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 		Path:     "/oauth2/callback",
 		Expires:  time.Unix(0, 0), // Set expiry to the past to delete it
 		HttpOnly: true,
-		Secure:   true, // Uncomment in production with HTTPS
+		Secure:   secureCookies(),
 	}
 	c.SetCookie(deleteStateCookie)
 	log.Println("State cookie removed.")
@@ -234,9 +236,9 @@ func HandleOAuth2Callback(c echo.Context) error {
 		), // Base64 encode for cookie safety
 		Path:     "/",                                // Accessible across the site
 		Expires:  time.Now().Add(7 * 24 * time.Hour), // Example: Valid for 7 days
-		HttpOnly: true,                               // Prevent client-side JavaScript access
-		Secure:   true,                               // Uncomment in production with HTTPS
-		SameSite: http.SameSiteLaxMode,               // Recommended
+		HttpOnly: true,
+		Secure:   secureCookies(),
+		SameSite: http.SameSiteLaxMode,
 	}
 	c.SetCookie(userIDCookie)
 	log.Println("Encrypted user ID cookie set.")
@@ -244,43 +246,6 @@ func HandleOAuth2Callback(c echo.Context) error {
 	// 10. Redirect the user to a protected page (e.g., profile)
 	return c.Redirect(http.StatusFound, "/")
 }
-
-// handleProfile serves a protected page showing the user ID from the cookie.
-// func handleProfile(c echo.Context) error {
-// 	userID, err := getUserIDFromCookie(c)
-// 	if err != nil {
-// 		// Cookie not found or decryption failed, redirect to login
-// 		log.Printf("Access denied: %v", err)
-// 		return c.Redirect(http.StatusSeeOther, "/") // Redirect to index which will offer login
-// 	}
-//
-// 	// User is authenticated, display their ID
-// 	return c.HTML(
-// 		http.StatusOK,
-// 		fmt.Sprintf("<h1>Welcome, User %s!</h1><p><a href=\"/logout\">Logout</a></p>", userID),
-// 	)
-// }
-
-// handleLogout removes the user ID cookie.
-// func handleLogout(c echo.Context) error {
-// 	// Delete the user ID cookie
-// 	deleteUserCookie := &http.Cookie{
-// 		Name:     userIDCookieName,
-// 		Value:    "",              // Clear the value
-// 		Path:     "/",             // Must match the path the cookie was set with
-// 		Expires:  time.Unix(0, 0), // Set expiry to the past
-// 		HttpOnly: true,
-// 		// Secure:   true, // Uncomment in production with HTTPS
-// 	}
-// 	c.SetCookie(deleteUserCookie)
-//
-// 	log.Println("User ID cookie removed. User logged out.")
-//
-// 	// Redirect to the index page
-// 	return c.Redirect(http.StatusSeeOther, "/")
-// }
-
-// --- Helper Functions (mostly unchanged, adapted getUserIDFromCookie) ---
 
 // generateRandomString generates a URL-safe random string.
 func generateRandomString(n int) (string, error) {

@@ -39,6 +39,10 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 		.button-icon { display: inline-block; }
 		.button-spinner { display: none; }
 
+		.heart-filled { display: none; }
+		.favorite-btn.is-favorited .heart-outline { display: none; }
+		.favorite-btn.is-favorited .heart-filled { display: inline-block; }
+
 		.htmx-request .button-icon { display: none; }
 		.htmx-request .button-spinner {
 			display: inline-block;

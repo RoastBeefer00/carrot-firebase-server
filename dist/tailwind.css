@@ -852,6 +852,13 @@
       }
     }
   }
+  .hover\:bg-surface1 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-surface1);
+      }
+    }
+  }
   .hover\:bg-surface2 {
     &:hover {
       @media (hover: hover) {
@@ -863,6 +870,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-lavender);
+      }
+    }
+  }
+  .hover\:text-text {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-text);
       }
     }
   }

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
+	"log"
 	"math/rand/v2"
 	"net/http"
 	"slices"
@@ -11,13 +11,11 @@ import (
 	"strings"
 	"sync"
 
-	"cloud.google.com/go/firestore"
 	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
 	"github.com/a-h/templ"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 )
 
 type IDs struct {
@@ -25,44 +23,9 @@ type IDs struct {
 }
 
 func Render(ctx echo.Context, statusCode int, t templ.Component) error {
-	ctx.Response().Writer.WriteHeader(statusCode)
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
+	ctx.Response().Writer.WriteHeader(statusCode)
 	return t.Render(ctx.Request().Context(), ctx.Response().Writer)
-}
-
-func getAll(client *firestore.Client, ctx context.Context) ([]services.Recipe, error) {
-	docs, err := client.Collection("recipes").Documents(ctx).GetAll()
-	if err != nil {
-		return nil, err
-	}
-
-	var recipes []services.Recipe
-	for _, doc := range docs {
-		var recipe services.Recipe
-		err = doc.DataTo(&recipe)
-		if err != nil {
-			return nil, err
-		}
-
-		recipes = append(recipes, recipe)
-	}
-
-	return recipes, nil
-}
-
-func filterRecipes(
-	recipes []services.Recipe,
-	function func(services.Recipe) bool,
-) []services.Recipe {
-	var filteredRecipes []services.Recipe
-
-	for _, recipe := range recipes {
-		if function(recipe) {
-			filteredRecipes = append(filteredRecipes, recipe)
-		}
-	}
-
-	return filteredRecipes
 }
 
 func GetRecipes(c echo.Context) error {
@@ -78,18 +41,11 @@ func GetRecipes(c echo.Context) error {
 }
 
 func GetAllRecipes(c echo.Context) error {
-	client := GetDbClient(c)
-	recipes, err := getAll(client, c.Request().Context())
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, recipes)
+	return c.JSON(http.StatusOK, Cache.All())
 }
 
 func SearchRecipesByName(c echo.Context) error {
 	state := GetStateFromContext(c)
-	client := GetDbClient(c)
 
 	filter := c.FormValue("search")
 	log.Printf(
@@ -99,37 +55,22 @@ func SearchRecipesByName(c echo.Context) error {
 		state.User.Email,
 	)
 
-	recipes, err := getAll(client, c.Request().Context())
-	if err != nil {
-		return err
-	}
-	var filteredRecipes []services.Recipe
-
-	filterFunc := func(recipe services.Recipe) bool {
-		if strings.Contains(strings.ToLower(recipe.Name), strings.ToLower(filter)) {
-			return true
-		}
-		return false
-	}
-
-	filteredRecipes = filterRecipes(recipes, filterFunc)
+	filteredRecipes := Cache.SearchByName(filter)
 	for i, recipe := range filteredRecipes {
 		if state.IsFavorite(recipe.Id) {
 			filteredRecipes[i].Favorite = true
 		}
 	}
-	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
-	if err != nil {
+	if err := Render(c, http.StatusOK, views.Recipes(filteredRecipes, false)); err != nil {
 		return err
 	}
 
-	state.Recipes = append(state.Recipes, filteredRecipes...)
+	state.AddRecipes(filteredRecipes)
 	return db.UpdateState(state, c)
 }
 
 func SearchRecipesByIngredient(c echo.Context) error {
 	state := GetStateFromContext(c)
-	client := GetDbClient(c)
 
 	filter := c.FormValue("search")
 	log.Printf(
@@ -139,30 +80,14 @@ func SearchRecipesByIngredient(c echo.Context) error {
 		state.User.Email,
 	)
 
-	recipes, err := getAll(client, c.Request().Context())
-	if err != nil {
-		return err
-	}
-	var filteredRecipes []services.Recipe
-
-	filterFunc := func(recipe services.Recipe) bool {
-		for _, ingredient := range recipe.Ingredients {
-			if strings.Contains(strings.ToLower(ingredient), strings.ToLower(filter)) {
-				return true
-			}
-		}
-		return false
-	}
-
-	filteredRecipes = filterRecipes(recipes, filterFunc)
+	filteredRecipes := Cache.SearchByIngredient(filter)
 	for i, recipe := range filteredRecipes {
 		if state.IsFavorite(recipe.Id) {
 			filteredRecipes[i].Favorite = true
 		}
 	}
 
-	err = Render(c, http.StatusOK, views.Recipes(filteredRecipes, false))
-	if err != nil {
+	if err := Render(c, http.StatusOK, views.Recipes(filteredRecipes, false)); err != nil {
 		return err
 	}
 	state.AddRecipes(filteredRecipes)
@@ -180,21 +105,31 @@ func ReplaceRecipe(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	if len(docs) == 0 {
+		return fmt.Errorf("no ids document found")
+	}
 	var ids IDs
-	docs[0].DataTo(&ids)
+	if err := docs[0].DataTo(&ids); err != nil {
+		return err
+	}
+	if len(ids.IDs) == 0 {
+		return fmt.Errorf("ids document empty")
+	}
 	randomId := ids.IDs[rand.IntN(len(ids.IDs))]
 	doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
 	if err != nil {
 		return err
 	}
 	var recipe services.Recipe
-	doc.DataTo(&recipe)
+	if err := doc.DataTo(&recipe); err != nil {
+		return err
+	}
 	if state.IsFavorite(recipe.Id) {
 		recipe.Favorite = true
 	}
 
 	log.Printf(
-		"Replacing recipe with id %d with recipe %s for user %s with email %s",
+		"Replacing recipe with id %s with recipe %s for user %s with email %s",
 		id,
 		recipe.Name,
 		state.User.DisplayName,
@@ -214,7 +149,6 @@ func GetRandomRecipes(c echo.Context) error {
 	state := GetStateFromContext(c)
 	client := GetDbClient(c)
 
-	var randomRecipes []services.Recipe
 	amount := c.FormValue("amount")
 	log.Printf(
 		"Fetching %s random recipes for user %s with email %s",
@@ -232,27 +166,49 @@ func GetRandomRecipes(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	if len(docs) == 0 {
+		return fmt.Errorf("no ids document found")
+	}
 	var ids IDs
-	docs[0].DataTo(&ids)
+	if err := docs[0].DataTo(&ids); err != nil {
+		return err
+	}
+	if len(ids.IDs) == 0 {
+		return fmt.Errorf("ids document empty")
+	}
 
+	if amountInt > len(ids.IDs) {
+		amountInt = len(ids.IDs)
+	}
+
+	shuffled := make([]string, len(ids.IDs))
+	copy(shuffled, ids.IDs)
+	rand.Shuffle(len(shuffled), func(i, j int) { shuffled[i], shuffled[j] = shuffled[j], shuffled[i] })
+	pick := shuffled[:amountInt]
+
+	randomRecipes := make([]services.Recipe, amountInt)
+	errs := make([]error, amountInt)
 	var wg sync.WaitGroup
-	for range amountInt {
+	for i, id := range pick {
 		wg.Add(1)
-		go func() error {
+		go func(i int, id string) {
 			defer wg.Done()
-			randomId := ids.IDs[rand.IntN(len(ids.IDs))]
-			doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
+			doc, err := client.Collection("recipes").Doc(id).Get(ctx)
 			if err != nil {
-				return err
+				errs[i] = err
+				return
 			}
-			var recipe services.Recipe
-			doc.DataTo(&recipe)
-
-			randomRecipes = append(randomRecipes, recipe)
-			return nil
-		}()
+			if err := doc.DataTo(&randomRecipes[i]); err != nil {
+				errs[i] = err
+			}
+		}(i, id)
 	}
 	wg.Wait()
+	for _, e := range errs {
+		if e != nil {
+			return e
+		}
+	}
 
 	for i, recipe := range randomRecipes {
 		if state.IsFavorite(recipe.Id) {
@@ -274,7 +230,7 @@ func DeleteRecipe(c echo.Context) error {
 	id := c.Param("id")
 
 	log.Printf(
-		"Deleting recipe with id %d for user %s with email %s",
+		"Deleting recipe with id %s for user %s with email %s",
 		id,
 		state.User.DisplayName,
 		state.User.Email,
@@ -304,9 +260,12 @@ func DeleteAllRecipes(c echo.Context) error {
 }
 
 func ChangeFilter(c echo.Context) error {
+	state := GetStateFromContext(c)
 	filter := c.QueryParam("filter")
-	fmt.Println(filter)
-	services.SetFilter(filter)
+	state.Filter = filter
+	if err := db.UpdateState(state, c); err != nil {
+		return err
+	}
 	return Render(c, http.StatusOK, views.Search(filter))
 }
 
@@ -358,7 +317,7 @@ func AddRecipeToDatabase(c echo.Context) error {
 	}
 
 	log.Printf(
-		"User %s with email %s is adding recipe %s: ",
+		"User %s with email %s is adding recipe %v",
 		state.User.DisplayName,
 		state.User.Email,
 		recipe,
@@ -373,7 +332,7 @@ func AddRecipeToDatabase(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	log.Print(doc.ID)
+	log.Println(doc.ID)
 
 	recipe.Id = doc.ID
 	_, err = client.Collection("recipes").Doc(doc.ID).Set(ctx, recipe)

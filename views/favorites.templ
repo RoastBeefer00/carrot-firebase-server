@@ -12,6 +12,23 @@ templ Favorites(favorites []services.Recipe) {
 			<h2 class="text-text font-semibold text-xl">Favorites</h2>
 			<p class="text-subtext0 text-sm">{ favoriteCount(favorites) } saved</p>
 		</div>
+		if len(favorites) > 0 {
+			<input
+				type="text"
+				placeholder="Filter favorites..."
+				class="w-full h-11 bg-surface0 text-text placeholder-subtext0 rounded-xl px-4 mb-3 text-base border border-surface1 focus:border-lavender focus:ring-2 focus:ring-lavender outline-none transition-colors"
+				_="on input
+					set q to my value.toLowerCase()
+					for card in <#recipes > div/>
+						set h to first <h2/> in card
+						if h.textContent.toLowerCase().includes(q)
+							remove .hidden from card
+						else
+							add .hidden to card
+						end
+					end"
+			/>
+		}
 		@Recipes(favorites, false)
 	</div>
 }
