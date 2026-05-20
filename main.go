@@ -118,17 +118,11 @@ func main() {
 	recipes.DELETE("/:id", handlers.DeleteRecipe)
 	recipes.GET("/favorites", handlers.Favorites)
 	recipes.POST("/favorites/:id", handlers.ToggleFavorite)
+	recipes.GET("/typeahead", handlers.TypeaheadRecipes)
+	recipes.GET("/pick/:id", handlers.PickRecipe)
 
 	apis.GET("/groceries", handlers.CombineIngredients)
 
-	ingredient := apis.Group("/ingredient")
-	ingredient.GET("/add/:id", handlers.AddIngredient)
-	ingredient.GET("/delete/:id", handlers.DeleteIngredient)
-
-	step := apis.Group("/step")
-	step.GET("/add/:id", handlers.AddStep)
-	step.GET("/delete/:id", handlers.DeleteStep)
-
-	e.Logger.Info("Starting server at localhost:8080...")
+e.Logger.Info("Starting server at localhost:8080...")
 	e.Logger.Fatal(e.Start(":8080"))
 }

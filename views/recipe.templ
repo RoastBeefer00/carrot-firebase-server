@@ -11,9 +11,10 @@ templ FavoriteButton(favorite bool, id string) {
 		hx-post={ "/api/recipes/favorites/" + id }
 		hx-swap="none"
 		type="button"
-		_="on click toggle .is-favorited on me
-		   on htmx:responseError toggle .is-favorited on me
-		   on htmx:sendError toggle .is-favorited on me"
+		x-data
+		x-on:click="$el.classList.toggle('is-favorited')"
+		x-on:htmx:response-error="$el.classList.toggle('is-favorited')"
+		x-on:htmx:send-error="$el.classList.toggle('is-favorited')"
 		class={ "favorite-btn inline-flex items-center justify-center w-10 h-10 rounded-xl text-green hover:bg-green/15 active:scale-[0.95] transition-all hover:cursor-pointer", templ.KV("is-favorited", favorite) }
 	>
 		<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" class="heart-outline">
@@ -37,21 +38,21 @@ templ Recipe(recipe services.Recipe, oob bool) {
 	<div
 		id={ "recipe-" + recipe.Id }
 		class="bg-surface0 rounded-2xl p-4 border border-surface1"
+		x-data="{ open: false }"
 		if oob {
 			hx-swap-oob="beforeend:#recipes"
 		}
 	>
 		<div class="flex items-center gap-2 mb-1">
 			<button
-				id={ "toggle-recipe-" + recipe.Id }
-				_="on click toggle .rotate-180 on .chevron in me"
+				x-on:click="open = !open"
 				class="flex-1 flex items-center justify-between gap-2 text-left min-w-0 hover:cursor-pointer"
 			>
 				<div class="min-w-0">
 					<h2 class="text-text font-semibold text-lg leading-snug truncate">{ recipe.Name }</h2>
 					<span class="text-subtext0 text-sm">{ recipe.Time }</span>
 				</div>
-				<svg class="chevron shrink-0 text-subtext0 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+				<svg class="shrink-0 text-subtext0 transition-transform duration-200" x-bind:class="{ 'rotate-180': open }" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
 					<path fill="currentColor" d="M16.59 8.59L12 13.17L7.41 8.59L6 10l6 6l6-6z"></path>
 				</svg>
 			</button>
@@ -88,8 +89,8 @@ templ Recipe(recipe services.Recipe, oob bool) {
 			</div>
 		</div>
 		<div
-			_={ "on click from #toggle-recipe-" + recipe.Id + " toggle .hidden" }
-			class="mt-3 pt-3 border-t border-surface1 hidden"
+			x-show="open"
+			class="mt-3 pt-3 border-t border-surface1"
 		>
 			<div class="mb-4">
 				<h3 class="text-green text-sm font-semibold uppercase tracking-wide mb-2">Ingredients</h3>

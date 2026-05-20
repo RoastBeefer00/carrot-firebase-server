@@ -4,31 +4,26 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-var doubledQuantity = false
-
-func toggleQuantity() {
-	doubledQuantity = !doubledQuantity
-}
-
 templ Groceries(ingredients []services.Ingredient) {
 	<div
 		class="flex flex-col h-full w-full bg-surface0 rounded-2xl overflow-hidden"
-		_="on click from elsewhere remove me then toggle .hidden on #groceries"
+		x-data="{ doubled: false }"
+		x-on:click.outside="document.getElementById('groceries').classList.add('hidden')"
 	>
 		<div class="flex items-center justify-between gap-2 px-4 py-3 bg-mantle border-b border-surface1 shrink-0">
 			<h2 class="text-text font-semibold text-lg">Grocery List</h2>
 			<div class="flex items-center gap-2">
 				<button
 					class="px-3 py-1.5 text-sm font-medium rounded-lg bg-green text-crust hover:opacity-90 active:scale-[0.98] transition-all hover:cursor-pointer"
-					_="on click toggle .hidden on .qty-base in #ingredients then toggle .hidden on .qty-alt in #ingredients then toggle .hidden on .lbl-2x in me then toggle .hidden on .lbl-4x in me"
+					x-on:click="doubled = !doubled"
 				>
-					<span class="lbl-2x">2x</span>
-					<span class="lbl-4x hidden">4x</span>
+					<span x-show="!doubled">2x</span>
+					<span x-show="doubled">4x</span>
 				</button>
 				<button
 					type="button"
 					aria-label="Close grocery list"
-					_="on click add .hidden to #groceries"
+					x-on:click="document.getElementById('groceries').classList.add('hidden')"
 					class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-subtext0 hover:text-text hover:bg-surface1 active:scale-[0.95] transition-all hover:cursor-pointer"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
@@ -45,7 +40,7 @@ templ Groceries(ingredients []services.Ingredient) {
 				}}
 				<label class="flex items-start gap-3 py-2 border-b border-surface1 last:border-0 cursor-pointer">
 					<input type="checkbox" class="mt-0.5 accent-lavender shrink-0"/>
-					<span class="qty-base text-text text-sm">
+					<span class="text-text text-sm" x-show="!doubled">
 						if base > 0 {
 							{ services.FormatFraction(base) + " " + ingredient.Measurement + " " + ingredient.Item }
 						} else {
@@ -53,11 +48,11 @@ templ Groceries(ingredients []services.Ingredient) {
 						}
 					</span>
 					if doubled > 0 {
-						<span class="qty-alt text-text text-sm hidden">
+						<span class="text-text text-sm" x-show="doubled">
 							{ services.FormatFraction(doubled) + " " + ingredient.Measurement + " " + ingredient.Item }
 						</span>
 					} else {
-						<span class="qty-alt text-text text-sm hidden">
+						<span class="text-text text-sm" x-show="doubled">
 							{ ingredient.Measurement + " " + ingredient.Item }
 						</span>
 					}

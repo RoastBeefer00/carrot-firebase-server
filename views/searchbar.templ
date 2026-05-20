@@ -1,26 +1,33 @@
 package views
 
-func getFilter(t string) string {
-	return "Search by " + t + "..."
-}
-
 templ Search(t string) {
-	<form
-		if t=="name" {
-			hx-get="/api/recipes/name"
-		} else {
-			hx-get="/api/recipes/ingredients"
-		}
-		hx-target="#recipes"
-		hx-swap="beforeend"
-	>
-		<input
-			class="w-full h-11 bg-surface0 text-text placeholder-subtext0 rounded-xl px-4 text-base border border-surface1 focus:border-lavender focus:ring-2 focus:ring-lavender outline-none transition-colors"
-			type="text"
-			name="search"
-			placeholder={ getFilter(t) }
-			hx-trigger="keyup[keyCode==13]"
-			_="on htmx:afterRequest set my value to ''"
-		/>
-	</form>
+	<div class="relative">
+		<form
+			if t=="name" {
+				hx-get="/api/recipes/name"
+			} else {
+				hx-get="/api/recipes/ingredients"
+			}
+			x-bind:hx-get="filter === 'name' ? '/api/recipes/name' : '/api/recipes/ingredients'"
+			hx-target="#recipes"
+			hx-swap="beforeend"
+			hx-trigger="submit"
+			x-data
+			x-on:htmx:after-request="if ($event.detail.elt === $el) { document.getElementById('search-input').value = ''; document.getElementById('typeahead-list').innerHTML = ''; }"
+		>
+			<input
+				id="search-input"
+				class="w-full h-11 bg-surface0 text-text placeholder-subtext0 rounded-xl px-4 text-base border border-surface1 focus:border-lavender focus:ring-2 focus:ring-lavender outline-none transition-colors"
+				type="text"
+				name="search"
+				x-bind:placeholder="filter === 'name' ? 'Search by name...' : 'Search by ingredients...'"
+				autocomplete="off"
+				x-bind:hx-get="'/api/recipes/typeahead?filter=' + filter"
+				hx-target="#typeahead-list"
+				hx-swap="outerHTML"
+				hx-trigger="keyup changed delay:150ms[event.key!='Enter'], focus"
+			/>
+		</form>
+		@TypeaheadList(nil)
+	</div>
 }

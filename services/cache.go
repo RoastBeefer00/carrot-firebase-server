@@ -3,11 +3,11 @@ package services
 import (
 	"context"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"github.com/sahilm/fuzzy"
 	"google.golang.org/api/iterator"
 )
 
@@ -97,31 +97,61 @@ func (c *RecipeCache) All() []Recipe {
 	return out
 }
 
+type nameSource []Recipe
+
+func (s nameSource) String(i int) string { return s[i].Name }
+func (s nameSource) Len() int            { return len(s) }
+
 func (c *RecipeCache) SearchByName(q string) []Recipe {
-	q = strings.ToLower(q)
+	if q == "" {
+		return nil
+	}
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	var out []Recipe
-	for _, r := range c.recipes {
-		if strings.Contains(strings.ToLower(r.Name), q) {
-			out = append(out, r)
-		}
+	matches := fuzzy.FindFrom(q, nameSource(c.recipes))
+	out := make([]Recipe, 0, len(matches))
+	for _, m := range matches {
+		out = append(out, c.recipes[m.Index])
 	}
 	return out
 }
 
 func (c *RecipeCache) SearchByIngredient(q string) []Recipe {
-	q = strings.ToLower(q)
+	if q == "" {
+		return nil
+	}
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	var out []Recipe
-	for _, r := range c.recipes {
+	type ref struct{ recipeIdx int }
+	var lines []string
+	var refs []ref
+	for ri, r := range c.recipes {
 		for _, ing := range r.Ingredients {
-			if strings.Contains(strings.ToLower(ing), q) {
-				out = append(out, r)
-				break
-			}
+			lines = append(lines, ing)
+			refs = append(refs, ref{ri})
 		}
 	}
+	matches := fuzzy.Find(q, lines)
+	seen := make(map[int]struct{})
+	out := make([]Recipe, 0, len(matches))
+	for _, m := range matches {
+		ri := refs[m.Index].recipeIdx
+		if _, ok := seen[ri]; ok {
+			continue
+		}
+		seen[ri] = struct{}{}
+		out = append(out, c.recipes[ri])
+	}
 	return out
+}
+
+func (c *RecipeCache) GetByID(id string) (Recipe, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	for _, r := range c.recipes {
+		if r.Id == id {
+			return r, true
+		}
+	}
+	return Recipe{}, false
 }

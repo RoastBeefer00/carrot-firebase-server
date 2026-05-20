@@ -6,7 +6,6 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -56,6 +55,10 @@ func SearchRecipesByName(c echo.Context) error {
 	)
 
 	filteredRecipes := Cache.SearchByName(filter)
+	if len(filteredRecipes) == 0 {
+		c.Response().Header().Set("HX-Reswap", "none")
+		return c.NoContent(http.StatusOK)
+	}
 	for i, recipe := range filteredRecipes {
 		if state.IsFavorite(recipe.Id) {
 			filteredRecipes[i].Favorite = true
@@ -81,6 +84,10 @@ func SearchRecipesByIngredient(c echo.Context) error {
 	)
 
 	filteredRecipes := Cache.SearchByIngredient(filter)
+	if len(filteredRecipes) == 0 {
+		c.Response().Header().Set("HX-Reswap", "none")
+		return c.NoContent(http.StatusOK)
+	}
 	for i, recipe := range filteredRecipes {
 		if state.IsFavorite(recipe.Id) {
 			filteredRecipes[i].Favorite = true
@@ -91,6 +98,45 @@ func SearchRecipesByIngredient(c echo.Context) error {
 		return err
 	}
 	state.AddRecipes(filteredRecipes)
+	return db.UpdateState(state, c)
+}
+
+func TypeaheadRecipes(c echo.Context) error {
+	state := GetStateFromContext(c)
+	q := strings.TrimSpace(c.QueryParam("search"))
+	if q == "" {
+		return Render(c, http.StatusOK, views.TypeaheadList(nil))
+	}
+	filter := c.QueryParam("filter")
+	if filter == "" {
+		filter = state.Filter
+	}
+	var matches []services.Recipe
+	if filter == "ingredients" {
+		matches = Cache.SearchByIngredient(q)
+	} else {
+		matches = Cache.SearchByName(q)
+	}
+	if len(matches) > 6 {
+		matches = matches[:6]
+	}
+	return Render(c, http.StatusOK, views.TypeaheadList(matches))
+}
+
+func PickRecipe(c echo.Context) error {
+	state := GetStateFromContext(c)
+	id := c.Param("id")
+	recipe, ok := Cache.GetByID(id)
+	if !ok {
+		return c.NoContent(http.StatusNotFound)
+	}
+	if state.IsFavorite(recipe.Id) {
+		recipe.Favorite = true
+	}
+	if err := Render(c, http.StatusOK, views.PickResponse(recipe)); err != nil {
+		return err
+	}
+	state.AddRecipes([]services.Recipe{recipe})
 	return db.UpdateState(state, c)
 }
 
@@ -282,38 +328,20 @@ func AddRecipeToDatabase(c echo.Context) error {
 		return err
 	}
 
-	ingredients := make(map[string]string)
-	steps := make(map[string]string)
-	for key, value := range formParams {
-		if strings.HasPrefix(key, "name") {
-			recipe.Name = value[0]
-		} else if strings.HasPrefix(key, "time") {
-			recipe.Time = value[0]
-		} else if strings.HasPrefix(key, "ingredient") {
-			ingredients[key] = value[0]
-		} else if strings.HasPrefix(key, "step") {
-			steps[key] = value[0]
+	recipe.Name = formParams.Get("name")
+	recipe.Time = formParams.Get("time")
+
+	for _, ing := range formParams["ingredient[]"] {
+		if strings.TrimSpace(ing) == "" {
+			continue
 		}
+		recipe.Ingredients = append(recipe.Ingredients, services.NormalizeIngredient(ing))
 	}
-
-	ingKeys := make([]string, 0, len(ingredients))
-	for k := range ingredients {
-		ingKeys = append(ingKeys, k)
-	}
-	sort.Strings(ingKeys)
-
-	for _, k := range ingKeys {
-		recipe.Ingredients = append(recipe.Ingredients, services.NormalizeIngredient(ingredients[k]))
-	}
-
-	stepKeys := make([]string, 0, len(steps))
-	for k := range steps {
-		stepKeys = append(stepKeys, k)
-	}
-	sort.Strings(stepKeys)
-
-	for _, k := range stepKeys {
-		recipe.Steps = append(recipe.Steps, steps[k])
+	for _, step := range formParams["step[]"] {
+		if strings.TrimSpace(step) == "" {
+			continue
+		}
+		recipe.Steps = append(recipe.Steps, step)
 	}
 
 	log.Printf(

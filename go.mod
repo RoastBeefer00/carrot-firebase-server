@@ -10,6 +10,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/labstack/gommon v0.4.2
+	github.com/sahilm/fuzzy v0.1.2
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/time v0.5.0
 	google.golang.org/api v0.167.0

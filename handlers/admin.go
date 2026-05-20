@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"slices"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -37,33 +36,6 @@ func AdminHandler(c echo.Context) error {
 	}
 }
 
-func AddIngredient(c echo.Context) error {
-	param := c.Param("id")
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		return err
-	}
-
-	return Render(c, http.StatusOK, views.Ingredient(id))
-}
-
-func AddStep(c echo.Context) error {
-	param := c.Param("id")
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		return err
-	}
-
-	return Render(c, http.StatusOK, views.Step(id))
-}
-
-func DeleteIngredient(c echo.Context) error {
-	return c.NoContent(200)
-}
-
-func DeleteStep(c echo.Context) error {
-	return c.NoContent(200)
-}
 
 func ProcessRecipeFile(c echo.Context) error {
 	projectID := "r-j-magenta-carrot-42069"

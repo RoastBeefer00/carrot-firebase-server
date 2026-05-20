@@ -4,14 +4,12 @@ import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
 templ Page(recipes []services.Recipe, filter string) {
 	<div class="min-h-[100dvh] w-full px-3 pt-4 pb-6">
-		<div class="flex gap-2 mb-3">
+		<div class="flex gap-2 mb-3" x-data={ "{ filter: '" + filter + "' }" }>
 			<div id="search" class="flex-1">
 				@Search(filter)
 			</div>
 			<select
-				hx-get="/api/recipes/filter"
-				hx-target="#search"
-				hx-swap="innerHTML"
+				x-on:change="filter = $event.target.value"
 				name="filter"
 				class="bg-surface0 border border-surface1 text-text text-sm rounded-xl px-3 outline-none focus:ring-2 focus:ring-lavender shrink-0 hover:cursor-pointer"
 			>
@@ -25,7 +23,8 @@ templ Page(recipes []services.Recipe, filter string) {
 				hx-target="#groceries"
 				hx-swap="innerHTML"
 				type="button"
-				_="on click toggle .hidden on #groceries"
+				x-data
+			x-on:click="document.getElementById('groceries').classList.toggle('hidden')"
 				class="inline-flex items-center justify-center gap-2 h-11 px-4 bg-lavender text-crust text-base font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all hover:cursor-pointer flex-1 sm:flex-none"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
