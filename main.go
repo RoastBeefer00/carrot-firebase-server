@@ -5,8 +5,10 @@ import (
 	"encoding/base64"
 	"log"
 	"os"
+	"strings"
 	"time"
 
+	charmlog "github.com/charmbracelet/log"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -23,11 +25,28 @@ import (
 //go:generate templ generate
 //go:generate tailwindcss -i ./dist/main.css -o ./dist/tailwind.css
 
+type writeFunc func([]byte) (int, error)
+
+func (f writeFunc) Write(p []byte) (int, error) { return f(p) }
+
 func main() {
 	// --- Load configuration from .env ---
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("No .env file found, falling back to environment variables")
+	}
+
+	dev := os.Getenv("APP_ENV") == "development"
+	if dev {
+		charmlog.SetReportTimestamp(true)
+		charmlog.SetTimeFormat(time.Kitchen)
+		charmlog.SetLevel(charmlog.DebugLevel)
+		bridge := writeFunc(func(p []byte) (int, error) {
+			charmlog.Info(strings.TrimRight(string(p), "\n"))
+			return len(p), nil
+		})
+		log.SetFlags(0)
+		log.SetOutput(bridge)
 	}
 
 	// --- Read environment variables ---
@@ -65,9 +84,30 @@ func main() {
 	}
 
 	e.Static("/dist", "dist")
-	// Little bit of middlewares for housekeeping
-	e.Use(middleware.Logger())
 	e.Pre(middleware.RemoveTrailingSlash())
+	if dev {
+		e.Logger.SetOutput(writeFunc(func(p []byte) (int, error) {
+			charmlog.Info(strings.TrimRight(string(p), "\n"))
+			return len(p), nil
+		}))
+		e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+			LogStatus:  true,
+			LogURI:     true,
+			LogMethod:  true,
+			LogLatency: true,
+			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+				charmlog.Info("req",
+					"method", v.Method,
+					"uri", v.URI,
+					"status", v.Status,
+					"latency", v.Latency.Round(time.Millisecond),
+				)
+				return nil
+			},
+		}))
+	} else {
+		e.Use(middleware.Logger())
+	}
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(

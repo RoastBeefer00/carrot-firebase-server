@@ -522,6 +522,9 @@
   .bg-surface1 {
     background-color: var(--color-surface1);
   }
+  .p-1 {
+    padding: calc(var(--spacing) * 1);
+  }
   .p-3 {
     padding: calc(var(--spacing) * 3);
   }
