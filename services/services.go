@@ -11,14 +11,6 @@ type State struct {
     User User
     Recipes []Recipe
     Favorites []string
-    Filter string
-}
-
-func (s *State) GetFilter() string {
-    if s.Filter == "" {
-        return "name"
-    }
-    return s.Filter
 }
 
 type User struct {

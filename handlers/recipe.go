@@ -43,6 +43,38 @@ func GetAllRecipes(c echo.Context) error {
 	return c.JSON(http.StatusOK, Cache.All())
 }
 
+func SearchRecipes(c echo.Context) error {
+	state := GetStateFromContext(c)
+
+	q := c.FormValue("search")
+	filter := c.FormValue("filter")
+	log.Printf(
+		"Searching for recipes with filter=%s q=%s for user %s",
+		filter, q, state.User.DisplayName,
+	)
+
+	var filteredRecipes []services.Recipe
+	if filter == "ingredients" {
+		filteredRecipes = Cache.SearchByIngredient(q)
+	} else {
+		filteredRecipes = Cache.SearchByName(q)
+	}
+	if len(filteredRecipes) == 0 {
+		c.Response().Header().Set("HX-Reswap", "none")
+		return c.NoContent(http.StatusOK)
+	}
+	for i, recipe := range filteredRecipes {
+		if state.IsFavorite(recipe.Id) {
+			filteredRecipes[i].Favorite = true
+		}
+	}
+	if err := Render(c, http.StatusOK, views.Recipes(filteredRecipes, false)); err != nil {
+		return err
+	}
+	state.AddRecipes(filteredRecipes)
+	return db.UpdateState(state, c)
+}
+
 func SearchRecipesByName(c echo.Context) error {
 	state := GetStateFromContext(c)
 
@@ -102,14 +134,13 @@ func SearchRecipesByIngredient(c echo.Context) error {
 }
 
 func TypeaheadRecipes(c echo.Context) error {
-	state := GetStateFromContext(c)
 	q := strings.TrimSpace(c.QueryParam("search"))
 	if q == "" {
 		return Render(c, http.StatusOK, views.TypeaheadList(nil))
 	}
 	filter := c.QueryParam("filter")
 	if filter == "" {
-		filter = state.Filter
+		filter = "name"
 	}
 	var matches []services.Recipe
 	if filter == "ingredients" {
@@ -305,15 +336,6 @@ func DeleteAllRecipes(c echo.Context) error {
 	return db.UpdateState(state, c)
 }
 
-func ChangeFilter(c echo.Context) error {
-	state := GetStateFromContext(c)
-	filter := c.QueryParam("filter")
-	state.Filter = filter
-	if err := db.UpdateState(state, c); err != nil {
-		return err
-	}
-	return Render(c, http.StatusOK, views.Search(filter))
-}
 
 func AddRecipeToDatabase(c echo.Context) error {
 	recipe := services.Recipe{}

@@ -1,21 +1,18 @@
 package handlers
 
 import (
-	"context"
-	"flag"
-	"fmt"
+	"encoding/base64"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"slices"
 
+	anthropic "github.com/anthropics/anthropic-sdk-go"
 	"github.com/labstack/echo/v4"
 
-	documentai "cloud.google.com/go/documentai/apiv1"
-	"cloud.google.com/go/documentai/apiv1/documentaipb"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 	"github.com/RoastBeefer00/carrot-firebase-server/views"
-	"google.golang.org/api/option"
 )
 
 func AdminHandler(c echo.Context) error {
@@ -36,25 +33,7 @@ func AdminHandler(c echo.Context) error {
 	}
 }
 
-
 func ProcessRecipeFile(c echo.Context) error {
-	projectID := "r-j-magenta-carrot-42069"
-	location := "us"
-	// Create a Processor before running sample
-	processorID := "a4df3576712f1f6d"
-	mimeType := "application/pdf"
-	flag.Parse()
-
-	ctx := context.Background()
-
-	endpoint := "us-documentai.googleapis.com:443"
-	client, err := documentai.NewDocumentProcessorClient(ctx, option.WithEndpoint(endpoint))
-	if err != nil {
-		fmt.Println(fmt.Errorf("error creating Document AI client: %w", err))
-	}
-	defer client.Close()
-
-	// Get file from form input "file"
 	file, err := c.FormFile("file")
 	if err != nil {
 		return err
@@ -69,41 +48,75 @@ func ProcessRecipeFile(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Unable to read file")
 	}
+	b64 := base64.StdEncoding.EncodeToString(data)
 
-	req := &documentaipb.ProcessRequest{
-		Name: fmt.Sprintf(
-			"projects/%s/locations/%s/processors/%s",
-			projectID,
-			location,
-			processorID,
-		),
-		Source: &documentaipb.ProcessRequest_RawDocument{
-			RawDocument: &documentaipb.RawDocument{
-				Content:  []byte(data),
-				MimeType: mimeType,
+	mimeType := file.Header.Get("Content-Type")
+	if mimeType == "" {
+		mimeType = http.DetectContentType(data)
+	}
+
+	var fileBlock anthropic.ContentBlockParamUnion
+	switch mimeType {
+	case "image/jpeg", "image/png", "image/gif", "image/webp":
+		fileBlock = anthropic.NewImageBlockBase64(mimeType, b64)
+	default:
+		fileBlock = anthropic.NewDocumentBlock(anthropic.Base64PDFSourceParam{Data: b64})
+	}
+
+	client := anthropic.NewClient()
+	msg, err := client.Messages.New(c.Request().Context(), anthropic.MessageNewParams{
+		Model:     anthropic.ModelClaudeHaiku4_5,
+		MaxTokens: 4096,
+		Tools: []anthropic.ToolUnionParam{
+			{
+				OfTool: &anthropic.ToolParam{
+					Name:        "submit_recipe",
+					Description: anthropic.String("Submit the extracted recipe fields."),
+					InputSchema: anthropic.ToolInputSchemaParam{
+						Properties: map[string]any{
+							"name": map[string]any{
+								"type":        "string",
+								"description": "Recipe name",
+							},
+							"time": map[string]any{
+								"type":        "string",
+								"description": "Total cooking time, e.g. '30 min'",
+							},
+							"ingredients": map[string]any{
+								"type":  "array",
+								"items": map[string]any{"type": "string"},
+							},
+							"steps": map[string]any{
+								"type":  "array",
+								"items": map[string]any{"type": "string"},
+							},
+						},
+						Required: []string{"name", "time", "ingredients", "steps"},
+					},
+				},
 			},
 		},
-	}
-	resp, err := client.ProcessDocument(ctx, req)
+		ToolChoice: anthropic.ToolChoiceParamOfTool("submit_recipe"),
+		Messages: []anthropic.MessageParam{
+			anthropic.NewUserMessage(
+				fileBlock,
+				anthropic.NewTextBlock("Extract the recipe from this file. Return each ingredient and each step as a separate array element. Use the submit_recipe tool."),
+			),
+		},
+	})
 	if err != nil {
-		fmt.Println(fmt.Errorf("processDocument: %w", err))
+		log.Printf("Anthropic API error: %v", err)
+		return c.String(http.StatusInternalServerError, "Failed to extract recipe")
 	}
 
-	// Handle the results.
-	document := resp.GetDocument()
-	recipe := services.Recipe{}
-	for _, e := range document.Entities {
-		if e.Type == "Name" {
-			recipe.Name = e.MentionText
-		}
-		if e.Type == "total_time" {
-			recipe.Time = e.MentionText
-		}
-		if e.Type == "Ingredient" {
-			recipe.Ingredients = append(recipe.Ingredients, e.MentionText)
-		}
-		if e.Type == "Step" {
-			recipe.Steps = append(recipe.Steps, e.MentionText)
+	var recipe services.Recipe
+	for _, block := range msg.Content {
+		if block.Type == "tool_use" {
+			if err := json.Unmarshal(block.Input, &recipe); err != nil {
+				log.Printf("Failed to unmarshal recipe: %v", err)
+				return c.String(http.StatusInternalServerError, "Failed to parse extracted recipe")
+			}
+			break
 		}
 	}
 

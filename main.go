@@ -64,6 +64,9 @@ func main() {
 			"Missing required environment variables (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URL, ENCRYPTION_KEY_BASE64)",
 		)
 	}
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		log.Fatal("Missing required environment variable: ANTHROPIC_API_KEY")
+	}
 
 	// --- Decode Encryption Key ---
 	db.EncryptionKey, err = base64.URLEncoding.DecodeString(handlers.EncryptionKeyBase64)
@@ -150,11 +153,11 @@ func main() {
 	recipes.GET("/random", handlers.GetRandomRecipes)
 	recipes.GET("/add", handlers.AddRecipeToDatabase)
 	recipes.GET("/all", handlers.GetAllRecipes)
+	recipes.GET("/search", handlers.SearchRecipes)
 	recipes.GET("/name", handlers.SearchRecipesByName)
 	recipes.GET("/ingredients", handlers.SearchRecipesByIngredient)
 	recipes.POST("/file", handlers.ProcessRecipeFile)
-	recipes.GET("/filter", handlers.ChangeFilter)
-	recipes.DELETE("/all", handlers.DeleteAllRecipes)
+recipes.DELETE("/all", handlers.DeleteAllRecipes)
 	recipes.DELETE("/:id", handlers.DeleteRecipe)
 	recipes.GET("/favorites", handlers.Favorites)
 	recipes.POST("/favorites/:id", handlers.ToggleFavorite)

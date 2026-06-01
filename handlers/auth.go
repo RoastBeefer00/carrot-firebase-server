@@ -41,7 +41,7 @@ var (
 func HandleIndex(c echo.Context) error {
 	state := GetStateFromContext(c)
 
-	return Render(c, http.StatusOK, views.Index(views.Page(state.Recipes, state.GetFilter()), state, "home"))
+	return Render(c, http.StatusOK, views.Index(views.Page(state.Recipes), state, "home"))
 }
 
 // HandleLogin initiates the Google OAuth 2.0 flow.

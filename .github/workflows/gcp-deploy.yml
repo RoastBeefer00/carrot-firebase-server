@@ -2,7 +2,7 @@ name: Build, Push to GCR, and Deploy to Cloud Run
 
 on:
   push:
-    branches: [ "main" ] # Or your main development branch
+    branches: ["main"] # Or your main development branch
 
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }} # Your Google Cloud Project ID (stored as a GitHub secret)
@@ -60,6 +60,7 @@ jobs:
             GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest
             REDIRECT_URL=REDIRECT_URL:latest
             ENCRYPTION_KEY_BASE64=ENCRYPTION_KEY_BASE64:latest
+            ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest
           # Optional: Add environment variables
           # env_vars: |
           #   API_KEY: ${{ secrets.API_KEY }}
