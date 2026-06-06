@@ -19,7 +19,7 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 		</head>
 		<body id="body" class="bg-base pb-16 sm:pb-0 text-base">
 			@nav(state.User, currentPage)
-			<div id="page">
+			<div id="page" class="max-w-3xl mx-auto">
 				@page
 			</div>
 			<div
