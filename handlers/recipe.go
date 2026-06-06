@@ -368,7 +368,11 @@ func GetWifeRecipes(c echo.Context) error {
 	}
 
 	log.Printf("Serving %d recipes for wife (%s) to user %s", len(wife.Recipes), wife.User.Email, state.User.Email)
-	return Render(c, http.StatusOK, views.Recipes(wife.Recipes, false))
+	if err := Render(c, http.StatusOK, views.Recipes(wife.Recipes, false)); err != nil {
+		return err
+	}
+	state.AddRecipes(wife.Recipes)
+	return db.UpdateState(state, c)
 }
 
 func AddRecipeToDatabase(c echo.Context) error {
