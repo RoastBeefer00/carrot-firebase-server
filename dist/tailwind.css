@@ -32,6 +32,7 @@
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --color-base: #1e1e2e;
+    --color-pink: #f5c2e7;
     --color-red: #f38ba8;
     --color-green: #a6e3a1;
     --color-sky: #89dceb;
@@ -515,6 +516,9 @@
   }
   .bg-mantle {
     background-color: var(--color-mantle);
+  }
+  .bg-pink {
+    background-color: var(--color-pink);
   }
   .bg-red {
     background-color: var(--color-red);

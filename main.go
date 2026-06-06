@@ -163,6 +163,7 @@ recipes.DELETE("/all", handlers.DeleteAllRecipes)
 	recipes.POST("/favorites/:id", handlers.ToggleFavorite)
 	recipes.GET("/typeahead", handlers.TypeaheadRecipes)
 	recipes.GET("/pick/:id", handlers.PickRecipe)
+	recipes.GET("/wife", handlers.GetWifeRecipes)
 
 	apis.GET("/groceries", handlers.CombineIngredients)
 

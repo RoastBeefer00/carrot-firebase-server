@@ -337,6 +337,40 @@ func DeleteAllRecipes(c echo.Context) error {
 }
 
 
+func GetWifeRecipes(c echo.Context) error {
+	state := GetStateFromContext(c)
+
+	if state.User.Email != "roastbeefer000@gmail.com" {
+		return c.NoContent(http.StatusForbidden)
+	}
+
+	client := GetDbClient(c)
+	ctx := c.Request().Context()
+
+	docs, err := client.Collection("users").
+		Where("User.Email", "==", "rjudes123@gmail.com").
+		Limit(1).Documents(ctx).GetAll()
+	if err != nil {
+		return err
+	}
+	if len(docs) == 0 {
+		c.Response().Header().Set("HX-Reswap", "none")
+		return c.NoContent(http.StatusOK)
+	}
+
+	var wife services.State
+	if err := docs[0].DataTo(&wife); err != nil {
+		return err
+	}
+
+	for i, r := range wife.Recipes {
+		wife.Recipes[i].Favorite = wife.IsFavorite(r.Id)
+	}
+
+	log.Printf("Serving %d recipes for wife (%s) to user %s", len(wife.Recipes), wife.User.Email, state.User.Email)
+	return Render(c, http.StatusOK, views.Recipes(wife.Recipes, false))
+}
+
 func AddRecipeToDatabase(c echo.Context) error {
 	recipe := services.Recipe{}
 	state := GetStateFromContext(c)
