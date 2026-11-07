@@ -23,11 +23,7 @@ func AdminHandler(c echo.Context) error {
 	log.Println(header["Hx-Request"] == nil)
 
 	if slices.Contains(services.Admins, state.User.Email) {
-		if header["Hx-Request"] == nil {
-			return Render(c, http.StatusOK, views.Index(views.Admin(), state, "admin"))
-		} else {
-			return Render(c, http.StatusOK, views.Admin())
-		}
+		return Render(c, http.StatusOK, views.Index(views.AdminPage(shellData(state, "", ""))))
 	} else {
 		return c.NoContent(403)
 	}

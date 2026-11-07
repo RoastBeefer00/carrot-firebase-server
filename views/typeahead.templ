@@ -10,12 +10,8 @@ templ TypeaheadList(recipes []services.Recipe) {
 					<li>
 						<button
 							type="button"
-							hx-get={ "/api/recipes/pick/" + r.Id }
-							hx-target="#recipes"
-							hx-swap="beforeend"
-							x-data
-						x-on:htmx:after-request="document.getElementById('search-input').value = ''; document.getElementById('typeahead-list').innerHTML = '';"
-							class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-lg hover:bg-surface1 active:bg-surface2 transition-colors hover:cursor-pointer"
+							hx-post={ "/api/recipes/pick/" + r.Id }
+							class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-lg hover:bg-surface1 active:bg-surface2 transition-colors"
 						>
 							<span class="text-text text-sm truncate">{ r.Name }</span>
 							<span class="text-subtext0 text-xs shrink-0">{ r.Time }</span>
@@ -25,8 +21,4 @@ templ TypeaheadList(recipes []services.Recipe) {
 			</ul>
 		}
 	</div>
-}
-
-templ PickResponse(r services.Recipe) {
-	@Recipe(r, false)
 }

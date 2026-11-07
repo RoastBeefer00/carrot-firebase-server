@@ -15,7 +15,6 @@ import (
 
 	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
-	"github.com/RoastBeefer00/carrot-firebase-server/views"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 )
@@ -37,13 +36,6 @@ var (
 	oauthStateCookieName = "oauthstate"
 )
 
-// handleIndex serves a simple page with a login link.
-func HandleIndex(c echo.Context) error {
-	state := GetStateFromContext(c)
-
-	return Render(c, http.StatusOK, views.Index(views.Page(state.Recipes, state.User), state, "home"))
-}
-
 // HandleLogin initiates the Google OAuth 2.0 flow.
 func HandleLogin(c echo.Context) error {
 	// 1. Generate a random state parameter
@@ -64,7 +56,7 @@ func HandleLogin(c echo.Context) error {
 		Expires:  time.Now().Add(5 * time.Minute), // State cookie should be short-lived
 		HttpOnly: true,                            // Prevent client-side JavaScript access
 		Secure:   secureCookies(),
-		SameSite: http.SameSiteLaxMode,            // Recommended for CSRF protection
+		SameSite: http.SameSiteLaxMode, // Recommended for CSRF protection
 	}
 	c.SetCookie(stateCookie)
 	log.Printf("Set state cookie: %s", state)

@@ -1,0 +1,105 @@
+package views
+
+import (
+	"strconv"
+
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+)
+
+// PlanPage lays out the week: a row (phone) or column (desktop) per day, and a
+// tray of recipes that don't have a day yet. Meals move between days by
+// dragging (see dist/app.js) or with the day buttons on unplanned meals.
+templ PlanPage(s ShellData, d PlanData) {
+	@Shell(s) {
+		@viewCtx("plan", "", "")
+		<main class="mx-auto w-full max-w-[1400px] px-4 pt-5 pb-10 flex flex-col gap-4">
+			<div class="flex flex-wrap items-end justify-between gap-3">
+				<div>
+					<h1 class="text-2xl font-semibold tracking-tight text-text">This week</h1>
+					<p class="text-sm text-subtext0">{ planSummary(d.Recipes) }</p>
+				</div>
+				<div class="flex flex-wrap gap-2 flex-1 basis-[300px] min-w-0 max-w-[640px]">
+					@SearchBox()
+					@RandomButton()
+					if d.ShowWife {
+						<button type="button" hx-post="/api/recipes/wife" class="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-pink text-crust font-semibold hover:opacity-90 shrink-0">
+							@icon("pink", 18)
+							Wife
+						</button>
+					}
+				</div>
+			</div>
+			<div class="plan-board">
+				for _, day := range services.Days {
+					<section class="plan-day" data-drop={ day } data-weekday={ day }>
+						<h2 class="plan-day-label">
+							<span class="lg:hidden">{ day }</span>
+							<span class="hidden lg:inline">{ services.DayName(day) }</span>
+						</h2>
+						<div class="plan-day-items" data-items>
+							for _, r := range recipesOn(d.Recipes, day) {
+								@planTile(r, false)
+							}
+							<p class={ "plan-empty", templ.KV("hidden", len(recipesOn(d.Recipes, day)) > 0) } data-empty>Nothing planned</p>
+						</div>
+					</section>
+				}
+			</div>
+			<section class="plan-tray" data-drop="">
+				<h2 class="label">Not planned yet · { strconv.Itoa(len(recipesOn(d.Recipes, ""))) }</h2>
+				<div class="plan-tray-items" data-items>
+					for _, r := range recipesOn(d.Recipes, "") {
+						@planTile(r, true)
+					}
+				</div>
+				<p class="text-overlay1 text-sm">
+					Search and Random add recipes here. Tap a day to plan one, or drag any meal onto a day. On a phone, press and hold a meal first, or use its grip.
+				</p>
+			</section>
+			if len(d.Recipes) > 0 {
+				@clearWeek()
+			}
+		</main>
+	}
+}
+
+templ planTile(r services.Recipe, quick bool) {
+	<div class={ "plan-tile", templ.KV("is-off", r.SkipGroceries) } data-drag={ r.Id }>
+		<span class="grip" data-grip title="Drag to another day">
+			@icon("grip", 18)
+		</span>
+		<a class="plan-tile-main" href={ templ.SafeURL(RecipesURL("week", r.Id)) }>
+			<span class="plan-tile-name">{ r.Name }</span>
+			<span class="text-subtext0 text-xs">
+				{ r.Time }
+				if r.SkipGroceries {
+					· no groceries
+				}
+			</span>
+		</a>
+		<div class="plan-tile-icons">
+			@GroceryToggle(r, 17)
+			@FavoriteButton(r, 17)
+		</div>
+		if quick {
+			<div class="plan-quick" aria-label="Plan for">
+				for _, day := range services.Days {
+					<button type="button" hx-post={ "/api/plan/day/" + r.Id } hx-vals={ vals("day", day) }>{ day }</button>
+				}
+			</div>
+		}
+	</div>
+}
+
+// clearWeek removes every meal, after asking once in place.
+templ clearWeek() {
+	<div class="flex items-center justify-center gap-2 flex-wrap text-sm text-subtext0" x-data="{ confirming: false }">
+		<button type="button" x-show="!confirming" x-on:click="confirming = true" class="inline-flex items-center gap-2 h-9 px-3 rounded-lg hover:bg-surface0 hover:text-text transition-colors">
+			@icon("trash", 18)
+			Clear this week
+		</button>
+		<span x-show="confirming" x-cloak>Remove every meal from this week?</span>
+		<button type="button" x-show="confirming" x-cloak hx-delete="/api/recipes/all" class="h-9 px-3 rounded-lg border border-red/45 text-red font-semibold hover:bg-red/10">Clear week</button>
+		<button type="button" x-show="confirming" x-cloak x-on:click="confirming = false" class="h-9 px-3 rounded-lg hover:bg-surface0 hover:text-text">Keep them</button>
+	</div>
+}

@@ -1,8 +1,10 @@
 package views
 
-import "github.com/RoastBeefer00/carrot-firebase-server/services"
-
-templ Index(page templ.Component, state services.State, currentPage string) {
+// Index is the document around a page. Everything that changes after an action
+// lives inside #page: requests from inside it re-render the page with the
+// change applied (see handlers/pages.go), one request at a time, because each
+// one reads and then rewrites the user's whole state document.
+templ Index(page templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en" class="mocha">
 		<head>
@@ -12,8 +14,9 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-			<link rel="stylesheet" href="/dist/tailwind.css"/>
-			<link rel="icon" href="/dist/favicon.ico"/>
+			<link rel="stylesheet" href={ Asset("/dist/tailwind.css") }/>
+			<link rel="icon" href={ Asset("/dist/favicon.ico") }/>
+			<script defer src={ Asset("/dist/app.js") }></script>
 			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
 			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
 			<script>
@@ -54,6 +57,37 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 							localStorage.setItem(COOK_PROGRESS_KEY, JSON.stringify(all));
 						} catch {}
 					}
+
+					const GROCERY_CHECKED_KEY = 'groceryChecked';
+
+					Alpine.data('groceryList', () => ({
+						doubled: false,
+						checked: (() => {
+							try {
+								return JSON.parse(localStorage.getItem(GROCERY_CHECKED_KEY)) || [];
+							} catch {
+								return [];
+							}
+						})(),
+						isChecked(key) {
+							return this.checked.includes(key);
+						},
+						toggle(key) {
+							this.checked = this.isChecked(key)
+								? this.checked.filter((k) => k !== key)
+								: [...this.checked, key];
+							this.save();
+						},
+						clear() {
+							this.checked = [];
+							this.save();
+						},
+						save() {
+							try {
+								localStorage.setItem(GROCERY_CHECKED_KEY, JSON.stringify(this.checked));
+							} catch {}
+						},
+					}));
 
 					Alpine.data('cookMode', (id, total) => {
 						let wakeLock = null;
@@ -187,43 +221,17 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 			</script>
 			<title>Magenta Carrot</title>
 		</head>
-		<body id="body" class="bg-base pb-16 sm:pb-0 text-base">
-			@nav(state.User, currentPage)
-			<div id="page" class="max-w-3xl mx-auto">
+		<body
+			class="bg-base text-text pb-16 md:pb-0"
+			hx-target="#page"
+			hx-swap="innerHTML"
+			hx-include="#view-ctx"
+			hx-sync="#page:queue all"
+		>
+			<div id="page">
 				@page
 			</div>
-			<div
-				id="groceries"
-				class="fixed z-50 w-[92vw] sm:w-[480px] h-[80vh] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden rounded-2xl overflow-hidden shadow-2xl"
-			></div>
+			<div id="drawer"></div>
 		</body>
 	</html>
-	<style>
-		* { font-family: 'Outfit', system-ui, -apple-system, sans-serif; }
-
-		@keyframes spin {
-			from { transform: rotate(0deg); }
-			to { transform: rotate(360deg); }
-		}
-
-		.button-icon { display: inline-block; }
-		.button-spinner { display: none; }
-
-		.heart-filled { display: none; }
-		.favorite-btn.is-favorited .heart-outline { display: none; }
-		.favorite-btn.is-favorited .heart-filled { display: inline-block; }
-
-		.process-form.htmx-request .process-idle { display: none; }
-		.process-form.htmx-request .process-busy { display: inline-block; }
-
-		.htmx-request .button-icon { display: none; }
-		.htmx-request .button-spinner {
-			display: inline-block;
-			animation: spin 1s linear infinite;
-		}
-
-		.mobile-nav-btn { color: #a6adc8; transition: color 0.15s ease; }
-		.mobile-nav-btn.nav-active { color: #b4befe; }
-		.mobile-nav-btn.nav-active .nav-icon-bg { background-color: rgba(180, 190, 254, 0.15); }
-	</style>
 }

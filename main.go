@@ -20,6 +20,7 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/handlers"
 	"github.com/RoastBeefer00/carrot-firebase-server/middlewares"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
+	"github.com/RoastBeefer00/carrot-firebase-server/views"
 )
 
 //go:generate go tool templ generate
@@ -86,6 +87,28 @@ func main() {
 		Endpoint:     google.Endpoint,
 	}
 
+	// Pages link to static files by a URL that includes a hash of the file, so a
+	// versioned URL never changes content and can be cached for good. Anything
+	// fetched without the version has to be checked with the server each time.
+	// Local dev skips the versions: air rebuilds the CSS without restarting the
+	// server, so the hashes would go stale.
+	if !dev {
+		if err := views.LoadAssetVersions("dist"); err != nil {
+			log.Fatalf("Failed to hash static files: %v", err)
+		}
+	}
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if strings.HasPrefix(c.Request().URL.Path, "/dist/") {
+				if c.QueryParam("v") != "" {
+					c.Response().Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+				} else {
+					c.Response().Header().Set("Cache-Control", "no-cache")
+				}
+			}
+			return next(c)
+		}
+	})
 	e.Static("/dist", "dist")
 	e.Pre(middleware.RemoveTrailingSlash())
 	if dev {
@@ -137,6 +160,8 @@ func main() {
 	pages.Use(middlewares.DatabaseMiddleware(client))
 	pages.Use(middlewares.StateMiddleware)
 	pages.GET("/", handlers.HandleIndex)
+	pages.GET("/recipes", handlers.HandleRecipesPage)
+	pages.GET("/groceries", handlers.HandleGroceriesPage)
 	pages.GET("/admin", handlers.AdminHandler)
 
 	// Authentication routes
@@ -153,27 +178,32 @@ func main() {
 	apis.Use(middlewares.DatabaseMiddleware(client))
 	apis.Use(middlewares.StateMiddleware)
 
+	// Actions respond with the page that sent them re-rendered (handlers/pages.go).
+	apis.GET("/view", handlers.HandleView)
+
 	recipes := apis.Group("/recipes")
 	recipes.POST("/replace/:id", handlers.ReplaceRecipe)
-	recipes.GET("/random", handlers.GetRandomRecipes)
+	recipes.POST("/random", handlers.GetRandomRecipes)
 	recipes.GET("/add", handlers.AddRecipeToDatabase)
 	recipes.GET("/all", handlers.GetAllRecipes)
-	recipes.GET("/search", handlers.SearchRecipes)
-	recipes.GET("/name", handlers.SearchRecipesByName)
-	recipes.GET("/ingredients", handlers.SearchRecipesByIngredient)
+	recipes.POST("/search", handlers.SearchRecipes)
 	recipes.POST("/file", handlers.ProcessRecipeFile)
-recipes.DELETE("/all", handlers.DeleteAllRecipes)
+	recipes.DELETE("/all", handlers.DeleteAllRecipes)
 	recipes.DELETE("/:id", handlers.DeleteRecipe)
 	recipes.GET("/favorites", handlers.Favorites)
 	recipes.POST("/favorites/:id", handlers.ToggleFavorite)
 	recipes.GET("/typeahead", handlers.TypeaheadRecipes)
-	recipes.GET("/pick/:id", handlers.PickRecipe)
-	recipes.GET("/wife", handlers.GetWifeRecipes)
+	recipes.POST("/pick/:id", handlers.PickRecipe)
+	recipes.POST("/wife", handlers.GetWifeRecipes)
 	recipes.POST("/groceries/:id", handlers.ToggleRecipeGroceries)
 	recipes.POST("/week/:id", handlers.ToggleRecipeInWeek)
 
+	plan := apis.Group("/plan")
+	plan.POST("/day/:id", handlers.SetRecipeDay)
+	plan.POST("/swap/:id", handlers.SwapRecipeDays)
+
 	apis.GET("/groceries", handlers.CombineIngredients)
 
-e.Logger.Info("Starting server at localhost:8080...")
+	e.Logger.Info("Starting server at localhost:8080...")
 	e.Logger.Fatal(e.Start(":8080"))
 }

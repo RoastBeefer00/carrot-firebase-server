@@ -1,0 +1,106 @@
+package views
+
+import (
+	"strconv"
+
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+)
+
+// SearchBox adds recipes by name or ingredient. Typing suggests matches; Enter
+// adds every match.
+templ SearchBox() {
+	<div class="relative flex-1 basis-[230px] min-w-0" x-data="{ filter: 'name' }" x-on:click.outside="document.getElementById('typeahead-list').innerHTML = ''">
+		<form
+			hx-post="/api/recipes/search"
+			class="flex items-center gap-2 h-11 pl-3 pr-1 rounded-xl bg-surface0 border border-surface1 text-overlay1 focus-within:border-lavender focus-within:ring-2 focus-within:ring-lavender/40 transition-colors"
+		>
+			@icon("search", 18)
+			<input type="hidden" name="filter" x-bind:value="filter" value="name"/>
+			<input
+				id="search-input"
+				name="search"
+				type="text"
+				autocomplete="off"
+				aria-label="Search recipes to add"
+				placeholder="Add a recipe"
+				x-bind:placeholder="filter === 'name' ? 'Add a recipe' : 'Add by ingredient'"
+				class="flex-1 min-w-0 h-full bg-transparent outline-none text-text placeholder-overlay1 text-base"
+				hx-get="/api/recipes/typeahead"
+				hx-include="closest form"
+				hx-sync="this:replace"
+				hx-target="#typeahead-list"
+				hx-swap="outerHTML"
+				hx-trigger="input changed delay:150ms, focus"
+			/>
+			<div class="seg" role="group" aria-label="Search by">
+				<button type="button" x-on:click="filter = 'name'" x-bind:class="filter === 'name' && 'is-on'" class="is-on">Name</button>
+				<button type="button" x-on:click="filter = 'ingredients'" x-bind:class="filter === 'ingredients' && 'is-on'">Ingr.</button>
+			</div>
+		</form>
+		@TypeaheadList(nil)
+	</div>
+}
+
+// RandomButton adds one or more random recipes the user doesn't have yet.
+templ RandomButton() {
+	<form hx-post="/api/recipes/random" class="flex shrink-0">
+		<button type="submit" class="inline-flex items-center gap-2 h-11 pl-4 pr-3 rounded-l-xl bg-surface1 hover:bg-surface2 text-text font-semibold transition-colors">
+			@icon("shuffle", 20)
+			Random
+		</button>
+		<select name="amount" aria-label="How many random recipes" class="h-11 rounded-r-xl bg-surface1 hover:bg-surface2 border-l border-surface2 pl-2 pr-1 text-text font-semibold outline-none cursor-pointer">
+			for n := 1; n <= 5; n++ {
+				<option value={ strconv.Itoa(n) }>{ strconv.Itoa(n) }</option>
+			}
+		</select>
+	</form>
+}
+
+// GroceryToggle sets whether a recipe counts toward the grocery list.
+templ GroceryToggle(r services.Recipe, size int) {
+	<button
+		type="button"
+		hx-post={ "/api/recipes/groceries/" + r.Id }
+		aria-pressed={ strconv.FormatBool(!r.SkipGroceries) }
+		title={ groceryTitle(r) }
+		aria-label={ groceryTitle(r) }
+		class={ "icon-btn", templ.KV("text-lavender bg-lavender/15 hover:bg-lavender/25", !r.SkipGroceries) }
+	>
+		if r.SkipGroceries {
+			@icon("cartOff", size)
+		} else {
+			@icon("cart", size)
+		}
+	</button>
+}
+
+templ FavoriteButton(r services.Recipe, size int) {
+	<button
+		type="button"
+		hx-post={ "/api/recipes/favorites/" + r.Id }
+		aria-pressed={ strconv.FormatBool(r.Favorite) }
+		title={ favoriteTitle(r) }
+		aria-label={ favoriteTitle(r) }
+		class="icon-btn text-green hover:bg-green/15"
+	>
+		if r.Favorite {
+			@icon("heartF", size)
+		} else {
+			@icon("heart", size)
+		}
+	</button>
+}
+
+func groceryTitle(r services.Recipe) string {
+	if r.SkipGroceries {
+		return "Not on grocery list"
+	}
+	return "On grocery list"
+}
+
+func favoriteTitle(r services.Recipe) string {
+	if r.Favorite {
+		return "Remove from favorites"
+	}
+	return "Add to favorites"
+}

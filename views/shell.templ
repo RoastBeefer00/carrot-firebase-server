@@ -1,0 +1,86 @@
+package views
+
+import "strconv"
+
+// Shell wraps a page in the header, the phone's bottom navigation, and the toast
+// for the last action. It's rendered inside #page, so every response that
+// re-renders the page also refreshes the grocery count and the active tab.
+templ Shell(s ShellData) {
+	<header class="sticky top-0 z-30 bg-mantle border-b border-surface0">
+		<div class="mx-auto max-w-[1400px] flex items-center gap-3 h-14 px-4">
+			<a href="/" class="text-lavender text-xl font-semibold tracking-tight whitespace-nowrap">R&amp;J Meals</a>
+			<nav class="hidden md:flex gap-1 ml-2" aria-label="Pages">
+				@topTab("/", "Plan", s.Active == "plan")
+				@topTab("/recipes", "Recipes", s.Active == "recipes")
+			</nav>
+			<div class="ml-auto flex items-center gap-3 min-w-0">
+				<button
+					type="button"
+					hx-get="/api/groceries"
+					hx-target="#drawer"
+					hx-swap="innerHTML"
+					class="hidden md:inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-surface1 hover:bg-surface2 text-text text-sm font-semibold transition-colors"
+				>
+					@icon("cart", 18)
+					Groceries
+					if s.GroceryCount > 0 {
+						<span class="badge">{ strconv.Itoa(s.GroceryCount) }</span>
+					}
+				</button>
+				if s.IsAdmin {
+					<a href="/admin" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-crust bg-green hover:opacity-90">Admin</a>
+				}
+				<span class="text-subtext0 text-sm font-medium truncate max-w-[9rem]">{ s.User.DisplayName }</span>
+			</div>
+		</div>
+	</header>
+	{ children... }
+	<nav class="bottom-nav md:hidden" aria-label="Pages">
+		@bottomTab("/", "Plan", "cal", s.Active == "plan", 0)
+		@bottomTab("/recipes", "Recipes", "book", s.Active == "recipes", 0)
+		@bottomTab("/groceries", "Groceries", "cart", s.Active == "groceries", s.GroceryCount)
+	</nav>
+	if s.Toast != "" {
+		<div class="toast" role="status">{ s.Toast }</div>
+	}
+}
+
+templ topTab(href, label string, active bool) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={ "h-9 px-3 inline-flex items-center rounded-lg font-medium transition-colors",
+			templ.KV("text-lavender bg-lavender/12", active),
+			templ.KV("text-subtext0 hover:text-text", !active) }
+		if active {
+			aria-current="page"
+		}
+	>{ label }</a>
+}
+
+templ bottomTab(href, label, iconName string, active bool, count int) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={ "bottom-tab", templ.KV("is-active", active) }
+		if active {
+			aria-current="page"
+		}
+	>
+		<span class="bottom-tab-icon">
+			@icon(iconName, 22)
+			if count > 0 {
+				<span class="badge">{ strconv.Itoa(count) }</span>
+			}
+		</span>
+		{ label }
+	</a>
+}
+
+// viewCtx tells every request which page is showing, so the server can render
+// that page again with the change applied.
+templ viewCtx(view, sel, list string) {
+	<div id="view-ctx" hidden>
+		<input type="hidden" name="view" value={ view }/>
+		<input type="hidden" name="sel" value={ sel }/>
+		<input type="hidden" name="list" value={ list }/>
+	</div>
+}

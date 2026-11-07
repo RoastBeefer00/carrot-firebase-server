@@ -32,6 +32,8 @@ func (s *State) AddFavorite(id string) {
     }
 }
 
+// AddRecipes lists the recipes that aren't listed yet. New recipes start without a
+// day, even when they come from someone else's plan.
 func (s *State) AddRecipes(recipes []Recipe) {
     existing := make(map[string]bool, len(s.Recipes))
     for _, r := range s.Recipes {
@@ -39,10 +41,77 @@ func (s *State) AddRecipes(recipes []Recipe) {
     }
     for _, r := range recipes {
         if !existing[r.Id] {
+            r.Day = ""
             s.Recipes = append(s.Recipes, r)
             existing[r.Id] = true
         }
     }
+}
+
+// Days are the values a recipe's Day can take, in week order. An empty Day
+// means the recipe isn't planned for a particular day.
+var Days = []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+
+var dayNames = map[string]string{
+    "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday",
+    "Fri": "Friday", "Sat": "Saturday", "Sun": "Sunday",
+}
+
+// DayName returns the full name of a day, or "" for no day.
+func DayName(day string) string {
+    return dayNames[day]
+}
+
+// ValidDay reports whether day is one of Days, or empty for no day.
+func ValidDay(day string) bool {
+    return day == "" || dayNames[day] != ""
+}
+
+// FindRecipe returns the listed recipe with the given ID.
+func (s *State) FindRecipe(id string) (Recipe, bool) {
+    for _, r := range s.Recipes {
+        if r.Id == id {
+            return r, true
+        }
+    }
+    return Recipe{}, false
+}
+
+// SetDay plans a listed recipe for a day, or unplans it when day is empty, and
+// returns the updated recipe.
+func (s *State) SetDay(id, day string) (Recipe, bool) {
+    for i := range s.Recipes {
+        if s.Recipes[i].Id == id {
+            s.Recipes[i].Day = day
+            return s.Recipes[i], true
+        }
+    }
+    return Recipe{}, false
+}
+
+// SwapDays trades the days of two listed recipes and returns them updated.
+func (s *State) SwapDays(a, b string) (Recipe, Recipe, bool) {
+    ia := slices.IndexFunc(s.Recipes, func(r Recipe) bool { return r.Id == a })
+    ib := slices.IndexFunc(s.Recipes, func(r Recipe) bool { return r.Id == b })
+    if ia < 0 || ib < 0 || ia == ib {
+        return Recipe{}, Recipe{}, false
+    }
+    s.Recipes[ia].Day, s.Recipes[ib].Day = s.Recipes[ib].Day, s.Recipes[ia].Day
+    return s.Recipes[ia], s.Recipes[ib], true
+}
+
+// ByDay returns the recipes in week order, with unplanned recipes last. Recipes
+// on the same day keep the order they were added in.
+func ByDay(recipes []Recipe) []Recipe {
+    sorted := slices.Clone(recipes)
+    rank := func(r Recipe) int {
+        if i := slices.Index(Days, r.Day); i >= 0 {
+            return i
+        }
+        return len(Days)
+    }
+    slices.SortStableFunc(sorted, func(a, b Recipe) int { return rank(a) - rank(b) })
+    return sorted
 }
 
 // Unlisted returns the given recipes that aren't already listed, without repeats.
@@ -115,9 +184,11 @@ func (s *State) DeleteFavorite(id string) {
     }
 }
 
+// ReplaceRecipe swaps a listed recipe for another, which takes over its day.
 func (s *State) ReplaceRecipe(id string, newRecipe Recipe) {
     for i, recipe := range s.Recipes {
         if recipe.Id == id {
+            newRecipe.Day = recipe.Day
             s.Recipes[i] = newRecipe
             break
         }
@@ -138,7 +209,10 @@ type Recipe struct {
 	// SkipGroceries leaves the recipe out of the grocery list. Unset means included,
 	// which also covers recipes saved before this field existed.
 	SkipGroceries bool `firestore:"SkipGroceries,omitempty"`
-	// InWeek reports whether the recipe is on the homepage, for the favorites page.
+	// Day is the day of the week the recipe is planned for, one of Days, or empty
+	// when it isn't planned yet.
+	Day string `firestore:"Day,omitempty"`
+	// InWeek reports whether the recipe is in this week's plan, for favorites.
 	InWeek bool `firestore:"-"`
 }
 

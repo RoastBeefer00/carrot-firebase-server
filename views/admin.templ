@@ -141,3 +141,9 @@ templ AddRecipeForm(r services.Recipe) {
 		</form>
 	</div>
 }
+
+templ AdminPage(s ShellData) {
+	@Shell(s) {
+		@Admin()
+	}
+}

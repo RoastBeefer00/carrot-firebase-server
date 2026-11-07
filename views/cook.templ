@@ -15,7 +15,7 @@ templ MakeRecipe(recipe services.Recipe) {
 		x-on:keydown.window="handleKey($event)"
 		x-on:visibilitychange.document="keepAwake()"
 		x-on:cook-history.window="syncHistory($event.detail)"
-		class="mb-4"
+		class=""
 	>
 		<button
 			x-ref="opener"
