@@ -10,7 +10,7 @@ import (
 
 // Favorites now lives on the recipes page; this keeps old links working.
 func Favorites(c echo.Context) error {
-	return c.Redirect(http.StatusFound, views.RecipesURL("fav", ""))
+	return c.Redirect(http.StatusFound, views.RecipesURL("fav", "", ""))
 }
 
 func ToggleFavorite(c echo.Context) error {

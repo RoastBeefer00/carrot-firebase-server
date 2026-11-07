@@ -77,10 +77,50 @@ templ bottomTab(href, label, iconName string, active bool, count int) {
 
 // viewCtx tells every request which page is showing, so the server can render
 // that page again with the change applied.
-templ viewCtx(view, sel, list string) {
+templ viewCtx(view, sel, list, week string) {
 	<div id="view-ctx" hidden>
 		<input type="hidden" name="view" value={ view }/>
 		<input type="hidden" name="sel" value={ sel }/>
 		<input type="hidden" name="list" value={ list }/>
+		<input type="hidden" name="week" value={ week }/>
 	</div>
+}
+
+// weekNav steps the page a week back or forward. Away from the current week it
+// also offers a way back to it.
+templ weekNav(view, list, sel string, w Week) {
+	<div class="flex items-center gap-1">
+		@weekStep(view, list, sel, w.shifted(-1), "left", "Previous week")
+		@weekStep(view, list, sel, w.shifted(1), "right", "Next week")
+		if w.Param() != "" {
+			<button
+				type="button"
+				hx-get="/api/view"
+				hx-vals={ vals("view", view, "list", list, "sel", sel, "week", "") }
+				hx-push-url={ weekURL(view, list, sel, "") }
+				class="ml-1 h-8 px-3 rounded-lg text-sm font-semibold text-lavender hover:bg-lavender/12"
+			>Today</button>
+		}
+	</div>
+}
+
+templ weekStep(view, list, sel string, w Week, iconName, label string) {
+	<button
+		type="button"
+		hx-get="/api/view"
+		hx-vals={ vals("view", view, "list", list, "sel", sel, "week", w.Param()) }
+		hx-push-url={ weekURL(view, list, sel, w.Param()) }
+		aria-label={ label }
+		title={ label }
+		class="icon-btn w-9! h-9!"
+	>
+		@icon(iconName, 22)
+	</button>
+}
+
+func weekURL(view, list, sel, week string) string {
+	if view == "recipes" {
+		return RecipesURL(list, sel, week)
+	}
+	return PlanURL(week)
 }

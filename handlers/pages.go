@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/RoastBeefer00/carrot-firebase-server/db"
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
@@ -21,6 +22,7 @@ type viewCtx struct {
 	View string // "plan", "recipes", or "groceries"
 	Sel  string // the selected recipe on the recipes page
 	List string // "week" or "fav" on the recipes page
+	Week string // the Monday of the week shown, or empty for the current week
 }
 
 func (v viewCtx) normalized() viewCtx {
@@ -34,15 +36,38 @@ func (v viewCtx) normalized() viewCtx {
 }
 
 func viewFrom(c echo.Context) viewCtx {
-	return viewCtx{View: c.FormValue("view"), Sel: c.FormValue("sel"), List: c.FormValue("list")}.normalized()
+	return viewCtx{
+		View: c.FormValue("view"),
+		Sel:  c.FormValue("sel"),
+		List: c.FormValue("list"),
+		Week: c.FormValue("week"),
+	}.normalized()
+}
+
+// today is the current date in the user's time zone (see StateMiddleware).
+func today(c echo.Context) time.Time {
+	if t, ok := c.Get("today").(time.Time); ok {
+		return t
+	}
+	return services.Today("")
+}
+
+// week resolves the week a request is for, defaulting to the current one.
+func week(c echo.Context, v viewCtx) views.Week {
+	now := today(c)
+	start := services.WeekStart(now)
+	if t, ok := services.ParseDay(v.Week); ok {
+		start = services.WeekStart(t)
+	}
+	return views.Week{Start: start, Today: now}
 }
 
 func HandleIndex(c echo.Context) error {
-	return renderFull(c, viewCtx{View: "plan"}.normalized())
+	return renderFull(c, viewCtx{View: "plan", Week: c.QueryParam("week")}.normalized())
 }
 
 func HandleRecipesPage(c echo.Context) error {
-	return renderFull(c, viewCtx{View: "recipes", Sel: c.QueryParam("id"), List: c.QueryParam("list")}.normalized())
+	return renderFull(c, viewCtx{View: "recipes", Sel: c.QueryParam("id"), List: c.QueryParam("list"), Week: c.QueryParam("week")}.normalized())
 }
 
 func HandleGroceriesPage(c echo.Context) error {
@@ -51,20 +76,20 @@ func HandleGroceriesPage(c echo.Context) error {
 
 // HandleView renders a page into #page, for moving around without a full load.
 func HandleView(c echo.Context) error {
-	return Render(c, http.StatusOK, pageContent(GetStateFromContext(c), viewFrom(c), ""))
+	return Render(c, http.StatusOK, pageContent(c, GetStateFromContext(c), viewFrom(c), ""))
 }
 
 func renderFull(c echo.Context, v viewCtx) error {
-	return Render(c, http.StatusOK, views.Index(pageContent(GetStateFromContext(c), v, "")))
+	return Render(c, http.StatusOK, views.Index(pageContent(c, GetStateFromContext(c), v, "")))
 }
 
 // respond answers an action with the current page re-rendered and a toast
 // saying what happened. On the recipes page the address follows the selection.
 func respond(c echo.Context, state services.State, v viewCtx, toast string) error {
 	if v.View == "recipes" {
-		c.Response().Header().Set("HX-Replace-Url", views.RecipesURL(v.List, v.Sel))
+		c.Response().Header().Set("HX-Replace-Url", views.RecipesURL(v.List, v.Sel, week(c, v).Param()))
 	}
-	return Render(c, http.StatusOK, pageContent(state, v, toast))
+	return Render(c, http.StatusOK, pageContent(c, state, v, toast))
 }
 
 // saveAndRespond saves the state, then responds as respond does.
@@ -85,7 +110,7 @@ func shellData(state services.State, active, toast string) views.ShellData {
 	}
 }
 
-func pageContent(state services.State, v viewCtx, toast string) templ.Component {
+func pageContent(c echo.Context, state services.State, v viewCtx, toast string) templ.Component {
 	// Favorite isn't saved with the recipe, and recipes just added don't have it.
 	state.Recipes = slices.Clone(state.Recipes)
 	for i, r := range state.Recipes {
@@ -94,23 +119,24 @@ func pageContent(state services.State, v viewCtx, toast string) templ.Component 
 	shell := shellData(state, v.View, toast)
 	switch v.View {
 	case "recipes":
-		return views.RecipesPage(shell, recipesData(state, v))
+		return views.RecipesPage(shell, recipesData(state, v, week(c, v)))
 	case "groceries":
 		return views.GroceriesPage(shell, groceryItems(state), groceryMeals(state))
 	default:
 		return views.PlanPage(shell, views.PlanData{
 			Recipes:  state.Recipes,
 			ShowWife: state.User.Email == husbandEmail,
+			Week:     week(c, v),
 		})
 	}
 }
 
-func recipesData(state services.State, v viewCtx) views.RecipesData {
-	week := services.ByDay(state.Recipes)
-	for i := range week {
-		week[i].InWeek = true
+func recipesData(state services.State, v viewCtx, w views.Week) views.RecipesData {
+	meals := services.ByDay(state.Recipes)
+	for i := range meals {
+		meals[i].InWeek = true
 	}
-	d := views.RecipesData{List: v.List, Week: week, Favorites: favoriteRecipes(state)}
+	d := views.RecipesData{List: v.List, Meals: meals, Favorites: favoriteRecipes(state), Week: w}
 	shown := d.Shown()
 	for i := range shown {
 		if shown[i].Id == v.Sel {
@@ -178,7 +204,7 @@ func SetRecipeDay(c echo.Context) error {
 	}
 	toast := fmt.Sprintf("%s moved to Not planned", r.Name)
 	if day != "" {
-		toast = fmt.Sprintf("%s planned for %s", r.Name, services.DayName(day))
+		toast = fmt.Sprintf("%s planned for %s", r.Name, views.DayLong(day))
 	}
 	return saveAndRespond(c, state, viewFrom(c), toast)
 }

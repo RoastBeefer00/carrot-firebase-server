@@ -52,62 +52,22 @@ func TestDedupeRecipesKeepsFirst(t *testing.T) {
 	}
 }
 
-func TestSetDay(t *testing.T) {
-	s := State{Recipes: []Recipe{{Id: "a"}, {Id: "b", Day: "Tue"}}}
-
-	if r, ok := s.SetDay("a", "Mon"); !ok || r.Day != "Mon" {
-		t.Fatalf("SetDay(a, Mon) = %+v, %v, want Mon", r, ok)
-	}
-	if r, _ := s.SetDay("b", ""); r.Day != "" {
-		t.Errorf("SetDay(b, \"\") left Day = %q, want unplanned", r.Day)
-	}
-	if _, ok := s.SetDay("missing", "Mon"); ok {
-		t.Error("SetDay(missing) = true, want false")
-	}
-}
-
-func TestSwapDays(t *testing.T) {
-	s := State{Recipes: []Recipe{{Id: "a", Day: "Mon"}, {Id: "b"}}}
-
-	a, b, ok := s.SwapDays("a", "b")
-	if !ok || a.Day != "" || b.Day != "Mon" {
-		t.Fatalf("SwapDays = %+v, %+v, %v, want a unplanned and b on Mon", a, b, ok)
-	}
-	if _, _, ok := s.SwapDays("a", "a"); ok {
-		t.Error("swapping a recipe with itself should fail")
-	}
-	if _, _, ok := s.SwapDays("a", "missing"); ok {
-		t.Error("swapping with a missing recipe should fail")
-	}
-}
-
 func TestReplaceRecipeKeepsDay(t *testing.T) {
-	s := State{Recipes: []Recipe{{Id: "a", Day: "Wed"}}}
+	s := State{Recipes: []Recipe{{Id: "a", Day: "2026-11-11"}}}
 
-	s.ReplaceRecipe("a", Recipe{Id: "b", Day: "Fri"})
+	s.ReplaceRecipe("a", Recipe{Id: "b", Day: "2026-11-13"})
 
-	if s.Recipes[0].Id != "b" || s.Recipes[0].Day != "Wed" {
-		t.Errorf("after replace got %+v, want b on Wed", s.Recipes[0])
+	if s.Recipes[0].Id != "b" || s.Recipes[0].Day != "2026-11-11" {
+		t.Errorf("after replace got %+v, want b on Nov 11", s.Recipes[0])
 	}
 }
 
 func TestAddRecipesStartUnplanned(t *testing.T) {
 	var s State
-	s.AddRecipes([]Recipe{{Id: "a", Day: "Sat"}})
+	s.AddRecipes([]Recipe{{Id: "a", Day: "2026-11-14"}})
 
 	if s.Recipes[0].Day != "" {
 		t.Errorf("added recipe has Day %q, want unplanned", s.Recipes[0].Day)
-	}
-}
-
-func TestByDay(t *testing.T) {
-	got := ByDay([]Recipe{{Id: "none"}, {Id: "sun", Day: "Sun"}, {Id: "mon1", Day: "Mon"}, {Id: "mon2", Day: "Mon"}})
-
-	want := []string{"mon1", "mon2", "sun", "none"}
-	for i, r := range got {
-		if r.Id != want[i] {
-			t.Fatalf("ByDay order = %v, want %v", ids(got), want)
-		}
 	}
 }
 

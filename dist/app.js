@@ -1,7 +1,23 @@
 // Page behavior that htmx and Alpine don't cover: dragging meals between days,
-// keeping a list's scroll position when the page re-renders, and marking today.
+// keeping a list's scroll position when the page re-renders, and telling the
+// server the browser's time zone.
 // Everything listens on document, so it keeps working after #page is replaced.
 (() => {
+  // ---------- time zone ----------
+
+  // The server works out "today" and "this week" from this cookie. The first
+  // visit from a browser renders in UTC, so the page reloads once when the
+  // cookie is new and the zone would change the date.
+  (() => {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!zone) return;
+    const had = document.cookie.split('; ').some((c) => c === `tz=${encodeURIComponent(zone)}`);
+    document.cookie = `tz=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`;
+    const utcDate = new Date().toISOString().slice(0, 10);
+    const localDate = new Date().toLocaleDateString('en-CA');
+    if (!had && utcDate !== localDate && document.cookie.includes('tz=')) location.reload();
+  })();
+
   // ---------- re-render helpers ----------
 
   // Lists that scroll on their own (the recipes sidebar) would jump back to the
@@ -19,16 +35,7 @@
     });
     // Opening a recipe from the list starts at its top.
     if (e.detail.requestConfig?.elt?.hasAttribute?.('data-scroll-top')) window.scrollTo(0, 0);
-    markToday();
   });
-
-  function markToday() {
-    const today = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
-    document.querySelectorAll('[data-weekday]').forEach((el) => {
-      el.classList.toggle('is-today', el.dataset.weekday === today);
-    });
-  }
-  document.addEventListener('DOMContentLoaded', markToday);
 
   // ---------- drag and drop ----------
   // One pointer-based path for mouse and touch, since phones don't fire HTML5

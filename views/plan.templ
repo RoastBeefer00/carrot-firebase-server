@@ -6,17 +6,20 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-// PlanPage lays out the week: a row (phone) or column (desktop) per day, and a
-// tray of recipes that don't have a day yet. Meals move between days by
+// PlanPage lays out one week: a row (phone) or column (desktop) per date, and a
+// tray of recipes that don't have a date yet. Meals move between days by
 // dragging (see dist/app.js) or with the day buttons on unplanned meals.
 templ PlanPage(s ShellData, d PlanData) {
 	@Shell(s) {
-		@viewCtx("plan", "", "")
+		@viewCtx("plan", "", "", d.Week.Param())
 		<main class="mx-auto w-full max-w-[1400px] px-4 pt-5 pb-10 flex flex-col gap-4">
 			<div class="flex flex-wrap items-end justify-between gap-3">
 				<div>
-					<h1 class="text-2xl font-semibold tracking-tight text-text">This week</h1>
-					<p class="text-sm text-subtext0">{ planSummary(d.Recipes) }</p>
+					<div class="flex items-center gap-2">
+						<h1 class="text-2xl font-semibold tracking-tight text-text">{ d.Week.Label() }</h1>
+						@weekNav("plan", "", "", d.Week)
+					</div>
+					<p class="text-sm text-subtext0 tabular-nums">{ planSummary(d) }</p>
 				</div>
 				<div class="flex flex-wrap gap-2 flex-1 basis-[300px] min-w-0 max-w-[640px]">
 					@SearchBox()
@@ -30,17 +33,20 @@ templ PlanPage(s ShellData, d PlanData) {
 				</div>
 			</div>
 			<div class="plan-board">
-				for _, day := range services.Days {
-					<section class="plan-day" data-drop={ day } data-weekday={ day }>
+				for _, day := range d.Week.Days() {
+					<section class={ "plan-day", templ.KV("is-today", d.Week.isToday(day)) } data-drop={ iso(day) }>
 						<h2 class="plan-day-label">
-							<span class="lg:hidden">{ day }</span>
-							<span class="hidden lg:inline">{ services.DayName(day) }</span>
+							<span class="plan-day-name">
+								<span class="lg:hidden">{ day.Format("Mon") }</span>
+								<span class="hidden lg:inline">{ day.Format("Monday") }</span>
+							</span>
+							<span class="plan-day-date">{ strconv.Itoa(day.Day()) }</span>
 						</h2>
 						<div class="plan-day-items" data-items>
-							for _, r := range recipesOn(d.Recipes, day) {
-								@planTile(r, false)
+							for _, r := range recipesOn(d.Recipes, iso(day)) {
+								@planTile(r, d.Week, false)
 							}
-							<p class={ "plan-empty", templ.KV("hidden", len(recipesOn(d.Recipes, day)) > 0) } data-empty>Nothing planned</p>
+							<p class={ "plan-empty", templ.KV("hidden", len(recipesOn(d.Recipes, iso(day))) > 0) } data-empty>Nothing planned</p>
 						</div>
 					</section>
 				}
@@ -49,13 +55,23 @@ templ PlanPage(s ShellData, d PlanData) {
 				<h2 class="label">Not planned yet · { strconv.Itoa(len(recipesOn(d.Recipes, ""))) }</h2>
 				<div class="plan-tray-items" data-items>
 					for _, r := range recipesOn(d.Recipes, "") {
-						@planTile(r, true)
+						@planTile(r, d.Week, true)
 					}
 				</div>
 				<p class="text-overlay1 text-sm">
 					Search and Random add recipes here. Tap a day to plan one, or drag any meal onto a day. On a phone, press and hold a meal first, or use its grip.
 				</p>
 			</section>
+			if others := d.elsewhere(); len(others) > 0 {
+				<section class="flex flex-col gap-2">
+					<h2 class="label">Planned for other weeks · { strconv.Itoa(len(others)) }</h2>
+					<div class="plan-tray-items">
+						for _, r := range others {
+							@planTile(r, d.Week, false)
+						}
+					</div>
+				</section>
+			}
 			if len(d.Recipes) > 0 {
 				@clearWeek()
 			}
@@ -63,14 +79,17 @@ templ PlanPage(s ShellData, d PlanData) {
 	}
 }
 
-templ planTile(r services.Recipe, quick bool) {
+templ planTile(r services.Recipe, w Week, quick bool) {
 	<div class={ "plan-tile", templ.KV("is-off", r.SkipGroceries) } data-drag={ r.Id }>
 		<span class="grip" data-grip title="Drag to another day">
 			@icon("grip", 18)
 		</span>
-		<a class="plan-tile-main" href={ templ.SafeURL(RecipesURL("week", r.Id)) }>
+		<a class="plan-tile-main" href={ templ.SafeURL(RecipesURL("week", r.Id, w.Param())) }>
 			<span class="plan-tile-name">{ r.Name }</span>
 			<span class="text-subtext0 text-xs">
+				if r.Day != "" && !w.Contains(r.Day) {
+					<span class="text-lavender">{ dayShort(r.Day) }</span> ·
+				}
 				{ r.Time }
 				if r.SkipGroceries {
 					· no groceries
@@ -83,8 +102,10 @@ templ planTile(r services.Recipe, quick bool) {
 		</div>
 		if quick {
 			<div class="plan-quick" aria-label="Plan for">
-				for _, day := range services.Days {
-					<button type="button" hx-post={ "/api/plan/day/" + r.Id } hx-vals={ vals("day", day) }>{ day }</button>
+				for _, day := range w.Days() {
+					<button type="button" hx-post={ "/api/plan/day/" + r.Id } hx-vals={ vals("day", iso(day)) } title={ day.Format("Monday, Jan 2") }>
+						{ day.Format("Mon") } <span class="tabular-nums">{ strconv.Itoa(day.Day()) }</span>
+					</button>
 				}
 			</div>
 		}
@@ -96,10 +117,10 @@ templ clearWeek() {
 	<div class="flex items-center justify-center gap-2 flex-wrap text-sm text-subtext0" x-data="{ confirming: false }">
 		<button type="button" x-show="!confirming" x-on:click="confirming = true" class="inline-flex items-center gap-2 h-9 px-3 rounded-lg hover:bg-surface0 hover:text-text transition-colors">
 			@icon("trash", 18)
-			Clear this week
+			Clear all meals
 		</button>
-		<span x-show="confirming" x-cloak>Remove every meal from this week?</span>
-		<button type="button" x-show="confirming" x-cloak hx-delete="/api/recipes/all" class="h-9 px-3 rounded-lg border border-red/45 text-red font-semibold hover:bg-red/10">Clear week</button>
+		<span x-show="confirming" x-cloak>Remove every meal, in every week?</span>
+		<button type="button" x-show="confirming" x-cloak hx-delete="/api/recipes/all" class="h-9 px-3 rounded-lg border border-red/45 text-red font-semibold hover:bg-red/10">Clear all</button>
 		<button type="button" x-show="confirming" x-cloak x-on:click="confirming = false" class="h-9 px-3 rounded-lg hover:bg-surface0 hover:text-text">Keep them</button>
 	</div>
 }

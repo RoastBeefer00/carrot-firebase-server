@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	_ "time/tzdata" // the runtime image has no zone files, and "today" follows the user's zone
 
 	charmlog "github.com/charmbracelet/log"
 	"github.com/joho/godotenv"

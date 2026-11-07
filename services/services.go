@@ -48,25 +48,6 @@ func (s *State) AddRecipes(recipes []Recipe) {
     }
 }
 
-// Days are the values a recipe's Day can take, in week order. An empty Day
-// means the recipe isn't planned for a particular day.
-var Days = []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
-
-var dayNames = map[string]string{
-    "Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday",
-    "Fri": "Friday", "Sat": "Saturday", "Sun": "Sunday",
-}
-
-// DayName returns the full name of a day, or "" for no day.
-func DayName(day string) string {
-    return dayNames[day]
-}
-
-// ValidDay reports whether day is one of Days, or empty for no day.
-func ValidDay(day string) bool {
-    return day == "" || dayNames[day] != ""
-}
-
 // FindRecipe returns the listed recipe with the given ID.
 func (s *State) FindRecipe(id string) (Recipe, bool) {
     for _, r := range s.Recipes {
@@ -77,8 +58,8 @@ func (s *State) FindRecipe(id string) (Recipe, bool) {
     return Recipe{}, false
 }
 
-// SetDay plans a listed recipe for a day, or unplans it when day is empty, and
-// returns the updated recipe.
+// SetDay plans a listed recipe for a date such as "2026-11-09", or unplans it
+// when day is empty, and returns the updated recipe.
 func (s *State) SetDay(id, day string) (Recipe, bool) {
     for i := range s.Recipes {
         if s.Recipes[i].Id == id {
@@ -100,19 +81,6 @@ func (s *State) SwapDays(a, b string) (Recipe, Recipe, bool) {
     return s.Recipes[ia], s.Recipes[ib], true
 }
 
-// ByDay returns the recipes in week order, with unplanned recipes last. Recipes
-// on the same day keep the order they were added in.
-func ByDay(recipes []Recipe) []Recipe {
-    sorted := slices.Clone(recipes)
-    rank := func(r Recipe) int {
-        if i := slices.Index(Days, r.Day); i >= 0 {
-            return i
-        }
-        return len(Days)
-    }
-    slices.SortStableFunc(sorted, func(a, b Recipe) int { return rank(a) - rank(b) })
-    return sorted
-}
 
 // Unlisted returns the given recipes that aren't already listed, without repeats.
 func (s *State) Unlisted(recipes []Recipe) []Recipe {
@@ -209,8 +177,8 @@ type Recipe struct {
 	// SkipGroceries leaves the recipe out of the grocery list. Unset means included,
 	// which also covers recipes saved before this field existed.
 	SkipGroceries bool `firestore:"SkipGroceries,omitempty"`
-	// Day is the day of the week the recipe is planned for, one of Days, or empty
-	// when it isn't planned yet.
+	// Day is the date the recipe is planned for, such as "2026-11-09", or empty
+	// when it isn't planned yet. See days.go.
 	Day string `firestore:"Day,omitempty"`
 	// InWeek reports whether the recipe is in this week's plan, for favorites.
 	InWeek bool `firestore:"-"`
