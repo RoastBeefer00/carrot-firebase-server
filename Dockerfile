@@ -24,9 +24,6 @@ RUN ./tailwindcss-linux-x64 -i ./dist/main.css -o ./dist/tailwind.css --minify
 FROM golang:1.26-alpine AS builder
 WORKDIR /app
 
-# Install Templ
-RUN go install github.com/a-h/templ/cmd/templ@latest
-
 # Copy Go module files
 COPY go.mod go.sum ./
 RUN go mod download
@@ -37,8 +34,9 @@ COPY . .
 # Copy the generated Tailwind CSS from the frontend stage
 COPY --from=frontend-builder /app/dist/tailwind.css ./dist/
 
-# Generate Templ templates
-RUN templ generate
+# Generate Templ templates with the templ version pinned in go.mod, so the
+# generated code matches the runtime it's compiled against
+RUN go tool templ generate
 
 # Build the Go application
 RUN CGO_ENABLED=0 go build -o app .
