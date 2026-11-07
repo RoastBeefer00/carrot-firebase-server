@@ -4,7 +4,7 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-templ Groceries(ingredients []services.Ingredient) {
+templ Groceries(ingredients []services.GroceryItem) {
 	<div
 		class="flex flex-col h-full w-full bg-surface0 rounded-2xl overflow-hidden"
 		x-data="{ doubled: false }"
@@ -33,29 +33,14 @@ templ Groceries(ingredients []services.Ingredient) {
 			</div>
 		</div>
 		<div class="flex-1 overflow-y-auto p-3" id="ingredients">
+			if len(ingredients) == 0 {
+				<p class="text-subtext0 text-sm text-center py-8">No recipes on your grocery list.</p>
+			}
 			for _, ingredient := range ingredients {
-				{{
-					base := services.ParseQuantity(ingredient.Quantity)
-					doubled := base * 2
-				}}
 				<label class="flex items-start gap-3 py-2 border-b border-surface1 last:border-0 cursor-pointer">
 					<input type="checkbox" class="mt-0.5 accent-lavender shrink-0"/>
-					<span class="text-text text-sm" x-show="!doubled">
-						if base > 0 {
-							{ services.FormatFraction(base) + " " + ingredient.Measurement + " " + ingredient.Item }
-						} else {
-							{ ingredient.Measurement + " " + ingredient.Item }
-						}
-					</span>
-					if doubled > 0 {
-						<span class="text-text text-sm" x-show="doubled">
-							{ services.FormatFraction(doubled) + " " + ingredient.Measurement + " " + ingredient.Item }
-						</span>
-					} else {
-						<span class="text-text text-sm" x-show="doubled">
-							{ ingredient.Measurement + " " + ingredient.Item }
-						</span>
-					}
+					<span class="text-text text-sm" x-show="!doubled">{ ingredient.Format(1) }</span>
+					<span class="text-text text-sm" x-show="doubled">{ ingredient.Format(2) }</span>
 				</label>
 			}
 		</div>

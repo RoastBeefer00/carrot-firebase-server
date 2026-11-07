@@ -2,8 +2,10 @@ package views
 
 import "github.com/RoastBeefer00/carrot-firebase-server/services"
 
+// Requests from this page run one at a time, because each one reads and then
+// rewrites the user's whole state document.
 templ Page(recipes []services.Recipe, user services.User) {
-	<div class="min-h-[100dvh] w-full px-3 pt-4 pb-6">
+	<div class="min-h-[100dvh] w-full px-3 pt-4 pb-6" hx-sync="#recipes:queue all">
 		<div class="flex gap-2 mb-3" x-data="{ filter: 'name' }">
 			<div id="search" class="flex-1">
 				@Search()

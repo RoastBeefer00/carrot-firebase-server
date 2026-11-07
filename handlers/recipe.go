@@ -27,6 +27,39 @@ func Render(ctx echo.Context, statusCode int, t templ.Component) error {
 	return t.Render(ctx.Request().Context(), ctx.Response().Writer)
 }
 
+// addAndRender saves the recipes that aren't already listed, then renders their cards.
+func addAndRender(c echo.Context, state services.State, recipes []services.Recipe) error {
+	unlisted := state.Unlisted(recipes)
+	if len(unlisted) == 0 {
+		c.Response().Header().Set("HX-Reswap", "none")
+		return c.NoContent(http.StatusOK)
+	}
+	state.AddRecipes(unlisted)
+	if err := db.UpdateState(state, c); err != nil {
+		return err
+	}
+	return Render(c, http.StatusOK, views.Recipes(unlisted, false))
+}
+
+// unlistedRecipeIDs returns the IDs of recipes that aren't on the user's homepage.
+func unlistedRecipeIDs(c echo.Context, state services.State) ([]string, error) {
+	docs, err := GetDbClient(c).Collection("ids").Documents(c.Request().Context()).GetAll()
+	if err != nil {
+		return nil, err
+	}
+	if len(docs) == 0 {
+		return nil, fmt.Errorf("no ids document found")
+	}
+	var ids IDs
+	if err := docs[0].DataTo(&ids); err != nil {
+		return nil, err
+	}
+	if len(ids.IDs) == 0 {
+		return nil, fmt.Errorf("ids document empty")
+	}
+	return slices.DeleteFunc(ids.IDs, state.HasRecipe), nil
+}
+
 func GetRecipes(c echo.Context) error {
 	state := GetStateFromContext(c)
 
@@ -68,11 +101,7 @@ func SearchRecipes(c echo.Context) error {
 			filteredRecipes[i].Favorite = true
 		}
 	}
-	if err := Render(c, http.StatusOK, views.Recipes(filteredRecipes, false)); err != nil {
-		return err
-	}
-	state.AddRecipes(filteredRecipes)
-	return db.UpdateState(state, c)
+	return addAndRender(c, state, filteredRecipes)
 }
 
 func SearchRecipesByName(c echo.Context) error {
@@ -96,12 +125,7 @@ func SearchRecipesByName(c echo.Context) error {
 			filteredRecipes[i].Favorite = true
 		}
 	}
-	if err := Render(c, http.StatusOK, views.Recipes(filteredRecipes, false)); err != nil {
-		return err
-	}
-
-	state.AddRecipes(filteredRecipes)
-	return db.UpdateState(state, c)
+	return addAndRender(c, state, filteredRecipes)
 }
 
 func SearchRecipesByIngredient(c echo.Context) error {
@@ -126,11 +150,7 @@ func SearchRecipesByIngredient(c echo.Context) error {
 		}
 	}
 
-	if err := Render(c, http.StatusOK, views.Recipes(filteredRecipes, false)); err != nil {
-		return err
-	}
-	state.AddRecipes(filteredRecipes)
-	return db.UpdateState(state, c)
+	return addAndRender(c, state, filteredRecipes)
 }
 
 func TypeaheadRecipes(c echo.Context) error {
@@ -164,11 +184,49 @@ func PickRecipe(c echo.Context) error {
 	if state.IsFavorite(recipe.Id) {
 		recipe.Favorite = true
 	}
-	if err := Render(c, http.StatusOK, views.PickResponse(recipe)); err != nil {
+	if state.HasRecipe(recipe.Id) {
+		// Picking a recipe that's already listed means it's needed again, so refresh
+		// its card rather than adding a second one.
+		state.IncludeInGroceries(recipe.Id)
+		c.Response().Header().Set("HX-Retarget", "#recipe-"+recipe.Id)
+		c.Response().Header().Set("HX-Reswap", "outerHTML")
+	} else {
+		state.AddRecipes([]services.Recipe{recipe})
+	}
+	if err := db.UpdateState(state, c); err != nil {
 		return err
 	}
-	state.AddRecipes([]services.Recipe{recipe})
-	return db.UpdateState(state, c)
+	return Render(c, http.StatusOK, views.PickResponse(recipe))
+}
+
+func ToggleRecipeGroceries(c echo.Context) error {
+	state := GetStateFromContext(c)
+	recipe, ok := state.ToggleGroceries(c.Param("id"))
+	if !ok {
+		return c.NoContent(http.StatusNotFound)
+	}
+	if err := db.UpdateState(state, c); err != nil {
+		return err
+	}
+	return Render(c, http.StatusOK, views.GroceryToggle(recipe))
+}
+
+func ToggleRecipeInWeek(c echo.Context) error {
+	state := GetStateFromContext(c)
+	recipe, ok := Cache.GetByID(c.Param("id"))
+	if !ok {
+		return c.NoContent(http.StatusNotFound)
+	}
+	if state.HasRecipe(recipe.Id) {
+		state.DeleteRecipe(recipe.Id)
+	} else {
+		state.AddRecipes([]services.Recipe{recipe})
+		recipe.InWeek = true
+	}
+	if err := db.UpdateState(state, c); err != nil {
+		return err
+	}
+	return Render(c, http.StatusOK, views.WeekToggle(recipe))
 }
 
 func ReplaceRecipe(c echo.Context) error {
@@ -178,21 +236,15 @@ func ReplaceRecipe(c echo.Context) error {
 
 	id := c.Param("id")
 
-	docs, err := client.Collection("ids").Documents(ctx).GetAll()
+	ids, err := unlistedRecipeIDs(c, state)
 	if err != nil {
 		return err
 	}
-	if len(docs) == 0 {
-		return fmt.Errorf("no ids document found")
+	if len(ids) == 0 {
+		c.Response().Header().Set("HX-Reswap", "none")
+		return c.NoContent(http.StatusOK)
 	}
-	var ids IDs
-	if err := docs[0].DataTo(&ids); err != nil {
-		return err
-	}
-	if len(ids.IDs) == 0 {
-		return fmt.Errorf("ids document empty")
-	}
-	randomId := ids.IDs[rand.IntN(len(ids.IDs))]
+	randomId := ids[rand.IntN(len(ids))]
 	doc, err := client.Collection("recipes").Doc(randomId).Get(ctx)
 	if err != nil {
 		return err
@@ -212,13 +264,11 @@ func ReplaceRecipe(c echo.Context) error {
 		state.User.DisplayName,
 		state.User.Email,
 	)
-	err = Render(c, http.StatusOK, views.Recipe(recipe, false))
-	if err != nil {
+	state.ReplaceRecipe(id, recipe)
+	if err := db.UpdateState(state, c); err != nil {
 		return err
 	}
-
-	state.ReplaceRecipe(id, recipe)
-	return db.UpdateState(state, c)
+	return Render(c, http.StatusOK, views.Recipe(recipe, false))
 }
 
 func GetRandomRecipes(c echo.Context) error {
@@ -239,27 +289,19 @@ func GetRandomRecipes(c echo.Context) error {
 		return err
 	}
 
-	docs, err := client.Collection("ids").Documents(ctx).GetAll()
+	shuffled, err := unlistedRecipeIDs(c, state)
 	if err != nil {
 		return err
 	}
-	if len(docs) == 0 {
-		return fmt.Errorf("no ids document found")
-	}
-	var ids IDs
-	if err := docs[0].DataTo(&ids); err != nil {
-		return err
-	}
-	if len(ids.IDs) == 0 {
-		return fmt.Errorf("ids document empty")
+	if len(shuffled) == 0 {
+		c.Response().Header().Set("HX-Reswap", "none")
+		return c.NoContent(http.StatusOK)
 	}
 
-	if amountInt > len(ids.IDs) {
-		amountInt = len(ids.IDs)
+	if amountInt > len(shuffled) {
+		amountInt = len(shuffled)
 	}
 
-	shuffled := make([]string, len(ids.IDs))
-	copy(shuffled, ids.IDs)
 	rand.Shuffle(len(shuffled), func(i, j int) { shuffled[i], shuffled[j] = shuffled[j], shuffled[i] })
 	pick := shuffled[:amountInt]
 
@@ -293,12 +335,7 @@ func GetRandomRecipes(c echo.Context) error {
 		}
 	}
 
-	err = Render(c, http.StatusOK, views.Recipes(randomRecipes, false))
-	if err != nil {
-		return err
-	}
-	state.AddRecipes(randomRecipes)
-	return db.UpdateState(state, c)
+	return addAndRender(c, state, randomRecipes)
 }
 
 func DeleteRecipe(c echo.Context) error {
@@ -312,12 +349,11 @@ func DeleteRecipe(c echo.Context) error {
 		state.User.DisplayName,
 		state.User.Email,
 	)
-	err := c.NoContent(200)
-	if err != nil {
+	state.DeleteRecipe(id)
+	if err := db.UpdateState(state, c); err != nil {
 		return err
 	}
-	state.DeleteRecipe(id)
-	return db.UpdateState(state, c)
+	return c.NoContent(200)
 }
 
 func DeleteAllRecipes(c echo.Context) error {
@@ -328,12 +364,11 @@ func DeleteAllRecipes(c echo.Context) error {
 		state.User.DisplayName,
 		state.User.Email,
 	)
-	err := c.NoContent(200)
-	if err != nil {
+	state.Recipes = make([]services.Recipe, 0)
+	if err := db.UpdateState(state, c); err != nil {
 		return err
 	}
-	state.Recipes = make([]services.Recipe, 0)
-	return db.UpdateState(state, c)
+	return c.NoContent(200)
 }
 
 
@@ -365,14 +400,11 @@ func GetWifeRecipes(c echo.Context) error {
 
 	for i, r := range wife.Recipes {
 		wife.Recipes[i].Favorite = wife.IsFavorite(r.Id)
+		wife.Recipes[i].SkipGroceries = false
 	}
 
 	log.Printf("Serving %d recipes for wife (%s) to user %s", len(wife.Recipes), wife.User.Email, state.User.Email)
-	if err := Render(c, http.StatusOK, views.Recipes(wife.Recipes, false)); err != nil {
-		return err
-	}
-	state.AddRecipes(wife.Recipes)
-	return db.UpdateState(state, c)
+	return addAndRender(c, state, wife.Recipes)
 }
 
 func AddRecipeToDatabase(c echo.Context) error {

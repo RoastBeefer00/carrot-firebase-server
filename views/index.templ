@@ -8,6 +8,7 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="htmx-config" content='{"historyCacheSize":0,"refreshOnHistoryMiss":true}'/>
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -15,6 +16,175 @@ templ Index(page templ.Component, state services.State, currentPage string) {
 			<link rel="icon" href="/dist/favicon.ico"/>
 			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
 			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
+			<script>
+				// The recipe whose cooking view is open, if any.
+				let cookingId = null;
+
+				// htmx restores a cached page on popstate when the entry underneath came
+				// from an hx-push-url navigation, which would replace the recipe card when
+				// the back button closes the view. This has to be added while the page is
+				// parsing, because listeners on window run in the order they were added
+				// and a card's own listener may be added long after htmx's.
+				window.addEventListener('popstate', (e) => {
+					const wanted = e.state?.cook ?? null;
+					if (wanted === cookingId) return;
+					e.stopImmediatePropagation();
+					window.dispatchEvent(new CustomEvent('cook-history', { detail: wanted }));
+				});
+
+				document.addEventListener('alpine:init', () => {
+					const COOK_PROGRESS_KEY = 'cookProgress';
+					const COOK_PROGRESS_TTL = 3 * 24 * 60 * 60 * 1000;
+
+					// Storage can be unavailable (e.g. private browsing); cooking still
+					// works in that case, it just won't survive a refresh.
+					function readCookProgress() {
+						try {
+							const all = JSON.parse(localStorage.getItem(COOK_PROGRESS_KEY)) || {};
+							return Object.fromEntries(
+								Object.entries(all).filter(([, p]) => Date.now() - p.at < COOK_PROGRESS_TTL)
+							);
+						} catch {
+							return {};
+						}
+					}
+
+					function writeCookProgress(all) {
+						try {
+							localStorage.setItem(COOK_PROGRESS_KEY, JSON.stringify(all));
+						} catch {}
+					}
+
+					Alpine.data('cookMode', (id, total) => {
+						let wakeLock = null;
+						return {
+							cooking: false,
+							// 0 is the ingredient list; 1..total are the recipe's steps.
+							step: 0,
+							checked: [],
+							peek: false,
+							get progress() {
+								return total ? (this.step / total) * 100 : 0;
+							},
+							get nextLabel() {
+								if (this.peek) return `Back to step ${this.step}`;
+								if (this.step === total) return 'Done';
+								return this.step === 0 ? 'Start cooking' : 'Next';
+							},
+							init() {
+								const saved = readCookProgress()[id];
+								if (saved) {
+									this.step = Math.min(saved.step, total);
+									this.checked = saved.checked;
+								}
+								this.$watch('step', () => this.save());
+								this.$watch('checked', () => this.save());
+								// The browser keeps history state across a refresh, so this
+								// reopens the view if it was open when the page reloaded.
+								if (history.state?.cook === id) this.show();
+							},
+							save() {
+								const all = readCookProgress();
+								if (this.step === 0 && this.checked.length === 0) {
+									delete all[id];
+								} else {
+									all[id] = { step: this.step, checked: this.checked, at: Date.now() };
+								}
+								writeCookProgress(all);
+							},
+							// Opening adds a history entry so the phone's back button closes
+							// the view instead of leaving the page.
+							start() {
+								history.pushState({ cook: id }, '');
+								this.show();
+							},
+							show() {
+								// The view sits inside the recipe card's collapsible section,
+								// which starts collapsed after a refresh.
+								this.open = true;
+								this.cooking = true;
+								cookingId = id;
+								document.body.classList.add('overflow-hidden');
+								this.keepAwake();
+								this.$nextTick(() => this.$refs.next.focus());
+							},
+							hide() {
+								this.cooking = false;
+								cookingId = null;
+								this.peek = false;
+								document.body.classList.remove('overflow-hidden');
+								wakeLock?.release();
+								wakeLock = null;
+								this.$refs.opener.focus();
+							},
+							// Closing goes back through history, and syncHistory does the hiding.
+							close() {
+								if (history.length > 1) {
+									history.back();
+								} else {
+									history.replaceState(null, '');
+									this.hide();
+								}
+							},
+							syncHistory(wanted) {
+								if (wanted === id) {
+									this.show();
+								} else if (this.cooking) {
+									this.hide();
+								}
+							},
+							finish() {
+								this.step = 0;
+								this.checked = [];
+								this.close();
+							},
+							goTo(step) {
+								this.step = step;
+								this.$refs.body.scrollTop = 0;
+							},
+							next() {
+								if (this.peek) {
+									this.peek = false;
+								} else if (this.step === total) {
+									this.finish();
+								} else {
+									this.goTo(this.step + 1);
+								}
+							},
+							back() {
+								this.goTo(this.step - 1);
+							},
+							handleKey(e) {
+								if (!this.cooking) return;
+								if (e.key === 'Escape') {
+									this.peek ? (this.peek = false) : this.close();
+								} else if (this.peek) {
+									return;
+								} else if (e.key === 'ArrowRight' && this.step < total) {
+									this.next();
+								} else if (e.key === 'ArrowLeft' && this.step > 0) {
+									this.back();
+								}
+							},
+							// The browser drops the lock whenever the page is hidden, so this
+							// also runs when the page becomes visible again.
+							async keepAwake() {
+								if (!this.cooking || document.visibilityState !== 'visible' || !navigator.wakeLock) return;
+								try {
+									const lock = await navigator.wakeLock.request('screen');
+									if (this.cooking) {
+										wakeLock = lock;
+									} else {
+										lock.release();
+									}
+								} catch {
+									// Not fatal: the screen just follows its normal timeout.
+								}
+							},
+						};
+					});
+				});
+			</script>
 			<title>Magenta Carrot</title>
 		</head>
 		<body id="body" class="bg-base pb-16 sm:pb-0 text-base">

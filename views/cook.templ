@@ -1,0 +1,111 @@
+package views
+
+import (
+	"strconv"
+
+	"github.com/RoastBeefer00/carrot-firebase-server/services"
+)
+
+// MakeRecipe renders the button that starts cooking and the full-screen,
+// step-by-step view it opens. Navigation state lives in the cookMode Alpine
+// component defined in index.templ.
+templ MakeRecipe(recipe services.Recipe) {
+	<div
+		x-data={ "cookMode(" + strconv.Quote(recipe.Id) + ", " + strconv.Itoa(len(recipe.Steps)) + ")" }
+		x-on:keydown.window="handleKey($event)"
+		x-on:visibilitychange.document="keepAwake()"
+		x-on:cook-history.window="syncHistory($event.detail)"
+		class="mb-4"
+	>
+		<button
+			x-ref="opener"
+			x-on:click="start()"
+			type="button"
+			class="w-full inline-flex items-center justify-center gap-2 h-12 px-4 bg-lavender text-crust text-base font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all hover:cursor-pointer"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+				<path fill="currentColor" d="M8 5.14v14q0 .6.525.888t1.025-.038l11-7q.475-.3.475-.85t-.475-.85l-11-7Q9.05 3.965 8.525 4.253T8 5.14"></path>
+			</svg>
+			<span x-text="step > 0 ? `Resume at step ${step}` : 'Make this recipe'">Make this recipe</span>
+		</button>
+		<div
+			x-show="cooking"
+			x-cloak
+			x-transition.opacity
+			role="dialog"
+			aria-modal="true"
+			aria-label={ "Making " + recipe.Name }
+			class="fixed inset-0 z-[60] h-[100dvh] flex flex-col bg-base"
+		>
+			<header class="flex items-center gap-2 px-3 py-3 sm:px-6">
+				<button
+					x-on:click="close()"
+					type="button"
+					aria-label="Close"
+					class="inline-flex items-center justify-center w-14 h-14 shrink-0 rounded-xl text-subtext0 hover:bg-surface0 active:scale-[0.95] transition-all hover:cursor-pointer"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+						<path fill="currentColor" d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6z"></path>
+					</svg>
+				</button>
+				<div class="flex-1 min-w-0">
+					<h2 class="text-text font-semibold text-lg sm:text-xl leading-snug truncate">{ recipe.Name }</h2>
+					<p class="text-subtext0 text-sm">{ recipe.Time }</p>
+				</div>
+				<button
+					x-show="step > 0"
+					x-on:click="peek = !peek"
+					x-bind:aria-pressed="peek"
+					x-bind:class="peek ? 'bg-green/15 border-green' : 'border-surface1'"
+					type="button"
+					class="inline-flex items-center h-14 px-4 shrink-0 rounded-xl border text-green text-base sm:text-lg font-semibold active:scale-[0.97] transition-all hover:cursor-pointer"
+				>
+					Ingredients
+				</button>
+			</header>
+			<div class="h-1.5 bg-surface0">
+				<div class="h-full bg-lavender transition-all duration-300" x-bind:style="`width: ${progress}%`"></div>
+			</div>
+			<main x-ref="body" class="flex-1 min-h-0 overflow-y-auto flex flex-col px-5 py-6 sm:px-10 sm:py-10">
+				<div class="my-auto w-full max-w-4xl mx-auto">
+					<div x-show="step === 0 || peek">
+						<h3 class="text-green text-xl sm:text-2xl font-semibold mb-4">Ingredients</h3>
+						<div>
+							for i, ingredient := range recipe.Ingredients {
+								<label class="flex items-center gap-4 py-3 border-b border-surface0 text-text text-2xl sm:text-3xl leading-snug has-checked:text-overlay1 has-checked:line-through hover:cursor-pointer">
+									<input type="checkbox" x-model="checked" value={ strconv.Itoa(i) } class="w-7 h-7 shrink-0 accent-green hover:cursor-pointer"/>
+									<span>{ services.FormatIngredient(ingredient) }</span>
+								</label>
+							}
+						</div>
+					</div>
+					for i, step := range recipe.Steps {
+						<div x-show={ "!peek && step === " + strconv.Itoa(i+1) }>
+							<h3 class="text-lavender text-xl sm:text-2xl font-semibold mb-4">
+								Step { strconv.Itoa(i + 1) } of { strconv.Itoa(len(recipe.Steps)) }
+							</h3>
+							<p class="text-text text-3xl sm:text-4xl lg:text-5xl leading-snug lg:leading-tight">{ step }</p>
+						</div>
+					}
+				</div>
+			</main>
+			<footer class="flex gap-3 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+				<button
+					x-show="step > 0 && !peek"
+					x-on:click="back()"
+					type="button"
+					class="flex-1 h-20 bg-surface1 text-text text-xl sm:text-2xl font-semibold rounded-2xl hover:bg-surface2 active:scale-[0.98] transition-all hover:cursor-pointer"
+				>
+					Back
+				</button>
+				<button
+					x-ref="next"
+					x-on:click="next()"
+					x-text="nextLabel"
+					type="button"
+					class="flex-[2] h-20 bg-lavender text-crust text-xl sm:text-2xl font-semibold rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all hover:cursor-pointer"
+				></button>
+			</footer>
+		</div>
+	</div>
+}

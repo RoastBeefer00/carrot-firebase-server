@@ -30,3 +30,7 @@
   --color-mantle: #181825;
   --color-crust: #11111b;
 }
+
+[x-cloak] {
+  display: none !important;
+}

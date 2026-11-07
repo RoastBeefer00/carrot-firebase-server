@@ -6,8 +6,9 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
+// Requests run one at a time for the same reason as on the homepage.
 templ Favorites(favorites []services.Recipe) {
-	<div class="px-3 pt-4 pb-6 min-h-[100dvh]">
+	<div class="px-3 pt-4 pb-6 min-h-[100dvh]" hx-sync="#recipes:queue all">
 		<div class="mb-4">
 			<h2 class="text-text font-semibold text-xl">Favorites</h2>
 			<p class="text-subtext0 text-sm">{ favoriteCount(favorites) } saved</p>
@@ -27,7 +28,11 @@ templ Favorites(favorites []services.Recipe) {
 			"
 			/>
 		}
-		@Recipes(favorites, false)
+		<div class="flex flex-col gap-2.5" id="recipes">
+			for _, recipe := range favorites {
+				@FavoriteRecipe(recipe)
+			}
+		</div>
 	</div>
 }
 
