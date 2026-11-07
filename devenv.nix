@@ -5,16 +5,9 @@
   ...
 }:
 let
-  templ-newer = pkgs.templ.overrideAttrs (oldAttrs: rec {
-    version = "0.3.1020";
-    src = pkgs.fetchFromGitHub {
-      owner = "a-h";
-      repo = "templ";
-      rev = "v${version}";
-      hash = "sha256-wv7qKZfnavz8lxfaOaIJJySNsXsjke1ADJuv2kgQOHE=";
-    };
-    vendorHash = "sha256-i4uDGZb3VZUvIyO2Tt53VR1Do/3OYtj6JccGoFnnlbs=";
-  });
+  # Runs the templ version pinned in go.mod, so generated code always matches the
+  # runtime it compiles against. Upgrade it with `go get github.com/a-h/templ@latest`.
+  templ = pkgs.writeShellScriptBin "templ" ''exec go tool templ "$@"'';
 
   firestorePort = "8200";
   firestoreProject = "demo-carrot";
@@ -27,7 +20,7 @@ in
     go
     go-tools
     tailwindcss_4
-    templ-newer
+    templ
   ];
 
   # These take priority over .env, since godotenv doesn't override variables that

@@ -22,7 +22,7 @@ import (
 	"github.com/RoastBeefer00/carrot-firebase-server/services"
 )
 
-//go:generate templ generate
+//go:generate go tool templ generate
 //go:generate tailwindcss -i ./dist/main.css -o ./dist/tailwind.css
 
 type writeFunc func([]byte) (int, error)
