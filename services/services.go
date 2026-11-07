@@ -45,6 +45,51 @@ func (s *State) AddRecipes(recipes []Recipe) {
     }
 }
 
+// Unlisted returns the given recipes that aren't already listed, without repeats.
+func (s *State) Unlisted(recipes []Recipe) []Recipe {
+    unlisted := make([]Recipe, 0, len(recipes))
+    seen := make(map[string]bool, len(recipes))
+    for _, r := range recipes {
+        if !seen[r.Id] && !s.HasRecipe(r.Id) {
+            unlisted = append(unlisted, r)
+            seen[r.Id] = true
+        }
+    }
+    return unlisted
+}
+
+// DedupeRecipes removes repeated recipes, keeping the first of each. Swapping a
+// recipe could previously list the same one twice, and those are still saved.
+func (s *State) DedupeRecipes() {
+    s.Recipes = (&State{}).Unlisted(s.Recipes)
+}
+
+// IncludeInGroceries puts a listed recipe back on the grocery list.
+func (s *State) IncludeInGroceries(id string) {
+    for i := range s.Recipes {
+        if s.Recipes[i].Id == id {
+            s.Recipes[i].SkipGroceries = false
+            return
+        }
+    }
+}
+
+// ToggleGroceries flips whether a listed recipe counts toward the grocery list and
+// returns the updated recipe.
+func (s *State) ToggleGroceries(id string) (Recipe, bool) {
+    for i, recipe := range s.Recipes {
+        if recipe.Id == id {
+            s.Recipes[i].SkipGroceries = !recipe.SkipGroceries
+            return s.Recipes[i], true
+        }
+    }
+    return Recipe{}, false
+}
+
+func (s *State) HasRecipe(id string) bool {
+    return slices.ContainsFunc(s.Recipes, func(r Recipe) bool { return r.Id == id })
+}
+
 func (s *State) DeleteRecipe(id string) {
     for i, recipe := range s.Recipes {
         if recipe.Id == id {
@@ -90,10 +135,10 @@ type Recipe struct {
 	Steps       []string
 	Id          string
 	Favorite    bool `firestore:"-"`
+	// SkipGroceries leaves the recipe out of the grocery list. Unset means included,
+	// which also covers recipes saved before this field existed.
+	SkipGroceries bool `firestore:"SkipGroceries,omitempty"`
+	// InWeek reports whether the recipe is on the homepage, for the favorites page.
+	InWeek bool `firestore:"-"`
 }
 
-type Ingredient struct {
-	Quantity    string
-	Measurement string
-	Item        string
-}

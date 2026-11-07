@@ -220,7 +220,38 @@ func HandleOAuth2Callback(c echo.Context) error {
 		}
 	}
 
-	// 8. Encrypt the user ID
+	// 8. Encrypt the user ID and store it in a new, persistent cookie
+	if err := setUserIDCookie(c, userID); err != nil {
+		return err
+	}
+
+	// 9. Redirect the user to a protected page (e.g., profile)
+	return c.Redirect(http.StatusFound, "/")
+}
+
+// HandleDevLogin signs in as a local user without going through Google. main.go
+// only registers it when db.DevSandbox() is true.
+func HandleDevLogin(c echo.Context) error {
+	email := os.Getenv("DEV_LOGIN_EMAIL")
+	if email == "" {
+		email = "dev@example.com"
+	}
+	user := services.User{Email: email, Uid: "dev-" + email, DisplayName: "Dev User"}
+
+	if _, err := db.GetStateFromId(user.Uid, c); err != nil {
+		state := services.State{User: user, Recipes: []services.Recipe{}}
+		if err := db.UpdateState(state, c); err != nil {
+			return err
+		}
+	}
+	if err := setUserIDCookie(c, user.Uid); err != nil {
+		return err
+	}
+	return c.Redirect(http.StatusFound, "/")
+}
+
+// setUserIDCookie encrypts the user ID and stores it in the session cookie.
+func setUserIDCookie(c echo.Context, userID string) error {
 	encryptedUserID, err := encryptUserID(userID, db.EncryptionKey)
 	if err != nil {
 		log.Printf("Error encrypting user ID: %v", err)
@@ -228,7 +259,6 @@ func HandleOAuth2Callback(c echo.Context) error {
 	}
 	log.Println("User ID encrypted successfully.")
 
-	// 9. Store the encrypted user ID in a new, persistent cookie
 	userIDCookie := &http.Cookie{
 		Name: db.UserIDCookieName,
 		Value: base64.URLEncoding.EncodeToString(
@@ -242,9 +272,7 @@ func HandleOAuth2Callback(c echo.Context) error {
 	}
 	c.SetCookie(userIDCookie)
 	log.Println("Encrypted user ID cookie set.")
-
-	// 10. Redirect the user to a protected page (e.g., profile)
-	return c.Redirect(http.StatusFound, "/")
+	return nil
 }
 
 // generateRandomString generates a URL-safe random string.

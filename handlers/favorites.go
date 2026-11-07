@@ -33,6 +33,7 @@ func Favorites(c echo.Context) error {
 				return
 			}
 			results[i].Favorite = true
+			results[i].InWeek = state.HasRecipe(id)
 		}(i, id)
 	}
 	wg.Wait()

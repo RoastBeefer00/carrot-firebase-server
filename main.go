@@ -140,8 +140,13 @@ func main() {
 	pages.GET("/admin", handlers.AdminHandler)
 
 	// Authentication routes
-	e.GET("/login", handlers.HandleLogin)
-	e.GET("/oauth2/callback", handlers.HandleOAuth2Callback, middlewares.DatabaseMiddleware(client))
+	if db.DevSandbox() {
+		log.Println("Dev sandbox: using Firestore emulator and local login, Google OAuth disabled")
+		e.GET("/login", handlers.HandleDevLogin, middlewares.DatabaseMiddleware(client))
+	} else {
+		e.GET("/login", handlers.HandleLogin)
+		e.GET("/oauth2/callback", handlers.HandleOAuth2Callback, middlewares.DatabaseMiddleware(client))
+	}
 
 	// API routes
 	apis := e.Group("/api")
@@ -164,6 +169,8 @@ recipes.DELETE("/all", handlers.DeleteAllRecipes)
 	recipes.GET("/typeahead", handlers.TypeaheadRecipes)
 	recipes.GET("/pick/:id", handlers.PickRecipe)
 	recipes.GET("/wife", handlers.GetWifeRecipes)
+	recipes.POST("/groceries/:id", handlers.ToggleRecipeGroceries)
+	recipes.POST("/week/:id", handlers.ToggleRecipeInWeek)
 
 	apis.GET("/groceries", handlers.CombineIngredients)
 

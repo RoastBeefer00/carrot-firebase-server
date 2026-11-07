@@ -18,6 +18,7 @@ templ Search() {
 				x-bind:placeholder="filter === 'name' ? 'Search by name...' : 'Search by ingredients...'"
 				autocomplete="off"
 				hx-get="/api/recipes/typeahead"
+				hx-sync="this:replace"
 				hx-include="[name='filter']"
 				hx-target="#typeahead-list"
 				hx-swap="outerHTML"

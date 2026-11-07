@@ -23,3 +23,5 @@
 *.test
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+# Real recipes, for checking the grocery list against locally
+services/testdata/recipes.json

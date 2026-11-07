@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
@@ -30,8 +31,21 @@ func GetToken(c echo.Context) (string, error) {
 	return token, nil
 }
 
+// DevSandbox reports whether this process is local development wired to the
+// Firestore emulator with a demo project, which cannot resolve to real data.
+func DevSandbox() bool {
+	return os.Getenv("APP_ENV") == "development" &&
+		os.Getenv("FIRESTORE_EMULATOR_HOST") != "" &&
+		strings.HasPrefix(os.Getenv("FIRESTORE_PROJECT_ID"), "demo-")
+}
+
 func GetClient() (*firestore.Client, context.Context, error) {
 	ctx := context.Background()
+	if os.Getenv("APP_ENV") == "development" && !DevSandbox() {
+		return nil, ctx, fmt.Errorf(
+			"refusing to open Firestore: APP_ENV=development requires FIRESTORE_EMULATOR_HOST and a demo- FIRESTORE_PROJECT_ID (use devenv up)",
+		)
+	}
 	projectID := os.Getenv("FIRESTORE_PROJECT_ID")
 	if projectID == "" {
 		projectID = "r-j-magenta-carrot-42069"
@@ -103,6 +117,7 @@ func GetState(c echo.Context) (services.State, error) {
 		return state, err
 	}
 
+	dbuser.DedupeRecipes()
 	for i, r := range dbuser.Recipes {
 		dbuser.Recipes[i].Favorite = dbuser.IsFavorite(r.Id)
 	}
