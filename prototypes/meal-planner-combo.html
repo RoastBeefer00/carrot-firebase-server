@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>R&amp;J Meals Plan and Read</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: two linked pages (Plan board + Recipe reader) shown live in a desktop frame and a phone frame side by side, sharing one set of data. Single dark look: the app's Catppuccin Mocha palette. */
+:root {
+  color-scheme: dark;
+  --base:#1e1e2e; --mantle:#181825; --crust:#11111b;
+  --s0:#313244; --s1:#45475a; --s2:#585b70;
+  --o0:#6c7086; --o1:#7f849c; --sub0:#a6adc8; --sub1:#bac2de; --text:#cdd6f4;
+  --lav:#b4befe; --blue:#89b4fa; --green:#a6e3a1; --red:#f38ba8; --peach:#fab387;
+  --font:'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-sm:8px; --r:12px; --r-lg:16px;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--crust); color:var(--text); font-family:var(--font); font-size:15px; line-height:1.45; }
+button, input, select { font:inherit; color:inherit; }
+button { cursor:pointer; }
+:focus-visible { outline:2px solid var(--lav); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+/* ---------- studio chrome ---------- */
+.studio { max-width:1680px; margin:0 auto; padding:20px 16px 32px; display:flex; flex-direction:column; gap:16px; }
+.ch-head h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em; }
+.ch-head h1 span { color:var(--lav); }
+.ch-head p { margin:4px 0 0; color:var(--sub0); font-size:14px; max-width:80ch; }
+.flow { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px 20px; padding:14px 16px; border-radius:var(--r-lg); background:var(--mantle); border:1px solid var(--s0); }
+.flow div { font-size:13.5px; color:var(--sub1); }
+.flow b { display:block; color:var(--text); font-size:14px; font-weight:600; margin-bottom:2px; }
+@media (max-width: 800px) { .flow { grid-template-columns:1fr; } }
+.stage { display:grid; grid-template-columns:minmax(0,1fr) 390px; gap:20px; align-items:start; }
+.stage figure { margin:0; display:flex; flex-direction:column; gap:8px; min-width:0; }
+.stage figcaption { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--o1); }
+@media (max-width: 1200px) { .stage { grid-template-columns:minmax(0,1fr); } .stage .phonefig { justify-self:center; width:390px; max-width:100%; } }
+@media (max-width: 760px) { .stage .deskfig { display:none; } }
+.frame { position:relative; container-type:inline-size; container-name:app; width:100%; height:min(840px, calc(100dvh - 60px)); min-height:600px; background:var(--base); border:1px solid var(--s0); border-radius:20px; overflow:hidden; }
+.frame.phone { height:min(800px, calc(100dvh - 60px)); border-radius:32px; border:8px solid var(--mantle); box-shadow:0 0 0 1px var(--s0); }
+@media (max-width: 760px) { .frame.phone { border-radius:18px; border-width:1px; height:calc(100dvh - 60px); } }
+
+/* ---------- primitives ---------- */
+.app { position:absolute; inset:0; display:flex; flex-direction:column; }
+.scroll { overflow-y:auto; min-height:0; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--s1) transparent; }
+.top { flex:0 0 auto; display:flex; align-items:center; gap:14px; height:56px; padding:0 16px; background:var(--mantle); border-bottom:1px solid var(--s0); }
+.brand { color:var(--lav); font-size:19px; font-weight:600; letter-spacing:-.01em; white-space:nowrap; }
+.user { color:var(--sub0); font-size:14px; font-weight:500; white-space:nowrap; }
+.top-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.toptabs { display:none; gap:4px; margin-left:8px; }
+.toptabs button { height:36px; padding:0 12px; border-radius:var(--r-sm); border:0; background:transparent; color:var(--sub0); font-weight:500; display:inline-flex; align-items:center; gap:6px; }
+.toptabs button:hover { color:var(--text); }
+.toptabs button.on { color:var(--lav); background:rgba(180,190,254,.12); }
+.top-groc { display:none !important; }
+@container app (min-width: 720px) { .toptabs { display:flex; } .top-groc { display:inline-flex !important; } }
+
+.lbl { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--o1); margin:0; }
+.lbl.green { color:var(--green); } .lbl.blue { color:var(--blue); }
+
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:44px; padding:0 16px; border-radius:var(--r); border:1px solid transparent; font-weight:600; font-size:15px; white-space:nowrap; transition:background .15s, opacity .15s, transform .1s; }
+.btn:active { transform:scale(.98); }
+.btn.sm { height:36px; padding:0 12px; font-size:14px; border-radius:10px; }
+.btn-primary { background:var(--lav); color:var(--crust); } .btn-primary:hover { opacity:.9; }
+.btn-soft { background:var(--s1); color:var(--text); } .btn-soft:hover { background:var(--s2); }
+.btn-ghost { background:transparent; color:var(--sub0); } .btn-ghost:hover { background:var(--s0); color:var(--text); }
+.btn-ghost.danger { color:var(--red); }
+.btn-ghost.fav { color:var(--green); }
+.btn-danger { background:transparent; border-color:rgba(243,139,168,.45); color:var(--red); }
+.iconbtn { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:var(--r); border:0; background:transparent; color:var(--sub0); flex:0 0 auto; }
+.iconbtn:hover { background:var(--s1); color:var(--text); }
+.badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--lav); color:var(--crust); font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
+.seg { display:inline-flex; padding:3px; gap:2px; border-radius:10px; background:var(--mantle); border:1px solid var(--s1); flex:0 0 auto; }
+.seg button { height:28px; padding:0 10px; border:0; border-radius:7px; background:transparent; color:var(--sub0); font-size:13px; font-weight:600; }
+.seg button.on { background:var(--s1); color:var(--text); }
+.seg.full { display:flex; } .seg.full button { flex:1; }
+.gpill { display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 12px 0 10px; border-radius:999px; border:1px solid var(--s1); background:transparent; color:var(--sub0); font-size:13.5px; font-weight:600; white-space:nowrap; }
+.gpill.on { background:rgba(180,190,254,.14); border-color:transparent; color:var(--lav); }
+
+.search { position:relative; flex:1 1 240px; min-width:0; }
+.sbox { display:flex; align-items:center; gap:8px; height:44px; padding:0 4px 0 12px; border-radius:var(--r); background:var(--s0); border:1px solid var(--s1); color:var(--o1); }
+.sbox:focus-within { border-color:var(--lav); box-shadow:0 0 0 2px rgba(180,190,254,.35); }
+.sbox input { flex:1; min-width:0; height:100%; border:0; background:transparent; outline:0; color:var(--text); font-size:15px; }
+.sbox input::placeholder { color:var(--o1); }
+.sbox .seg { background:var(--base); }
+.ta:empty { display:none; }
+.ta { position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:40; padding:4px; border-radius:var(--r); background:var(--s0); border:1px solid var(--s1); box-shadow:0 16px 40px rgba(0,0,0,.5); }
+.ta button { width:100%; display:flex; justify-content:space-between; gap:12px; padding:10px 12px; border:0; border-radius:var(--r-sm); background:transparent; text-align:left; font-size:14px; }
+.ta button:hover, .ta button.hl { background:var(--s1); }
+.ta button span:last-child { color:var(--sub0); font-size:12.5px; flex:0 0 auto; }
+.ta .none { padding:10px 12px; color:var(--sub0); font-size:14px; }
+
+.nm { font-weight:600; line-height:1.3; text-wrap:balance; min-width:0; }
+.mt { color:var(--sub0); font-size:13.5px; }
+.empty { padding:28px 16px; text-align:center; color:var(--sub0); border:1px dashed var(--s1); border-radius:var(--r-lg); font-size:14px; }
+.empty b { display:block; color:var(--text); font-size:16px; margin-bottom:4px; }
+.toast { position:absolute; z-index:70; left:50%; bottom:84px; transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); padding:10px 16px; border-radius:var(--r); background:var(--text); color:var(--crust); font-weight:500; font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+@container app (min-width: 720px) { .toast { bottom:24px; } }
+
+/* bottom nav (phone) */
+.bottomnav { flex:0 0 auto; display:grid; grid-template-columns:repeat(3,1fr); height:64px; background:var(--mantle); border-top:1px solid var(--s0); }
+.bottomnav button { border:0; background:transparent; color:var(--sub0); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:12px; font-weight:500; }
+.bn-ic { position:relative; display:flex; align-items:center; justify-content:center; width:52px; height:28px; border-radius:14px; }
+.bottomnav button.on { color:var(--lav); }
+.bottomnav button.on .bn-ic { background:rgba(180,190,254,.15); }
+.bn-ic .badge { position:absolute; top:-6px; right:2px; min-width:18px; height:18px; font-size:11px; padding:0 5px; }
+@container app (min-width: 720px) { .bottomnav { display:none; } }
+
+/* ---------- Plan page ---------- */
+.plan { flex:1; }
+.plan-wrap { padding:18px 16px 28px; display:flex; flex-direction:column; gap:14px; }
+.plan-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px; }
+.plan-head h1 { margin:0; font-size:24px; font-weight:600; letter-spacing:-.01em; }
+.plan-head p { margin:2px 0 0; color:var(--sub0); font-size:14px; font-variant-numeric:tabular-nums; }
+.weeknav { display:flex; align-items:center; gap:2px; }
+.plan-tools { display:flex; gap:8px; flex-wrap:wrap; flex:1 1 300px; min-width:0; max-width:560px; }
+.plan-tools .search { flex-basis:230px; }
+.board { display:flex; flex-direction:column; gap:0; border-top:1px solid var(--s0); }
+.day { display:grid; grid-template-columns:54px minmax(0,1fr); gap:10px; padding:10px 0; border-bottom:1px solid var(--s0); }
+.day h3 { margin:0; padding-top:6px; display:flex; flex-direction:column; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--sub0); }
+.day h3 span { font-size:20px; letter-spacing:0; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.1; }
+.day.drop { background:rgba(180,190,254,.06); }
+.day-items { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.emptyday { margin:0; padding:8px 0; color:var(--o0); font-size:13.5px; }
+.tile { display:flex; align-items:center; gap:6px; padding:8px 6px 8px 12px; border-radius:var(--r); background:var(--s0); border:1px solid var(--s1); cursor:grab; }
+.tile { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.lifted { opacity:.35; }
+.tile { position:relative; }
+.grip { flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:22px; height:36px; margin-left:-8px; border-radius:6px; color:var(--o0); cursor:grab; touch-action:none; }
+.grip:hover { color:var(--sub1); background:var(--s1); }
+body.dragging, body.dragging * { cursor:grabbing !important; -webkit-user-select:none; user-select:none; }
+.ghost { position:fixed; z-index:9999; margin:0; pointer-events:none; opacity:.96; transform:rotate(-1.5deg) scale(1.03); border-color:var(--lav); box-shadow:0 18px 40px rgba(0,0,0,.55); }
+.tile.off { background:transparent; border-style:dashed; }
+.tile.off .nm { color:var(--sub0); }
+.tile-main { flex:1; min-width:0; border:0; background:none; padding:2px 0; text-align:left; display:flex; flex-direction:column; gap:1px; }
+.tile .nm { font-size:15px; }
+.tile .mt { font-size:12.5px; display:flex; gap:8px; align-items:center; }
+.tile-ic { display:flex; gap:0; flex:0 0 auto; }
+.tile-ic .iconbtn { width:34px; height:34px; border-radius:9px; }
+.tile-ic .iconbtn.on { color:var(--lav); }
+.tile-ic .iconbtn.fav { color:var(--green); }
+.tray { display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:var(--r-lg); border:1px dashed var(--s1); }
+.tray.drop { border-color:var(--lav); background:rgba(180,190,254,.05); }
+.tray-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:8px; }
+.tray .tile { flex-wrap:wrap; }
+.quick { flex-basis:100%; display:flex; gap:4px; flex-wrap:wrap; padding:2px 0 2px; }
+.quick button { height:28px; min-width:38px; padding:0 8px; border-radius:8px; border:1px solid var(--s1); background:var(--base); color:var(--sub0); font-size:12px; font-weight:600; }
+.quick button:hover { border-color:var(--lav); color:var(--lav); }
+.tray p { margin:0; color:var(--o1); font-size:13px; }
+@container app (min-width: 900px) {
+  .plan-wrap { padding:22px 20px 32px; }
+  .board { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:8px; border-top:0; }
+  .day { display:flex; flex-direction:column; gap:8px; min-height:280px; padding:10px 8px; border:1px solid var(--s0); border-radius:var(--r-lg); background:var(--mantle); }
+  .day h3 { flex-direction:row; justify-content:space-between; align-items:baseline; padding:0 4px 2px; }
+  .day h3 span { font-size:13px; color:var(--o1); }
+  .day.drop { border-color:var(--lav); }
+  .tile { flex-direction:column; align-items:stretch; padding:10px 8px 6px 10px; }
+  .tile .nm { font-size:14px; }
+  .tile-ic { margin-left:-6px; }
+  .tile .grip { position:absolute; top:6px; right:4px; margin:0; height:28px; }
+  .tile .tile-main { padding-right:18px; }
+  .tile-ic .iconbtn { width:30px; height:30px; }
+  .emptyday { margin:auto 0; text-align:center; }
+}
+
+/* ---------- Reader page ---------- */
+.read { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); }
+.rl { display:flex; flex-direction:column; min-height:0; background:var(--base); }
+.rl-tools { padding:12px; display:flex; flex-direction:column; gap:8px; }
+.rl-tools .search { flex:0 0 auto; }
+.rl .scroll { flex:1; padding:0 8px 12px; }
+.rl-day { padding:8px 0 4px; border-radius:var(--r); }
+.rl-day.drop { background:rgba(180,190,254,.08); box-shadow:inset 0 0 0 1px var(--lav); }
+.rl-group { margin:0 12px 4px; display:flex; justify-content:space-between; }
+.rl-empty { margin:0 12px 4px; color:var(--o0); font-size:13px; }
+.rl-item { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.rl-item .grip { margin-left:-6px; margin-right:-4px; }
+.rl-item.ghost { background:var(--s0); border:1px solid var(--lav); }
+.swap { box-shadow:inset 0 0 0 2px var(--lav) !important; background:rgba(180,190,254,.12) !important; }
+.rl ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.rl-item { width:100%; display:flex; align-items:center; gap:10px; padding:10px 12px; border:0; border-radius:var(--r); background:transparent; text-align:left; }
+.rl-item:hover { background:var(--s0); }
+.rl-item.on { background:var(--s0); box-shadow:inset 0 0 0 1px var(--s1); }
+.rl-item > span:not(.grip):not(.go) { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.rl-item .nm { font-size:15px; font-weight:500; }
+.rl-item.on .nm { color:var(--lav); }
+.rl-item.off .nm { color:var(--o1); }
+.rl-item .mt { font-size:12.5px; display:flex; gap:8px; align-items:center; }
+.rl-item .go { color:var(--o0); flex:0 0 auto; transform:rotate(-90deg); display:inline-flex; }
+.rl-foot { padding:10px 16px; border-top:1px solid var(--s0); color:var(--sub0); font-size:13px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.link { border:0; background:none; padding:0; color:var(--sub0); text-decoration:underline; text-underline-offset:3px; font-size:13px; }
+.link:hover { color:var(--red); }
+.rd { display:none; }
+.show-detail .rl { display:none; }
+.show-detail .rd { display:block; }
+.reader { max-width:900px; margin:0 auto; padding:12px 18px 32px; display:flex; flex-direction:column; gap:18px; }
+.eyebrow { color:var(--lav); }
+.reader h1 { margin:4px 0 0; font-size:28px; line-height:1.15; font-weight:600; letter-spacing:-.015em; text-wrap:balance; }
+.reader .mt { font-size:15px; margin-top:4px; }
+.reader-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.reader-actions .make { flex:1 1 100%; }
+.cookon { display:flex; flex-direction:column; gap:8px; }
+.daypick { display:flex; flex-wrap:wrap; gap:6px; }
+.daypick button { height:34px; padding:0 12px; border-radius:999px; border:1px solid var(--s1); background:transparent; color:var(--sub0); font-size:13.5px; font-weight:600; }
+.daypick button.on { background:var(--lav); border-color:var(--lav); color:var(--crust); }
+.reader-cols { display:grid; gap:22px; }
+.ing-box { background:var(--s0); border-radius:var(--r-lg); padding:14px 16px; }
+.ing { list-style:none; margin:8px 0 0; padding:0; display:grid; gap:7px; }
+.ing li { display:flex; gap:8px; }
+.ing li::before { content:'•'; color:var(--green); }
+.steps { list-style:none; margin:8px 0 0; padding:0; display:grid; gap:12px; counter-reset:s; }
+.steps li { display:flex; gap:10px; max-width:68ch; font-size:16px; }
+.steps li::before { counter-increment:s; content:counter(s) '.'; color:var(--blue); font-weight:600; min-width:22px; text-align:right; font-variant-numeric:tabular-nums; }
+.backbtn { align-self:flex-start; margin-left:-8px; }
+@container app (min-width: 720px) {
+  .read { grid-template-columns:310px minmax(0,1fr); }
+  .rl, .show-detail .rl { display:flex; background:var(--mantle); border-right:1px solid var(--s0); }
+  .rd, .show-detail .rd { display:block; }
+  .backbtn { display:none; }
+  .rl-item .go { display:none; }
+  .reader { padding:28px 32px 40px; }
+  .reader h1 { font-size:34px; }
+  .reader-actions .make { flex:0 0 auto; }
+}
+@container app (min-width: 1000px) { .reader-cols { grid-template-columns:280px minmax(0,1fr); align-items:start; } }
+
+/* ---------- Groceries ---------- */
+.gpage { flex:1; }
+.gpage .inner { max-width:640px; margin:0 auto; padding:18px 16px 28px; }
+.gl { display:flex; flex-direction:column; gap:10px; }
+.gl-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.gl-head h2 { margin:0; font-size:20px; font-weight:600; }
+.gl-head p { margin:2px 0 0; color:var(--sub0); font-size:13px; font-variant-numeric:tabular-nums; }
+.gl-items { list-style:none; margin:0; padding:0; }
+.gl-items label { display:flex; align-items:flex-start; gap:12px; padding:10px 2px; border-bottom:1px solid var(--s0); cursor:pointer; font-size:15px; }
+.gl-items li:last-child label { border-bottom:0; }
+.gl-items input { width:18px; height:18px; margin:2px 0 0; accent-color:var(--lav); flex:0 0 auto; }
+.gl-items label.done span { color:var(--o0); text-decoration:line-through; }
+.gl-from { color:var(--o1); font-size:12px; display:block; }
+.scrim { position:absolute; inset:0; z-index:50; background:rgba(17,17,27,.6); border:0; padding:0; }
+.drawer { position:absolute; z-index:51; top:0; right:0; bottom:0; width:min(400px, 100%); background:var(--base); border-left:1px solid var(--s1); display:flex; flex-direction:column; box-shadow:-20px 0 50px rgba(0,0,0,.4); }
+.drawer-head { display:flex; justify-content:flex-end; padding:8px 8px 0; }
+.drawer .scroll { padding:0 18px 20px; flex:1; }
+</style>
+
+<div class="studio">
+  <header class="ch-head">
+    <h1><span>R&amp;J Meals</span> plan + read</h1>
+    <p>Layouts 3 and 5 combined into two linked pages. Both frames below run the same app on the same data, so a change in one shows up in the other. Drag meals on the desktop board, or tap a meal on the phone to read it.</p>
+  </header>
+  <section class="flow">
+    <div><b>Plan</b>Lay out the week. New recipes from search or Random land in "Not planned", and you assign them a day by dragging or by tapping a day button.</div>
+    <div><b>Recipes</b>Read and cook. The list is grouped by day, and every action is a labeled button. Switch to Favorites to browse and add favorites to the week.</div>
+    <div><b>Groceries</b>A side drawer on desktop and its own tab on the phone. Tapping a meal on the board opens it in Recipes.</div>
+  </section>
+  <div class="stage">
+    <figure class="deskfig"><figcaption>Desktop</figcaption><div class="frame" id="f-desk"></div></figure>
+    <figure class="phonefig"><figcaption>Phone</figcaption><div class="frame phone" id="f-phone"></div></figure>
+  </div>
+</div>
+
+<script>
+const ICONS = {
+  cart:'M7 22q-.825 0-1.412-.587T5 20q0-.825.588-1.412T7 18q.825 0 1.413.588T9 20q0 .825-.587 1.413T7 22m10 0q-.825 0-1.412-.587T15 20q0-.825.588-1.412T17 18q.825 0 1.413.588T20 20q0 .825-.587 1.413T17 22M6.15 6l2.4 5h7l2.75-5zM5.2 4h14.75q.575 0 .875.513t.025 1.037l-3.55 6.4q-.275.5-.737.775T15.55 13H8.1L7 15h11q.425 0 .713.288T19 16q0 .425-.288.713T18 17H7q-1.125 0-1.7-.988t-.05-1.962L6.6 11.6L3 4H2q-.425 0-.712-.288T1 3q0-.425.288-.712T2 2h1.625q.275 0 .525.15t.375.425z',
+  heart:'M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125M11.05 6.75q-.725-1.025-1.55-1.563t-2-.537q-1.5 0-2.5 1t-1 2.5q0 1.3.925 2.763t2.213 2.837q1.287 1.375 2.65 2.575T12 18.3q.85-.775 2.213-1.975t2.65-2.575q1.287-1.375 2.212-2.837T20 8.15q0-1.5-1-2.5t-2.5-1q-1.175 0-2 .538T12.95 6.75q-.175.25-.425.375T12 7.25q-.275 0-.525-.125t-.425-.375m.95 4.725',
+  heartF:'M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125',
+  swap:'M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z',
+  trash:'M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z',
+  play:'M8 5.14v14q0 .6.525.888t1.025-.038l11-7q.475-.3.475-.85t-.475-.85l-11-7Q9.05 3.965 8.525 4.253T8 5.14',
+  search:'M9.5 3a6.5 6.5 0 0 1 5.18 10.43l5.45 5.44-1.42 1.42-5.44-5.45A6.5 6.5 0 1 1 9.5 3m0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9',
+  plus:'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z',
+  shuffle:'M10.59 9.17 5.41 4 4 5.41l5.17 5.17zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04z',
+  chev:'M16.59 8.59L12 13.17L7.41 8.59L6 10l6 6l6-6z',
+  close:'M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6z',
+  back:'M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z',
+  cal:'M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM5 22q-.825 0-1.412-.587T3 20V6q0-.825.588-1.412T5 4h1V2h2v2h8V2h2v2h1q.825 0 1.413.588T21 6v14q0 .825-.587 1.413T19 22zm0-2h14V10H5z',
+  book:'M6.5 2H20v18H6.5a1.5 1.5 0 0 0 0 3H20v-2H6.5a.5.5 0 0 1 0-1H20V2zM6.5 2A2.5 2.5 0 0 0 4 4.5v15A2.5 2.5 0 0 1 6.5 17H18V4H6.5z',
+  left:'M15.41 7.41L14 6l-6 6l6 6l1.41-1.41L10.83 12z',
+  right:'M8.59 16.59L10 18l6-6l-6-6l-1.41 1.41L13.17 12z',
+  grip:'M9 20a2 2 0 1 1 0-4 2 2 0 0 1 0 4m6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4m-6-6a2 2 0 1 1 0-4 2 2 0 0 1 0 4m6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4M9 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4',
+};
+function ic(name, size = 20) {
+  const slash = name === 'cartOff';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${ICONS[slash ? 'cart' : name]}"/>${slash ? '<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 3l18 18"/>' : ''}</svg>`;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// ---------- sample data ----------
+const POOL = [
+  { id:'fajitas', name:'Sheet Pan Chicken Fajitas', time:'40 min', fav:true,
+    ingredients:['1.5 lb chicken breast','3 bell peppers','1 yellow onion','2 tbsp olive oil','1 tbsp chili powder','2 tsp cumin','8 flour tortillas','1 lime'],
+    steps:['Heat the oven to 425°F and line a sheet pan with foil.','Slice the chicken, peppers and onion into thin strips.','Toss everything with the oil, chili powder, cumin and a big pinch of salt, then spread it out in one layer.','Roast for 20–25 minutes, until the chicken is cooked through and the peppers char at the edges.','Squeeze the lime over the pan and serve in warm tortillas.'] },
+  { id:'gnocchi', name:'Creamy Tuscan Gnocchi', time:'30 min', fav:true,
+    ingredients:['1 lb potato gnocchi','3 cloves garlic','1 cup heavy cream','3 cups spinach','1/2 cup sun-dried tomatoes','1/2 cup parmesan','1 tbsp olive oil'],
+    steps:['Brown the gnocchi in the olive oil over medium-high heat, about 5 minutes. Set aside.','Cook the garlic and sun-dried tomatoes in the same pan for 1 minute.','Pour in the cream, bring to a simmer and stir in the parmesan.','Add the spinach and let it wilt, then fold the gnocchi back in.'] },
+  { id:'beef', name:'Beef and Broccoli', time:'25 min', fav:false,
+    ingredients:['1 lb flank steak','4 cups broccoli florets','3 cloves garlic','1/3 cup soy sauce','2 tbsp brown sugar','1 tbsp cornstarch','2 cups jasmine rice'],
+    steps:['Start the rice.','Slice the steak thin against the grain and toss it with the cornstarch.','Whisk the soy sauce, brown sugar, garlic and 1/4 cup water.','Sear the steak in batches in a very hot pan, then set it aside.','Steam the broccoli in the pan with a splash of water, add the sauce and the steak, and cook until glossy.'] },
+  { id:'tacos', name:'Black Bean Sweet Potato Tacos', time:'35 min', fav:false,
+    ingredients:['2 sweet potatoes','1 can black beans','1 yellow onion','2 tsp cumin','8 corn tortillas','1 avocado','1 lime','1/2 cup cotija'],
+    steps:['Dice the sweet potatoes and roast at 425°F with oil and cumin for 25 minutes.','Cook the onion until soft, then add the drained beans and warm through.','Mash the avocado with lime juice and salt.','Fill the tortillas and top with cotija.'] },
+  { id:'salmon', name:'Lemon Garlic Salmon', time:'20 min', fav:true, skip:true,
+    ingredients:['4 salmon fillets','3 cloves garlic','1 lemon','2 tbsp butter','1 lb asparagus'],
+    steps:['Heat the oven to 400°F.','Lay the salmon and asparagus on a sheet pan.','Melt the butter with the garlic and lemon zest and spoon it over everything.','Bake 12–15 minutes and finish with lemon juice.'] },
+  { id:'soup', name:'Chicken Tortilla Soup', time:'50 min', fav:false,
+    ingredients:['1 lb chicken breast','1 yellow onion','2 cloves garlic','1 can diced tomatoes','4 cups chicken broth','1 can black beans','1 tsp cumin','1 cup corn'],
+    steps:['Soften the onion and garlic in a large pot.','Add the broth, tomatoes, cumin and whole chicken breasts and simmer 20 minutes.','Shred the chicken and return it to the pot with the beans and corn.','Simmer 10 more minutes and serve with crushed tortilla chips.'] },
+  { id:'chili', name:'Turkey Chili', time:'45 min', fav:true,
+    ingredients:['1 lb ground turkey','1 yellow onion','1 can kidney beans','1 can diced tomatoes','2 tbsp chili powder','1 tsp cumin'],
+    steps:['Brown the turkey with the onion.','Add the spices, tomatoes and beans.','Simmer 30 minutes, stirring now and then.'] },
+  { id:'pesto', name:'Pesto Pasta with Peas', time:'20 min', fav:false,
+    ingredients:['1 lb penne','1/2 cup basil pesto','2 cups frozen peas','1/2 cup parmesan'],
+    steps:['Boil the pasta, adding the peas for the last 2 minutes.','Drain, keeping a cup of pasta water.','Toss with pesto, parmesan and enough water to loosen.'] },
+  { id:'pork', name:'Honey Garlic Pork Chops', time:'30 min', fav:false,
+    ingredients:['4 pork chops','3 tbsp honey','3 cloves garlic','2 tbsp soy sauce','1 lb green beans'],
+    steps:['Season and sear the chops 4 minutes per side.','Add the honey, garlic and soy sauce and spoon it over the chops.','Steam the green beans and serve alongside.'] },
+  { id:'rice', name:'Shrimp Fried Rice', time:'25 min', fav:true,
+    ingredients:['1 lb shrimp','3 cups cooked rice','2 eggs','1 cup frozen peas','2 tbsp soy sauce','3 green onions'],
+    steps:['Sear the shrimp and set aside.','Scramble the eggs in the same pan.','Add the rice and peas and fry until hot, then add the soy sauce, shrimp and green onions.'] },
+  { id:'curry', name:'Coconut Chickpea Curry', time:'30 min', fav:false,
+    ingredients:['2 cans chickpeas','1 can coconut milk','1 yellow onion','2 tbsp curry paste','3 cups spinach','2 cups jasmine rice'],
+    steps:['Start the rice.','Cook the onion with the curry paste until fragrant.','Add the chickpeas and coconut milk and simmer 15 minutes.','Stir in the spinach until wilted.'] },
+  { id:'greek', name:'Greek Chicken Bowls', time:'35 min', fav:false,
+    ingredients:['1.5 lb chicken thighs','1 cucumber','1 cup cherry tomatoes','1/2 cup feta','1 cup tzatziki','2 cups jasmine rice'],
+    steps:['Marinate the chicken in lemon, oregano and garlic.','Grill or pan-sear 6 minutes per side.','Build bowls with rice, chicken, cucumber, tomatoes, feta and tzatziki.'] },
+];
+const R = Object.fromEntries(POOL.map(r => [r.id, { ...r, groc: !r.skip, day: null }]));
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYNAME = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
+const DATES = { Mon:9, Tue:10, Wed:11, Thu:12, Fri:13, Sat:14, Sun:15 };
+R.fajitas.day = 'Mon'; R.gnocchi.day = 'Tue'; R.beef.day = 'Wed'; R.tacos.day = 'Thu'; R.salmon.day = 'Sat';
+
+// Shared data; each frame keeps its own view state.
+const D = { week:['fajitas','gnocchi','beef','tacos','salmon','soup'], checked:new Set(), scale:1, filter:'name' };
+const week = () => D.week.map(id => R[id]);
+const ordered = () => [...DAYS.flatMap(d => week().filter(r => r.day === d)), ...week().filter(r => !r.day)];
+
+// ---------- groceries ----------
+const UNITS = { lb:'lb', lbs:'lb', oz:'oz', cup:'cup', cups:'cup', tbsp:'tbsp', tsp:'tsp', can:'can', cans:'can', clove:'clove', cloves:'clove' };
+function parse(s) {
+  const m = s.match(/^([\d.\/]+)\s+(.*)$/);
+  if (!m) return { q:null, u:'', n:s };
+  const q = m[1].includes('/') ? m[1].split('/').map(Number).reduce((a, b) => a / b) : Number(m[1]);
+  const rest = m[2].split(' ');
+  const u = UNITS[rest[0]] || '';
+  if (u) rest.shift();
+  return { q, u, n: rest.join(' ') };
+}
+function fmtQ(q) {
+  const w = Math.floor(q), f = q - w;
+  const hit = [[.25,'¼'],[.5,'½'],[.75,'¾'],[1/3,'⅓'],[2/3,'⅔']].find(([k]) => Math.abs(f - k) < .02);
+  if (f > .02 && !hit) return String(+q.toFixed(2));
+  return (w ? String(w) : '') + (hit ? hit[1] : '') || '0';
+}
+function fmtIng({ q, u, n }, scale = 1) {
+  if (q == null) return n;
+  q *= scale;
+  let unit = u;
+  if (unit && q > 1 && ['cup','can','clove'].includes(unit)) unit += 's';
+  return `${fmtQ(q)} ${unit ? unit + ' ' : ''}${n}`;
+}
+function groceries() {
+  const map = new Map();
+  for (const r of ordered().filter(r => r.groc)) for (const s of r.ingredients) {
+    const p = parse(s), key = `${p.u}|${p.n}`, cur = map.get(key);
+    if (cur && cur.q != null && p.q != null) { cur.q += p.q; cur.from.push(r.name); }
+    else if (!cur) map.set(key, { ...p, key, from:[r.name] });
+  }
+  return [...map.values()].map(i => ({ ...i, text: fmtIng(i, D.scale) }));
+}
+const groceryCount = () => groceries().filter(i => !D.checked.has(i.key)).length;
+function totalTime() {
+  const m = week().reduce((a, r) => a + (parseInt(r.time, 10) || 0), 0);
+  return m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`;
+}
+
+// ---------- shared pieces ----------
+function searchBox(f, placeholderName) {
+  return `<div class="search"><div class="sbox">${ic('search', 18)}
+      <input class="q" id="q-${f.key}-${f.V.page}" type="text" autocomplete="off" aria-label="Search recipes to add"
+        placeholder="${D.filter === 'name' ? placeholderName : 'Add by ingredient'}">
+      <div class="seg" role="group" aria-label="Search by">
+        <button data-act="filter" data-v="name" class="${D.filter === 'name' ? 'on' : ''}">Name</button>
+        <button data-act="filter" data-v="ingredients" class="${D.filter === 'ingredients' ? 'on' : ''}">Ingr.</button>
+      </div></div><div class="ta"></div></div>`;
+}
+function groceryList() {
+  const items = groceries();
+  const left = items.filter(i => !D.checked.has(i.key)).length;
+  const meals = week().filter(r => r.groc).length;
+  return `<div class="gl">
+    <div class="gl-head"><div><h2>Grocery list</h2><p>${left} of ${items.length} left · from ${meals} meal${meals === 1 ? '' : 's'}</p></div>
+      <div class="seg" role="group" aria-label="Batch size">${[1, 2].map(x => `<button data-act="scale" data-v="${x}" class="${D.scale === x ? 'on' : ''}">${x}×</button>`).join('')}</div></div>
+    ${items.length ? `<ul class="gl-items">${items.map(i => {
+      const done = D.checked.has(i.key);
+      return `<li><label class="${done ? 'done' : ''}"><input type="checkbox" data-check="${esc(i.key)}" ${done ? 'checked' : ''}><span>${esc(i.text)}${i.from.length > 1 ? `<span class="gl-from">${i.from.length} recipes</span>` : ''}</span></label></li>`;
+    }).join('')}</ul>` : `<div class="empty"><b>Nothing to buy</b>Turn on the grocery toggle for a meal to add its ingredients.</div>`}
+  </div>`;
+}
+const gpill = r => `<button class="gpill ${r.groc ? 'on' : ''}" data-act="groc" data-id="${r.id}" aria-pressed="${r.groc}">${ic(r.groc ? 'cart' : 'cartOff', 18)}<span>${r.groc ? 'On grocery list' : 'Not on list'}</span></button>`;
+
+// ---------- Plan page ----------
+function tile(r, quick) {
+  return `<div class="tile ${r.groc ? '' : 'off'}" data-drag="${r.id}">
+    <span class="grip" data-grip title="Drag to another day">${ic('grip', 18)}</span>
+    <button class="tile-main" data-act="read" data-id="${r.id}"><span class="nm">${esc(r.name)}</span><span class="mt">${r.time}${r.groc ? '' : '<span>· no groceries</span>'}</span></button>
+    <div class="tile-ic">
+      <button class="iconbtn ${r.groc ? 'on' : ''}" data-act="groc" data-id="${r.id}" aria-pressed="${r.groc}" title="${r.groc ? 'On grocery list' : 'Not on grocery list'}">${ic(r.groc ? 'cart' : 'cartOff', 17)}</button>
+      <button class="iconbtn fav" data-act="fav" data-id="${r.id}" aria-pressed="${r.fav}" title="${r.fav ? 'Favorited' : 'Favorite'}">${ic(r.fav ? 'heartF' : 'heart', 17)}</button>
+    </div>
+    ${quick ? `<div class="quick" aria-label="Plan for">${DAYS.map(d => `<button data-act="move" data-id="${r.id}" data-v="${d}">${d}</button>`).join('')}</div>` : ''}
+  </div>`;
+}
+function PlanPage(f) {
+  const ws = week(), un = ws.filter(r => !r.day);
+  return `<main class="plan scroll" data-scroll="plan"><div class="plan-wrap">
+    <div class="plan-head">
+      <div><div class="weeknav"><h1>Week of Nov 9</h1><button class="iconbtn" data-act="toast" data-v="Previous week" aria-label="Previous week">${ic('left', 22)}</button><button class="iconbtn" data-act="toast" data-v="Next week" aria-label="Next week">${ic('right', 22)}</button></div>
+        <p>${ws.length} meals · ${ws.length - un.length} planned · ${totalTime()} of cooking</p></div>
+      <div class="plan-tools">${searchBox(f, 'Add a recipe')}<button class="btn btn-soft" data-act="random">${ic('shuffle', 20)} Random</button></div>
+    </div>
+    <div class="board">${DAYS.map(d => {
+      const rs = ws.filter(r => r.day === d);
+      return `<section class="day" data-drop="${d}"><h3>${d}<span>${DATES[d]}</span></h3><div class="day-items">${rs.map(r => tile(r)).join('') || '<p class="emptyday">Nothing planned</p>'}</div></section>`;
+    }).join('')}</div>
+    <section class="tray" data-drop=""><h3 class="lbl">Not planned yet · ${un.length}</h3>
+      ${un.length ? `<div class="tray-tiles">${un.map(r => tile(r, true)).join('')}</div>` : ''}
+      <p>Search and Random add recipes here. Tap a day to plan one, or drag any meal onto a day. On a phone, press and hold a meal first.</p></section>
+  </div></main>`;
+}
+
+// ---------- Recipes page ----------
+function readerItem(f, x, sel) {
+  const week = f.V.list === 'week';
+  return `<li><button class="rl-item ${sel && x.id === sel.id ? 'on' : ''} ${x.groc || !week ? '' : 'off'}" data-act="sel" data-id="${x.id}" ${week ? `data-drag="${x.id}"` : ''}>
+    ${week ? `<span class="grip" data-grip title="Drag to another day">${ic('grip', 18)}</span>` : ''}
+    <span><span class="nm">${esc(x.name)}</span>
+    <span class="mt">${x.time}${x.fav ? `<span style="color:var(--green);display:inline-flex">${ic('heartF', 13)}</span>` : ''}${f.V.list === 'week' && !x.groc ? '<span>not on list</span>' : ''}${f.V.list === 'fav' && D.week.includes(x.id) ? `<span style="color:var(--lav)">${R[x.id].day ? DAYNAME[R[x.id].day] : 'This week'}</span>` : ''}</span></span>
+    <span class="go">${ic('chev', 20)}</span></button></li>`;
+}
+function RecipesPage(f) {
+  const V = f.V;
+  const favs = POOL.map(p => R[p.id]).filter(r => r.fav);
+  const pool = V.list === 'week' ? ordered() : favs;
+  const sel = pool.find(r => r.id === V.selId) || pool[0];
+  let list;
+  if (V.list === 'week') {
+    // Every day is listed, empty or not, so a meal can be dragged onto any of them.
+    const groups = [...DAYS.map(d => [d, `${DAYNAME[d]} ${DATES[d]}`, week().filter(r => r.day === d)]), ['', 'Not planned', week().filter(r => !r.day)]];
+    list = D.week.length
+      ? groups.map(([key, g, rs]) => `<div class="rl-day" data-drop="${key}"><div class="lbl rl-group">${g}</div>${rs.length ? `<ul>${rs.map(x => readerItem(f, x, sel)).join('')}</ul>` : `<p class="rl-empty">${key ? 'Nothing planned' : 'Every meal has a day'}</p>`}</div>`).join('')
+      : `<div class="empty" style="margin:8px">No meals this week yet.</div>`;
+  } else {
+    list = `<ul>${favs.map(x => readerItem(f, x, sel)).join('')}</ul>`;
+  }
+  let pane = `<div class="reader"><div class="empty"><b>Nothing to read yet</b>Add a recipe from Plan or switch to Favorites.</div></div>`;
+  if (sel) {
+    const inWeek = D.week.includes(sel.id);
+    const eyebrow = inWeek ? (sel.day ? `${DAYNAME[sel.day]}, Nov ${DATES[sel.day]}` : 'This week · not planned') : 'Favorite · not this week';
+    pane = `<div class="reader">
+      <button class="btn btn-ghost sm backbtn" data-act="back">${ic('back', 18)} ${V.list === 'week' ? 'This week' : 'Favorites'}</button>
+      <div><div class="lbl eyebrow">${eyebrow}</div><h1>${esc(sel.name)}</h1><div class="mt">${sel.time} · ${sel.ingredients.length} ingredients · ${sel.steps.length} steps</div></div>
+      ${inWeek ? `<div class="reader-actions">
+          <button class="btn btn-primary make" data-act="cook" data-id="${sel.id}">${ic('play', 20)} Make this recipe</button>
+          ${gpill(sel)}
+          <button class="btn btn-ghost sm fav" data-act="fav" data-id="${sel.id}">${ic(sel.fav ? 'heartF' : 'heart', 18)} ${sel.fav ? 'Favorited' : 'Favorite'}</button>
+          <button class="btn btn-ghost sm" data-act="swap" data-id="${sel.id}">${ic('swap', 18)} Swap</button>
+          <button class="btn btn-ghost sm danger" data-act="remove" data-id="${sel.id}">${ic('trash', 18)} Remove</button>
+        </div>
+        <div class="cookon"><span class="lbl">Cook on</span><div class="daypick">${DAYS.map(d => `<button data-act="move" data-id="${sel.id}" data-v="${d}" class="${sel.day === d ? 'on' : ''}">${d} ${DATES[d]}</button>`).join('')}<button data-act="move" data-id="${sel.id}" data-v="" class="${!sel.day ? 'on' : ''}">Not planned</button></div></div>`
+      : `<div class="reader-actions">
+          <button class="btn btn-primary make" data-act="addweek" data-id="${sel.id}">${ic('plus', 20)} Add to this week</button>
+          <button class="btn btn-ghost sm fav" data-act="fav" data-id="${sel.id}">${ic(sel.fav ? 'heartF' : 'heart', 18)} ${sel.fav ? 'Favorited' : 'Favorite'}</button>
+        </div>`}
+      <div class="reader-cols">
+        <div class="ing-box"><h3 class="lbl green">Ingredients</h3><ul class="ing">${sel.ingredients.map(i => `<li>${esc(fmtIng(parse(i)))}</li>`).join('')}</ul></div>
+        <div><h3 class="lbl blue">Steps</h3><ol class="steps">${sel.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></div>
+      </div>
+    </div>`;
+  }
+  return `<div class="read ${V.detail ? 'show-detail' : ''}">
+    <aside class="rl">
+      <div class="rl-tools">
+        <div class="seg full" role="group" aria-label="Show"><button data-act="list" data-v="week" class="${V.list === 'week' ? 'on' : ''}">This week</button><button data-act="list" data-v="fav" class="${V.list === 'fav' ? 'on' : ''}">Favorites · ${favs.length}</button></div>
+        ${V.list === 'week' ? searchBox(f, 'Add a recipe') : ''}
+      </div>
+      <div class="scroll" data-scroll="rl-${V.list}">${list}</div>
+      ${V.list === 'week' && D.week.length ? `<div class="rl-foot"><span>${D.week.length} meals · ${totalTime()}</span>${V.confirmClear ? `<span><button class="link" data-act="clear" style="color:var(--red)">Yes, clear all</button> · <button class="link" data-act="cancelClear">Keep</button></span>` : `<button class="link" data-act="clear">Clear week</button>`}</div>` : ''}
+    </aside>
+    <main class="rd scroll" data-scroll="rd">${pane}</main>
+  </div>`;
+}
+
+// ---------- app shell ----------
+function App(f) {
+  const V = f.V, count = groceryCount();
+  const page = V.page === 'plan' ? PlanPage(f) : V.page === 'read' ? RecipesPage(f) : `<main class="gpage scroll" data-scroll="groc"><div class="inner">${groceryList()}</div></main>`;
+  const tabs = [['plan', 'Plan', 'cal'], ['read', 'Recipes', 'book'], ['groc', 'Groceries', 'cart']];
+  return `<div class="app">
+    <header class="top"><span class="brand">R&amp;J Meals</span>
+      <nav class="toptabs">${tabs.slice(0, 2).map(([k, l]) => `<button data-act="page" data-v="${k}" class="${V.page === k ? 'on' : ''}">${l}</button>`).join('')}</nav>
+      <div class="top-actions"><button class="btn btn-soft sm top-groc" data-act="drawer">${ic('cart', 18)} Groceries ${count ? `<span class="badge">${count}</span>` : ''}</button><span class="user">Jake</span></div></header>
+    ${page}
+    <nav class="bottomnav">${tabs.map(([k, l, i]) => `<button data-act="page" data-v="${k}" class="${V.page === k ? 'on' : ''}"><span class="bn-ic">${ic(i, 22)}${k === 'groc' && count ? `<span class="badge">${count}</span>` : ''}</span>${l}</button>`).join('')}</nav>
+    ${V.drawer ? `<button class="scrim" data-act="drawer" aria-label="Close grocery list"></button>
+      <div class="drawer" role="dialog" aria-label="Grocery list"><div class="drawer-head"><button class="iconbtn" data-act="drawer" aria-label="Close">${ic('close', 22)}</button></div>
+      <div class="scroll" data-scroll="drawer">${groceryList()}</div></div>` : ''}
+    ${V.toast ? `<div class="toast" role="status">${esc(V.toast)}</div>` : ''}
+  </div>`;
+}
+
+const frames = [
+  { key:'d', el:document.getElementById('f-desk'), V:{ page:'plan', list:'week', selId:'fajitas', detail:false, drawer:false, confirmClear:false, toast:'' } },
+  { key:'m', el:document.getElementById('f-phone'), V:{ page:'plan', list:'week', selId:'fajitas', detail:false, drawer:false, confirmClear:false, toast:'' } },
+];
+function render(f) {
+  const pos = {};
+  f.el.querySelectorAll('[data-scroll]').forEach(el => pos[el.dataset.scroll] = el.scrollTop);
+  f.el.innerHTML = App(f);
+  f.el.querySelectorAll('[data-scroll]').forEach(el => { if (pos[el.dataset.scroll]) el.scrollTop = pos[el.dataset.scroll]; });
+}
+const renderAll = () => frames.forEach(render);
+function toast(f, msg) {
+  f.V.toast = msg; clearTimeout(f.tt);
+  f.tt = setTimeout(() => { f.V.toast = ''; render(f); }, 2400);
+}
+function freeIds(n) {
+  return POOL.filter(p => !D.week.includes(p.id)).map(p => p.id).sort(() => Math.random() - .5).slice(0, n);
+}
+function add(f, id) {
+  if (D.week.includes(id)) return;
+  D.week.push(id); R[id].groc = true; R[id].day = null;
+  if (f.V.page === 'read') { f.V.selId = id; f.V.list = 'week'; f.V.detail = true; toast(f, `Added ${R[id].name}. Pick a day below.`); }
+  else toast(f, `Added ${R[id].name} to Not planned`);
+}
+function matches(q) {
+  q = q.trim().toLowerCase();
+  if (!q) return [];
+  return POOL.filter(p => !D.week.includes(p.id)).filter(p => D.filter === 'name'
+    ? p.name.toLowerCase().includes(q) : p.ingredients.some(i => i.toLowerCase().includes(q))).slice(0, 6);
+}
+
+frames.forEach(f => {
+  const el = f.el, V = f.V;
+  el.addEventListener('click', e => {
+    const pk = e.target.closest('[data-pick]');
+    if (pk) { add(f, pk.dataset.pick); renderAll(); return; }
+    if (!e.target.closest('.search')) el.querySelectorAll('.ta').forEach(t => t.innerHTML = '');
+    const a = e.target.closest('[data-act]');
+    if (!a) return;
+    const act = a.dataset.act, id = a.dataset.id, v = a.dataset.v, r = R[id];
+    if (act !== 'clear' && act !== 'cancelClear') V.confirmClear = false;
+    switch (act) {
+      case 'page': V.page = v; V.drawer = false; if (v === 'read') V.detail = false; break;
+      case 'read': V.page = 'read'; V.list = 'week'; V.selId = id; V.detail = true; break;
+      case 'sel': V.selId = id; V.detail = true; break;
+      case 'back': V.detail = false; break;
+      case 'list': V.list = v; V.detail = false; V.selId = null; break;
+      case 'groc': r.groc = !r.groc; break;
+      case 'fav': r.fav = !r.fav; break;
+      case 'move': r.day = v || null; if (V.page === 'plan') toast(f, v ? `${r.name} planned for ${DAYNAME[v]}` : `${r.name} moved to Not planned`); break;
+      case 'remove': D.week = D.week.filter(x => x !== id); r.day = null; toast(f, `Removed ${r.name}`); V.detail = false; break;
+      case 'swap': {
+        const [nid] = freeIds(1); if (!nid) break;
+        D.week[D.week.indexOf(id)] = nid; R[nid].day = r.day; R[nid].groc = true; r.day = null;
+        frames.forEach(g => { if (g.V.selId === id) g.V.selId = nid; });
+        toast(f, `Swapped in ${R[nid].name}`); break;
+      }
+      case 'random': {
+        const [nid] = freeIds(1);
+        if (!nid) toast(f, 'Every sample recipe is already this week'); else add(f, nid);
+        break;
+      }
+      case 'addweek': add(f, id); break;
+      case 'clear': if (V.confirmClear) { D.week.forEach(x => R[x].day = null); D.week = []; V.confirmClear = false; toast(f, 'Cleared this week'); } else V.confirmClear = true; break;
+      case 'cancelClear': V.confirmClear = false; break;
+      case 'filter': D.filter = v; break;
+      case 'scale': D.scale = +v; break;
+      case 'drawer': V.drawer = !V.drawer; break;
+      case 'cook': toast(f, 'Cook mode opens here, the same as today'); break;
+      case 'toast': toast(f, `${v} would load here`); break;
+    }
+    renderAll();
+  });
+  el.addEventListener('change', e => {
+    const k = e.target.dataset.check;
+    if (k == null) return;
+    D.checked.has(k) ? D.checked.delete(k) : D.checked.add(k);
+    renderAll();
+  });
+  el.addEventListener('input', e => {
+    if (!e.target.classList.contains('q')) return;
+    const ta = e.target.closest('.search').querySelector('.ta'), q = e.target.value, ms = matches(q);
+    ta.innerHTML = !q.trim() ? '' : ms.length
+      ? ms.map((m, i) => `<button type="button" data-pick="${m.id}" class="${i === 0 ? 'hl' : ''}"><span>${esc(m.name)}</span><span>${m.time}</span></button>`).join('')
+      : `<div class="none">No recipes match “${esc(q)}”. Try ${D.filter === 'name' ? 'chicken, curry or pasta' : 'garlic, rice or spinach'}.</div>`;
+  });
+  el.addEventListener('keydown', e => {
+    if (e.target.classList?.contains('q') && e.key === 'Enter') {
+      const [m] = matches(e.target.value);
+      if (m) { add(f, m.id); renderAll(); }
+    }
+  });
+});
+// ---------- drag and drop ----------
+// One pointer-based path for mouse and touch, since phones don't fire HTML5 drag
+// events. A mouse picks a meal up as soon as it moves; a finger holds for a
+// moment first, so a plain swipe still scrolls.
+let drag = null, suppressClick = false;
+// Dropping on another meal swaps the two meals' days; dropping anywhere else in
+// a day moves the meal there.
+function dropTargetAt(x, y) {
+  const hit = document.elementFromPoint(x, y);
+  if (!hit || !drag.f.el.contains(hit)) return null;
+  const meal = hit.closest('[data-drag]');
+  if (meal && meal.dataset.drag !== drag.id && R[meal.dataset.drag].day !== R[drag.id].day) return { el: meal, swap: meal.dataset.drag };
+  const zone = hit.closest('[data-drop]');
+  return zone ? { el: zone, day: zone.dataset.drop || null } : null;
+}
+function highlightDrop() {
+  const t = dropTargetAt(drag.x, drag.y);
+  drag.f.el.querySelectorAll('.drop, .swap').forEach(x => x !== t?.el && x.classList.remove('drop', 'swap'));
+  t?.el.classList.add(t.swap ? 'swap' : 'drop');
+}
+function moveGhost() {
+  drag.ghost.style.left = `${drag.x - drag.dx}px`;
+  drag.ghost.style.top = `${drag.y - drag.dy}px`;
+}
+function autoScroll() {
+  if (!drag) return;
+  const s = drag.scroller;
+  if (s) {
+    const r = s.getBoundingClientRect(), edge = 70;
+    let dy = 0;
+    if (drag.y < r.top + edge) dy = -Math.ceil((r.top + edge - drag.y) / 6);
+    else if (drag.y > r.bottom - edge) dy = Math.ceil((drag.y - (r.bottom - edge)) / 6);
+    if (dy) { s.scrollTop += dy; highlightDrop(); }
+  }
+  requestAnimationFrame(autoScroll);
+}
+function startDrag(f, tileEl, x, y) {
+  const rect = tileEl.getBoundingClientRect();
+  const ghost = tileEl.cloneNode(true);
+  ghost.classList.add('ghost');
+  ghost.style.width = `${rect.width}px`;
+  document.body.appendChild(ghost);
+  tileEl.classList.add('lifted');
+  document.body.classList.add("dragging");
+  navigator.vibrate?.(15);
+  drag = { f, id: tileEl.dataset.drag, tileEl, ghost, x, y, dx: x - rect.left, dy: y - rect.top, scroller: tileEl.closest('.scroll') };
+  suppressClick = true;
+  moveGhost();
+  highlightDrop();
+  requestAnimationFrame(autoScroll);
+}
+function endDrag(commit) {
+  if (!drag) return;
+  const { f, id, ghost, tileEl } = drag;
+  const target = commit ? dropTargetAt(drag.x, drag.y) : null;
+  ghost.remove();
+  document.body.classList.remove("dragging");
+  tileEl.classList.remove('lifted');
+  f.el.querySelectorAll('.drop, .swap').forEach(x => x.classList.remove('drop', 'swap'));
+  drag = null;
+  setTimeout(() => { suppressClick = false; }, 100);
+  if (target && R[id]) {
+    const a = R[id], label = d => d ? DAYNAME[d] : 'Not planned';
+    if (target.swap) {
+      const b = R[target.swap];
+      [a.day, b.day] = [b.day, a.day];
+      toast(f, `Swapped: ${a.name} on ${label(a.day)}, ${b.name} on ${label(b.day)}`);
+    } else if (a.day !== target.day) {
+      a.day = target.day;
+      toast(f, target.day ? `${a.name} planned for ${DAYNAME[target.day]}` : `${a.name} moved to Not planned`);
+    }
+    renderAll();
+  }
+}
+frames.forEach(f => {
+  f.el.addEventListener('pointerdown', e => {
+    const t = e.target.closest('[data-drag]');
+    if (!t || drag || e.button !== 0 || e.target.closest('.tile-ic, .quick')) return;
+    // The grip never scrolls (touch-action: none), so it picks the meal up right away.
+    if (e.target.closest('[data-grip]')) { e.preventDefault(); startDrag(f, t, e.clientX, e.clientY); return; }
+    const mouse = e.pointerType === 'mouse';
+    const sx = e.clientX, sy = e.clientY;
+    let lx = sx, ly = sy;
+    const timer = mouse ? null : setTimeout(() => { cleanup(); startDrag(f, t, lx, ly); }, 320);
+    const move = ev => {
+      lx = ev.clientX; ly = ev.clientY;
+      if (Math.hypot(lx - sx, ly - sy) <= (mouse ? 4 : 8)) return;
+      clearTimeout(timer); cleanup();
+      if (mouse) { startDrag(f, t, sx, sy); drag.x = lx; drag.y = ly; moveGhost(); highlightDrop(); }
+    };
+    const stop = () => { clearTimeout(timer); cleanup(); };
+    function cleanup() {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+    }
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+  });
+  // A drag ends in a click on the tile, which would open the recipe.
+  f.el.addEventListener('click', e => {
+    if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+  }, true);
+  // Stops the long-press menu on touch screens.
+  f.el.addEventListener('contextmenu', e => { if (e.target.closest('[data-drag]') && e.pointerType !== 'mouse') e.preventDefault(); });
+});
+// Once a drag starts, the finger moves the meal instead of scrolling the page.
+window.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
+window.addEventListener('pointermove', e => {
+  if (!drag) return;
+  drag.x = e.clientX; drag.y = e.clientY;
+  moveGhost();
+  highlightDrop();
+});
+window.addEventListener('pointerup', () => endDrag(true));
+window.addEventListener('pointercancel', () => endDrag(false));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') frames.forEach(f => { if (f.V.drawer) { f.V.drawer = false; render(f); } });
+});
+// Start the desktop frame on Plan and the phone on a recipe, so both pages show at first glance.
+frames[1].V.page = 'read'; frames[1].V.detail = false;
+renderAll();
+</script>
+
+</body>
+</html>

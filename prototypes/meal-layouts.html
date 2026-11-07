@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>R&amp;J Meals Layouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a studio page — chrome on crust, one live app frame (container-query driven) on base, so each study can be seen at desktop and phone width. Single dark look: the app's Catppuccin Mocha palette. */
+:root {
+  color-scheme: dark;
+  --base:#1e1e2e; --mantle:#181825; --crust:#11111b;
+  --s0:#313244; --s1:#45475a; --s2:#585b70;
+  --o0:#6c7086; --o1:#7f849c; --sub0:#a6adc8; --sub1:#bac2de; --text:#cdd6f4;
+  --lav:#b4befe; --blue:#89b4fa; --sky:#89dceb; --green:#a6e3a1; --red:#f38ba8; --pink:#f5c2e7; --peach:#fab387; --mauve:#cba6f7;
+  --font:'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-sm:8px; --r:12px; --r-lg:16px;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--crust); color:var(--text); font-family:var(--font); font-size:15px; line-height:1.45; }
+button, input, select { font:inherit; color:inherit; }
+button { cursor:pointer; }
+:focus-visible { outline:2px solid var(--lav); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+/* ---------- studio chrome ---------- */
+.studio { max-width:1320px; margin:0 auto; padding:20px 16px 32px; display:flex; flex-direction:column; gap:14px; }
+.ch-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px; }
+.ch-head h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em; }
+.ch-head h1 span { color:var(--lav); }
+.ch-head p { margin:2px 0 0; color:var(--sub0); font-size:14px; max-width:62ch; }
+.ch-tabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+.ch-tabs button { flex:0 0 auto; display:flex; align-items:center; gap:8px; height:40px; padding:0 14px; border-radius:var(--r); border:1px solid var(--s0); background:var(--mantle); color:var(--sub0); font-weight:500; }
+.ch-tabs button b { font-weight:600; color:var(--o1); font-variant-numeric:tabular-nums; }
+.ch-tabs button.on { background:var(--s0); border-color:var(--lav); color:var(--text); }
+.ch-tabs button.on b { color:var(--lav); }
+.notes { display:grid; grid-template-columns: minmax(0,1.4fr) repeat(3, minmax(0,1fr)); gap:10px 20px; padding:14px 16px; border-radius:var(--r-lg); background:var(--mantle); border:1px solid var(--s0); }
+.notes h2 { margin:0 0 2px; font-size:16px; font-weight:600; }
+.notes p, .notes li { margin:0; color:var(--sub1); font-size:13.5px; }
+.notes ul { margin:0; padding-left:16px; display:grid; gap:2px; }
+.notes .lbl { display:block; margin-bottom:4px; }
+.cost { display:inline-flex; align-items:center; gap:6px; font-weight:600; color:var(--text); font-size:14px; }
+.cost i { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--s2); }
+.cost i.f { background:var(--peach); }
+@media (max-width: 900px) { .notes { grid-template-columns:1fr 1fr; } .notes > :first-child { grid-column:1 / -1; } }
+@media (max-width: 520px) { .notes { grid-template-columns:1fr; } }
+
+.stagewrap { display:flex; justify-content:center; }
+.frame { position:relative; container-type:inline-size; container-name:app; width:100%; height:min(860px, calc(100dvh - 120px)); min-height:560px; background:var(--base); border:1px solid var(--s0); border-radius:20px; overflow:hidden; transition:width .25s ease; }
+.frame.phone { width:390px; max-width:100%; height:min(800px, calc(100dvh - 120px)); border-radius:32px; border:8px solid var(--mantle); box-shadow:0 0 0 1px var(--s0); }
+@media (max-width: 720px) { .ch-view { display:none; } .frame, .frame.phone { width:100%; border-radius:18px; border-width:1px; height:calc(100dvh - 90px); } }
+
+/* ---------- shared app primitives ---------- */
+.app { position:absolute; inset:0; display:flex; flex-direction:column; }
+.scroll { overflow-y:auto; min-height:0; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--s1) transparent; }
+.top { flex:0 0 auto; display:flex; align-items:center; gap:14px; height:56px; padding:0 16px; background:var(--mantle); border-bottom:1px solid var(--s0); }
+.brand { color:var(--lav); font-size:19px; font-weight:600; letter-spacing:-.01em; white-space:nowrap; }
+.user { margin-left:auto; color:var(--sub0); font-size:14px; font-weight:500; white-space:nowrap; }
+.crumb { color:var(--sub0); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.top-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.top-actions .user { margin-left:0; }
+.toptabs { display:none; gap:4px; margin-left:12px; }
+.toptabs button { height:36px; padding:0 12px; border-radius:var(--r-sm); border:0; background:transparent; color:var(--sub0); font-weight:500; display:inline-flex; align-items:center; gap:6px; }
+.toptabs button:hover { color:var(--text); }
+.toptabs button.on { color:var(--lav); background:rgba(180,190,254,.12); }
+@container app (min-width: 720px) { .toptabs { display:flex; } }
+.wrap { width:100%; max-width:760px; margin:0 auto; padding:18px 14px 28px; display:flex; flex-direction:column; gap:14px; }
+
+.lbl { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--o1); margin:0; }
+.lbl.green { color:var(--green); } .lbl.blue { color:var(--blue); }
+.pagehead h1 { margin:0; font-size:24px; font-weight:600; letter-spacing:-.01em; text-wrap:balance; }
+.pagehead p { margin:2px 0 0; color:var(--sub0); font-size:14px; }
+
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:44px; padding:0 16px; border-radius:var(--r); border:1px solid transparent; font-weight:600; font-size:15px; white-space:nowrap; transition:background .15s, opacity .15s, transform .1s; }
+.btn:active { transform:scale(.98); }
+.btn.sm { height:36px; padding:0 12px; font-size:14px; border-radius:10px; }
+.btn.wide { width:100%; }
+.btn-primary { background:var(--lav); color:var(--crust); } .btn-primary:hover { opacity:.9; }
+.btn-soft { background:var(--s1); color:var(--text); } .btn-soft:hover { background:var(--s2); }
+.btn-ghost { background:transparent; color:var(--sub0); } .btn-ghost:hover { background:var(--s0); color:var(--text); }
+.btn-danger { background:transparent; border-color:rgba(243,139,168,.45); color:var(--red); } .btn-danger:hover { background:rgba(243,139,168,.1); }
+.btn-ghost.danger { color:var(--red); }
+.iconbtn { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:var(--r); border:0; background:transparent; color:var(--sub0); flex:0 0 auto; transition:background .15s; }
+.iconbtn:hover { background:var(--s1); color:var(--text); }
+.iconbtn.fav { color:var(--green); } .iconbtn.fav:hover { background:rgba(166,227,161,.14); }
+.badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--lav); color:var(--crust); font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
+.seg { display:inline-flex; padding:3px; gap:2px; border-radius:10px; background:var(--mantle); border:1px solid var(--s1); flex:0 0 auto; }
+.seg button { height:28px; padding:0 10px; border:0; border-radius:7px; background:transparent; color:var(--sub0); font-size:13px; font-weight:600; }
+.seg button.on { background:var(--s1); color:var(--text); }
+
+/* grocery pill */
+.gpill { display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 12px 0 10px; border-radius:999px; border:1px solid var(--s1); background:transparent; color:var(--sub0); font-size:13.5px; font-weight:600; white-space:nowrap; }
+.gpill.on { background:rgba(180,190,254,.14); border-color:transparent; color:var(--lav); }
+
+/* search + typeahead */
+.search { position:relative; flex:1 1 260px; min-width:0; }
+.sbox { display:flex; align-items:center; gap:8px; height:44px; padding:0 4px 0 12px; border-radius:var(--r); background:var(--s0); border:1px solid var(--s1); color:var(--o1); }
+.sbox:focus-within { border-color:var(--lav); box-shadow:0 0 0 2px rgba(180,190,254,.35); }
+.sbox input { flex:1; min-width:0; height:100%; border:0; background:transparent; outline:0; color:var(--text); font-size:15px; }
+.sbox input::placeholder { color:var(--o1); }
+.sbox .seg { background:var(--base); }
+.ta:empty { display:none; }
+.ta { position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:40; padding:4px; border-radius:var(--r); background:var(--s0); border:1px solid var(--s1); box-shadow:0 16px 40px rgba(0,0,0,.5); }
+.ta.up { top:auto; bottom:calc(100% + 10px); }
+.ta button { width:100%; display:flex; justify-content:space-between; gap:12px; padding:10px 12px; border:0; border-radius:var(--r-sm); background:transparent; text-align:left; font-size:14px; }
+.ta button:hover, .ta button.hl { background:var(--s1); }
+.ta button span:last-child { color:var(--sub0); font-size:12.5px; flex:0 0 auto; }
+.ta .none { padding:10px 12px; color:var(--sub0); font-size:14px; }
+@container app (max-width: 420px) { .sbox .seg button { padding:0 7px; } }
+
+/* recipe cards */
+.list { display:flex; flex-direction:column; gap:10px; }
+.card { background:var(--s0); border:1px solid var(--s1); border-radius:var(--r-lg); padding:14px 14px 12px 16px; }
+.card.off { background:transparent; border-style:dashed; }
+.card.off .nm { color:var(--sub0); }
+.card-head { width:100%; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; padding:0; border:0; background:none; text-align:left; }
+.nm { font-weight:600; font-size:17px; line-height:1.3; text-wrap:balance; min-width:0; }
+.mt { color:var(--sub0); font-size:13.5px; }
+.chev { color:var(--o1); flex:0 0 auto; transition:transform .2s; display:inline-flex; }
+.open .chev { transform:rotate(180deg); }
+.card-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; flex-wrap:wrap; }
+.card-actions { display:flex; align-items:center; gap:2px; margin-left:auto; }
+.menu-wrap { position:relative; }
+.menu { position:absolute; right:0; top:calc(100% + 4px); z-index:35; min-width:200px; padding:4px; border-radius:var(--r); background:var(--mantle); border:1px solid var(--s1); box-shadow:0 16px 40px rgba(0,0,0,.5); display:flex; flex-direction:column; }
+.menu button { display:flex; align-items:center; gap:10px; height:40px; padding:0 10px; border:0; border-radius:var(--r-sm); background:transparent; text-align:left; font-size:14px; font-weight:500; }
+.menu button:hover { background:var(--s0); }
+.menu button.danger { color:var(--red); }
+
+.detail { margin-top:12px; padding-top:14px; border-top:1px solid var(--s1); display:flex; flex-direction:column; gap:16px; }
+.ing { list-style:none; margin:8px 0 0; padding:0; display:grid; gap:6px 18px; }
+@container app (min-width: 560px) { .ing { grid-template-columns:1fr 1fr; } }
+.ing li { display:flex; gap:8px; }
+.ing li::before { content:'•'; color:var(--green); }
+.steps { list-style:none; margin:8px 0 0; padding:0; display:grid; gap:10px; counter-reset:s; }
+.steps li { display:flex; gap:10px; max-width:68ch; }
+.steps li::before { counter-increment:s; content:counter(s) '.'; color:var(--blue); font-weight:600; min-width:22px; text-align:right; font-variant-numeric:tabular-nums; }
+
+.listfoot { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; color:var(--sub0); font-size:14px; }
+.empty { padding:36px 16px; text-align:center; color:var(--sub0); border:1px dashed var(--s1); border-radius:var(--r-lg); }
+.empty b { display:block; color:var(--text); font-size:16px; margin-bottom:4px; }
+
+/* grocery list */
+.gl { display:flex; flex-direction:column; gap:10px; }
+.gl-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.gl-head h2 { margin:0; font-size:18px; font-weight:600; }
+.gl-head p { margin:2px 0 0; color:var(--sub0); font-size:13px; font-variant-numeric:tabular-nums; }
+.gl-items { list-style:none; margin:0; padding:0; }
+.gl-items label { display:flex; align-items:flex-start; gap:12px; padding:9px 2px; border-bottom:1px solid var(--s0); cursor:pointer; font-size:15px; }
+.gl-items li:last-child label { border-bottom:0; }
+.gl-items input { width:18px; height:18px; margin:2px 0 0; accent-color:var(--lav); flex:0 0 auto; }
+.gl-items label.done span { color:var(--o0); text-decoration:line-through; }
+.gl-from { color:var(--o1); font-size:12px; display:block; }
+
+/* overlays */
+.scrim { position:absolute; inset:0; z-index:50; background:rgba(17,17,27,.6); border:0; padding:0; }
+.drawer { position:absolute; z-index:51; top:0; right:0; bottom:0; width:min(400px, 100%); background:var(--base); border-left:1px solid var(--s1); display:flex; flex-direction:column; box-shadow:-20px 0 50px rgba(0,0,0,.4); }
+.drawer-head { display:flex; justify-content:flex-end; padding:8px 8px 0; }
+.drawer .scroll { padding:0 18px 20px; flex:1; }
+.toast { position:absolute; z-index:70; left:50%; bottom:88px; transform:translateX(-50%); max-width:calc(100% - 32px); padding:10px 16px; border-radius:var(--r); background:var(--text); color:var(--crust); font-weight:500; font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+
+/* ---------- 1: Tidied tabs ---------- */
+.l1 .scroll { flex:1; }
+.addrow { display:flex; gap:8px; flex-wrap:wrap; }
+.split { display:flex; flex:0 0 auto; }
+.split .btn { border-radius:var(--r) 0 0 var(--r); }
+.split select { height:44px; border:0; border-left:1px solid var(--s2); border-radius:0 var(--r) var(--r) 0; background:var(--s1); color:var(--text); padding:0 8px; font-weight:600; }
+.bottomnav { flex:0 0 auto; display:grid; grid-template-columns:repeat(3,1fr); height:64px; background:var(--mantle); border-top:1px solid var(--s0); }
+.bottomnav button { border:0; background:transparent; color:var(--sub0); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:12px; font-weight:500; }
+.bn-ic { position:relative; display:flex; align-items:center; justify-content:center; width:52px; height:28px; border-radius:14px; }
+.bottomnav button.on { color:var(--lav); }
+.bottomnav button.on .bn-ic { background:rgba(180,190,254,.15); }
+.bn-ic .badge { position:absolute; top:-6px; right:2px; min-width:18px; height:18px; font-size:11px; padding:0 5px; }
+@container app (min-width: 720px) { .bottomnav { display:none; } }
+.fav-card { display:flex; align-items:center; gap:10px; }
+.fav-card > div { flex:1; min-width:0; }
+
+/* ---------- 2: Planner + list ---------- */
+.l2-body { position:relative; flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); }
+.l2-body > main { min-height:0; padding-bottom:64px; }
+.summary { display:flex; flex-wrap:wrap; gap:6px 18px; color:var(--sub0); font-size:14px; font-variant-numeric:tabular-nums; }
+.summary b { color:var(--text); font-weight:600; }
+.toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.ccard { background:var(--s0); border:1px solid var(--s1); border-radius:var(--r-lg); padding:8px 6px 8px 14px; }
+.ccard.off { background:transparent; border-style:dashed; }
+.ccard.off .nm { color:var(--sub0); }
+.ccard-row { display:flex; align-items:center; gap:4px; }
+.ccard-row .card-head { flex:1; align-items:center; min-height:44px; }
+.ccard-row .nm { font-size:16px; }
+.ccard .detail { margin:6px 8px 8px 0; }
+.ccard .stack { display:flex; flex-direction:column; min-width:0; }
+.l2-side { position:absolute; z-index:30; left:0; right:0; bottom:0; height:56px; background:var(--mantle); border-top:1px solid var(--s1); border-radius:18px 18px 0 0; display:flex; flex-direction:column; transition:height .25s ease; box-shadow:0 -12px 30px rgba(0,0,0,.35); }
+.sheet-open .l2-side { height:78%; }
+.sheet-handle { flex:0 0 56px; display:flex; align-items:center; gap:10px; padding:0 18px; border:0; background:transparent; color:var(--text); font-weight:600; font-size:15px; }
+.sheet-handle .chev { margin-left:auto; transform:rotate(180deg); }
+.sheet-open .sheet-handle .chev { transform:none; }
+.l2-side .side-inner { flex:1; padding:0 18px 18px; }
+.l2-side .gl-head h2 { display:none; }
+@container app (min-width: 760px) {
+  .l2-body { grid-template-columns:minmax(0,1fr) 340px; }
+  .l2-body > main { padding-bottom:0; }
+  .l2-side, .sheet-open .l2-side { position:static; height:auto; border-radius:0; border-top:0; border-left:1px solid var(--s0); box-shadow:none; min-height:0; }
+  .sheet-handle { display:none; }
+  .l2-side .side-inner { padding:20px 20px 24px; }
+  .l2-side .gl-head h2 { display:block; }
+}
+
+/* ---------- 3: Recipe reader ---------- */
+.l3-body { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); }
+.l3-list { display:flex; flex-direction:column; min-height:0; background:var(--mantle); border-right:1px solid var(--s0); }
+.l3-tools { padding:12px; display:flex; flex-direction:column; gap:8px; }
+.l3-list .scroll { flex:1; padding:0 8px; }
+.l3-list ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.l3-item { width:100%; display:flex; flex-direction:column; gap:2px; padding:10px 12px; border:0; border-radius:var(--r); background:transparent; text-align:left; }
+.l3-item:hover { background:var(--s0); }
+.l3-item.on { background:var(--s0); box-shadow:inset 0 0 0 1px var(--s1); }
+.l3-item .nm { font-size:15px; font-weight:500; }
+.l3-item.on .nm { color:var(--lav); }
+.l3-item .mt { display:flex; align-items:center; gap:8px; font-size:12.5px; }
+.l3-item .mt svg { flex:0 0 auto; }
+.l3-item.off .nm { color:var(--o1); }
+.tag-off { color:var(--o1); }
+.l3-foot { padding:10px 16px; border-top:1px solid var(--s0); color:var(--sub0); font-size:13px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.link { border:0; background:none; padding:0; color:var(--sub0); text-decoration:underline; text-underline-offset:3px; font-size:13px; }
+.link:hover { color:var(--red); }
+.l3-detail { display:none; }
+.show-detail .l3-list { display:none; }
+.show-detail .l3-detail { display:block; }
+.reader { max-width:880px; margin:0 auto; padding:16px 18px 32px; display:flex; flex-direction:column; gap:18px; }
+.reader h1 { margin:0; font-size:28px; line-height:1.15; font-weight:600; letter-spacing:-.015em; text-wrap:balance; }
+.reader .mt { font-size:15px; margin-top:4px; }
+.reader-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.reader-cols { display:grid; gap:22px; }
+.reader-cols .steps li { font-size:16px; }
+.ing-box { background:var(--s0); border-radius:var(--r-lg); padding:14px 16px; }
+.reader-cols .ing { grid-template-columns:1fr; }
+.backbtn { align-self:flex-start; margin-left:-8px; }
+@container app (min-width: 720px) {
+  .l3-body { grid-template-columns:300px minmax(0,1fr); }
+  .l3-list, .show-detail .l3-list { display:flex; }
+  .l3-detail, .show-detail .l3-detail { display:block; }
+  .backbtn { display:none; }
+  .reader { padding:28px 32px 40px; }
+  .reader h1 { font-size:34px; }
+}
+@container app (min-width: 1000px) { .reader-cols { grid-template-columns:280px minmax(0,1fr); align-items:start; } }
+
+/* ---------- 4: Command bar ---------- */
+.l4 .scroll { flex:1; }
+.l4 .wrap { padding-bottom:110px; gap:4px; }
+.l4-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:4px 4px 10px; }
+.l4-head h1 { margin:0; font-size:20px; font-weight:600; }
+.rows { display:flex; flex-direction:column; border-top:1px solid var(--s0); }
+.row { border-bottom:1px solid var(--s0); }
+.row-line { display:flex; align-items:center; gap:4px; min-height:56px; padding:0 2px; }
+.row-main { flex:1; min-width:0; display:flex; align-items:baseline; gap:12px; padding:8px 4px; border:0; background:none; text-align:left; }
+.row-main .nm { font-size:16px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-wrap:nowrap; }
+.row-main .mt { margin-left:auto; flex:0 0 auto; font-variant-numeric:tabular-nums; }
+.row.off .nm { color:var(--o1); }
+.chk { width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; border:1.5px solid var(--s2); background:transparent; color:var(--o1); flex:0 0 auto; }
+.chk.on { border-color:transparent; background:rgba(180,190,254,.16); color:var(--lav); }
+.row .detail { border-top:0; margin:0 0 16px 44px; padding-top:0; }
+.row.open { background:linear-gradient(var(--mantle), var(--mantle)); }
+.cmdbar { position:absolute; z-index:45; left:0; right:0; bottom:0; padding:12px 12px 14px; display:flex; justify-content:center; background:linear-gradient(to top, var(--base) 55%, rgba(30,30,46,0)); pointer-events:none; }
+.cmd { pointer-events:auto; width:100%; max-width:640px; display:flex; align-items:center; gap:4px; padding:6px; border-radius:20px; background:var(--s0); border:1px solid var(--s1); box-shadow:0 14px 40px rgba(0,0,0,.5); }
+.cmd .search { flex:1; }
+.cmd .sbox { border:0; background:transparent; height:44px; box-shadow:none; }
+.cmd .sbox:focus-within { box-shadow:none; }
+.kbd { font-size:11px; font-weight:600; color:var(--o1); border:1px solid var(--s2); border-radius:5px; padding:1px 6px; }
+.cmd-groc { position:relative; display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 14px; border:0; border-radius:14px; background:var(--lav); color:var(--crust); font-weight:600; flex:0 0 auto; }
+.cmd-groc .badge { background:var(--crust); color:var(--lav); }
+.pop { position:absolute; z-index:44; left:12px; right:12px; bottom:84px; max-width:520px; margin:0 auto; max-height:70%; display:flex; flex-direction:column; border-radius:var(--r-lg); background:var(--mantle); border:1px solid var(--s1); box-shadow:0 20px 50px rgba(0,0,0,.55); }
+.pop .scroll { padding:16px 18px; }
+@container app (max-width: 480px) { .cmd-groc .lab, .kbd { display:none; } .row .detail { margin-left:4px; } }
+
+/* ---------- 5: Week board ---------- */
+.l5 .scroll { flex:1; }
+.l5 .wrap { max-width:none; padding:16px 14px 28px; }
+.l5-tools { display:flex; gap:8px; flex-wrap:wrap; max-width:760px; }
+.daystrip { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.daystrip button { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0; border:1px solid var(--s0); border-radius:var(--r); background:transparent; color:var(--sub0); font-size:12px; font-weight:600; }
+.daystrip button b { font-size:17px; color:var(--text); font-variant-numeric:tabular-nums; }
+.daystrip button i { width:5px; height:5px; border-radius:50%; background:var(--lav); }
+.daystrip button i.none { background:transparent; }
+.daystrip button.on { background:var(--s0); border-color:var(--lav); color:var(--lav); }
+.board { display:grid; gap:10px; }
+.day { display:none; flex-direction:column; gap:8px; min-height:120px; padding:10px; border-radius:var(--r-lg); background:var(--mantle); border:1px solid var(--s0); }
+.day.cur { display:flex; }
+.day.drop { border-color:var(--lav); background:rgba(180,190,254,.06); }
+.day h3 { margin:0 0 2px; display:flex; justify-content:space-between; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--sub0); }
+.day h3 span { color:var(--o1); font-variant-numeric:tabular-nums; }
+.day.today h3 { color:var(--lav); }
+.emptyday { margin:auto 0; text-align:center; color:var(--o0); font-size:13px; padding:12px 0; }
+.tile { display:flex; flex-direction:column; gap:6px; padding:10px 10px 8px 12px; border-radius:var(--r); background:var(--s0); border:1px solid var(--s1); cursor:grab; }
+.tile.off { background:transparent; border-style:dashed; }
+.tile.off .nm { color:var(--sub0); }
+.tile-main { border:0; background:none; padding:0; text-align:left; display:flex; flex-direction:column; gap:2px; }
+.tile .nm { font-size:14.5px; font-weight:600; }
+.tile .mt { font-size:12.5px; }
+.tile-ic { display:flex; gap:2px; margin-left:-6px; }
+.tile-ic .iconbtn { width:30px; height:30px; border-radius:8px; }
+.tile-ic .iconbtn.on { color:var(--lav); }
+.tray { display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:var(--r-lg); border:1px dashed var(--s1); }
+.tray.drop { border-color:var(--lav); }
+.tray-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:8px; }
+.tray p { margin:0; color:var(--o1); font-size:13px; }
+@container app (min-width: 900px) {
+  .daystrip { display:none; }
+  .board { grid-template-columns:repeat(7, minmax(0,1fr)); gap:8px; }
+  .day { display:flex; min-height:260px; padding:8px; }
+}
+.modal { position:absolute; z-index:51; left:0; right:0; bottom:0; max-height:88%; display:flex; flex-direction:column; background:var(--base); border-top:1px solid var(--s1); border-radius:20px 20px 0 0; box-shadow:0 -20px 50px rgba(0,0,0,.45); }
+@container app (min-width: 720px) { .modal { left:50%; top:50%; bottom:auto; width:620px; max-height:84%; transform:translate(-50%,-50%); border:1px solid var(--s1); border-radius:20px; } }
+.modal-head { display:flex; align-items:flex-start; gap:10px; padding:16px 12px 8px 20px; }
+.modal-head > div { flex:1; min-width:0; }
+.modal-head h2 { margin:0; font-size:22px; font-weight:600; text-wrap:balance; }
+.modal .scroll { padding:0 20px 24px; display:flex; flex-direction:column; gap:14px; }
+.daypick { display:flex; flex-wrap:wrap; gap:6px; }
+.daypick button { height:34px; padding:0 12px; border-radius:999px; border:1px solid var(--s1); background:transparent; color:var(--sub0); font-size:13.5px; font-weight:600; }
+.daypick button.on { background:var(--lav); border-color:var(--lav); color:var(--crust); }
+.modal .detail { margin-top:0; }
+</style>
+
+<div class="studio">
+  <header class="ch-head">
+    <div>
+      <h1><span>R&amp;J Meals</span> layout studies</h1>
+      <p>Five ways to arrange the same app with the same Mocha palette. Everything is clickable and runs on sample recipes. Try the grocery toggle, search, random, and swap.</p>
+    </div>
+    <div class="seg ch-view" role="group" aria-label="Preview width">
+      <button data-view="desktop" class="on">Desktop</button>
+      <button data-view="phone">Phone</button>
+    </div>
+  </header>
+  <nav class="ch-tabs" id="tabs" aria-label="Layouts"></nav>
+  <section class="notes" id="notes" aria-live="polite"></section>
+  <div class="stagewrap"><div class="frame" id="frame"></div></div>
+</div>
+
+<script>
+const ICONS = {
+  cart:'M7 22q-.825 0-1.412-.587T5 20q0-.825.588-1.412T7 18q.825 0 1.413.588T9 20q0 .825-.587 1.413T7 22m10 0q-.825 0-1.412-.587T15 20q0-.825.588-1.412T17 18q.825 0 1.413.588T20 20q0 .825-.587 1.413T17 22M6.15 6l2.4 5h7l2.75-5zM5.2 4h14.75q.575 0 .875.513t.025 1.037l-3.55 6.4q-.275.5-.737.775T15.55 13H8.1L7 15h11q.425 0 .713.288T19 16q0 .425-.288.713T18 17H7q-1.125 0-1.7-.988t-.05-1.962L6.6 11.6L3 4H2q-.425 0-.712-.288T1 3q0-.425.288-.712T2 2h1.625q.275 0 .525.15t.375.425z',
+  heart:'M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125M11.05 6.75q-.725-1.025-1.55-1.563t-2-.537q-1.5 0-2.5 1t-1 2.5q0 1.3.925 2.763t2.213 2.837q1.287 1.375 2.65 2.575T12 18.3q.85-.775 2.213-1.975t2.65-2.575q1.287-1.375 2.212-2.837T20 8.15q0-1.5-1-2.5t-2.5-1q-1.175 0-2 .538T12.95 6.75q-.175.25-.425.375T12 7.25q-.275 0-.525-.125t-.425-.375m.95 4.725',
+  heartF:'M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125',
+  swap:'M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z',
+  trash:'M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z',
+  play:'M8 5.14v14q0 .6.525.888t1.025-.038l11-7q.475-.3.475-.85t-.475-.85l-11-7Q9.05 3.965 8.525 4.253T8 5.14',
+  search:'M9.5 3a6.5 6.5 0 0 1 5.18 10.43l5.45 5.44-1.42 1.42-5.44-5.45A6.5 6.5 0 1 1 9.5 3m0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9',
+  plus:'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z',
+  shuffle:'M10.59 9.17 5.41 4 4 5.41l5.17 5.17zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04z',
+  dots:'M12 20q-.825 0-1.412-.587T10 18q0-.825.588-1.412T12 16q.825 0 1.413.588T14 18q0 .825-.587 1.413T12 20m0-6q-.825 0-1.412-.587T10 12q0-.825.588-1.412T12 10q.825 0 1.413.588T14 12q0 .825-.587 1.413T12 14m0-6q-.825 0-1.412-.587T10 6q0-.825.588-1.412T12 4q.825 0 1.413.588T14 6q0 .825-.587 1.413T12 8',
+  chev:'M16.59 8.59L12 13.17L7.41 8.59L6 10l6 6l6-6z',
+  close:'M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6z',
+  back:'M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z',
+  cal:'M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM5 22q-.825 0-1.412-.587T3 20V6q0-.825.588-1.412T5 4h1V2h2v2h8V2h2v2h1q.825 0 1.413.588T21 6v14q0 .825-.587 1.413T19 22zm0-2h14V10H5z',
+  clock:'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20m0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16m1 3v4.6l3.2 1.9-1 1.7L11 12.7V7z'
+};
+function ic(name, size = 20, extra = '') {
+  const slash = name === 'cartOff';
+  const d = ICONS[slash ? 'cart' : name];
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" ${extra}><path fill="currentColor" d="${d}"/>${slash ? '<path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 3l18 18"/>' : ''}</svg>`;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// ---------- sample data ----------
+const POOL = [
+  { id:'fajitas', name:'Sheet Pan Chicken Fajitas', time:'40 min', fav:true,
+    ingredients:['1.5 lb chicken breast','3 bell peppers','1 yellow onion','2 tbsp olive oil','1 tbsp chili powder','2 tsp cumin','8 flour tortillas','1 lime'],
+    steps:['Heat the oven to 425°F and line a sheet pan with foil.','Slice the chicken, peppers and onion into thin strips.','Toss everything with the oil, chili powder, cumin and a big pinch of salt, then spread it out in one layer.','Roast for 20–25 minutes, until the chicken is cooked through and the peppers char at the edges.','Squeeze the lime over the pan and serve in warm tortillas.'] },
+  { id:'gnocchi', name:'Creamy Tuscan Gnocchi', time:'30 min', fav:true,
+    ingredients:['1 lb potato gnocchi','3 cloves garlic','1 cup heavy cream','3 cups spinach','1/2 cup sun-dried tomatoes','1/2 cup parmesan','1 tbsp olive oil'],
+    steps:['Brown the gnocchi in the olive oil over medium-high heat, about 5 minutes. Set aside.','Cook the garlic and sun-dried tomatoes in the same pan for 1 minute.','Pour in the cream, bring to a simmer and stir in the parmesan.','Add the spinach and let it wilt, then fold the gnocchi back in.'] },
+  { id:'beef', name:'Beef and Broccoli', time:'25 min', fav:false,
+    ingredients:['1 lb flank steak','4 cups broccoli florets','3 cloves garlic','1/3 cup soy sauce','2 tbsp brown sugar','1 tbsp cornstarch','2 cups jasmine rice'],
+    steps:['Start the rice.','Slice the steak thin against the grain and toss it with the cornstarch.','Whisk the soy sauce, brown sugar, garlic and 1/4 cup water.','Sear the steak in batches in a very hot pan, then set it aside.','Steam the broccoli in the pan with a splash of water, add the sauce and the steak, and cook until glossy.'] },
+  { id:'tacos', name:'Black Bean Sweet Potato Tacos', time:'35 min', fav:false,
+    ingredients:['2 sweet potatoes','1 can black beans','1 yellow onion','2 tsp cumin','8 corn tortillas','1 avocado','1 lime','1/2 cup cotija'],
+    steps:['Dice the sweet potatoes and roast at 425°F with oil and cumin for 25 minutes.','Cook the onion until soft, then add the drained beans and warm through.','Mash the avocado with lime juice and salt.','Fill the tortillas and top with cotija.'] },
+  { id:'salmon', name:'Lemon Garlic Salmon', time:'20 min', fav:true, skip:true,
+    ingredients:['4 salmon fillets','3 cloves garlic','1 lemon','2 tbsp butter','1 lb asparagus'],
+    steps:['Heat the oven to 400°F.','Lay the salmon and asparagus on a sheet pan.','Melt the butter with the garlic and lemon zest and spoon it over everything.','Bake 12–15 minutes and finish with lemon juice.'] },
+  { id:'soup', name:'Chicken Tortilla Soup', time:'50 min', fav:false,
+    ingredients:['1 lb chicken breast','1 yellow onion','2 cloves garlic','1 can diced tomatoes','4 cups chicken broth','1 can black beans','1 tsp cumin','1 cup corn'],
+    steps:['Soften the onion and garlic in a large pot.','Add the broth, tomatoes, cumin and whole chicken breasts and simmer 20 minutes.','Shred the chicken and return it to the pot with the beans and corn.','Simmer 10 more minutes and serve with crushed tortilla chips.'] },
+  { id:'chili', name:'Turkey Chili', time:'45 min', fav:true,
+    ingredients:['1 lb ground turkey','1 yellow onion','1 can kidney beans','1 can diced tomatoes','2 tbsp chili powder','1 tsp cumin'],
+    steps:['Brown the turkey with the onion.','Add the spices, tomatoes and beans.','Simmer 30 minutes, stirring now and then.'] },
+  { id:'pesto', name:'Pesto Pasta with Peas', time:'20 min', fav:false,
+    ingredients:['1 lb penne','1/2 cup basil pesto','2 cups frozen peas','1/2 cup parmesan'],
+    steps:['Boil the pasta, adding the peas for the last 2 minutes.','Drain, keeping a cup of pasta water.','Toss with pesto, parmesan and enough water to loosen.'] },
+  { id:'pork', name:'Honey Garlic Pork Chops', time:'30 min', fav:false,
+    ingredients:['4 pork chops','3 tbsp honey','3 cloves garlic','2 tbsp soy sauce','1 lb green beans'],
+    steps:['Season and sear the chops 4 minutes per side.','Add the honey, garlic and soy sauce and spoon it over the chops.','Steam the green beans and serve alongside.'] },
+  { id:'rice', name:'Shrimp Fried Rice', time:'25 min', fav:true,
+    ingredients:['1 lb shrimp','3 cups cooked rice','2 eggs','1 cup frozen peas','2 tbsp soy sauce','3 green onions'],
+    steps:['Sear the shrimp and set aside.','Scramble the eggs in the same pan.','Add the rice and peas and fry until hot, then add the soy sauce, shrimp and green onions.'] },
+  { id:'curry', name:'Coconut Chickpea Curry', time:'30 min', fav:false,
+    ingredients:['2 cans chickpeas','1 can coconut milk','1 yellow onion','2 tbsp curry paste','3 cups spinach','2 cups jasmine rice'],
+    steps:['Start the rice.','Cook the onion with the curry paste until fragrant.','Add the chickpeas and coconut milk and simmer 15 minutes.','Stir in the spinach until wilted.'] },
+  { id:'greek', name:'Greek Chicken Bowls', time:'35 min', fav:false,
+    ingredients:['1.5 lb chicken thighs','1 cucumber','1 cup cherry tomatoes','1/2 cup feta','1 cup tzatziki','2 cups jasmine rice'],
+    steps:['Marinate the chicken in lemon, oregano and garlic.','Grill or pan-sear 6 minutes per side.','Build bowls with rice, chicken, cucumber, tomatoes, feta and tzatziki.'] },
+];
+const R = Object.fromEntries(POOL.map(r => [r.id, { ...r, groc: !r.skip, day: null }]));
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DATES = { Mon:9, Tue:10, Wed:11, Thu:12, Fri:13, Sat:14, Sun:15 };
+Object.assign(R.fajitas, { day:'Mon' }); Object.assign(R.gnocchi, { day:'Tue' }); Object.assign(R.beef, { day:'Wed' });
+Object.assign(R.tacos, { day:'Thu' }); Object.assign(R.salmon, { day:'Sat' });
+
+const S = {
+  layout: 1, view: 'desktop',
+  week: ['fajitas','gnocchi','beef','tacos','salmon','soup'],
+  openId: null, menuId: null, confirmClear: false,
+  tab: 'week', filter: 'name', randCount: 1,
+  checked: new Set(), scale: 1,
+  sheetOpen: false, drawer: false, l4groc: false,
+  selId: 'fajitas', l3Detail: false,
+  day: 'Mon', modalId: null, toast: '',
+};
+const week = () => S.week.map(id => R[id]);
+
+// ---------- grocery merge (mirrors services/groceries.go in spirit) ----------
+const UNITS = { lb:'lb', lbs:'lb', oz:'oz', cup:'cup', cups:'cup', tbsp:'tbsp', tsp:'tsp', can:'can', cans:'can', clove:'clove', cloves:'clove' };
+function parse(s) {
+  const m = s.match(/^([\d.\/]+)\s+(.*)$/);
+  if (!m) return { q:null, u:'', n:s };
+  const q = m[1].includes('/') ? m[1].split('/').map(Number).reduce((a, b) => a / b) : Number(m[1]);
+  const rest = m[2].split(' ');
+  const u = UNITS[rest[0]] || '';
+  if (u) rest.shift();
+  return { q, u, n: rest.join(' ') };
+}
+function fmtQ(q) {
+  const w = Math.floor(q), f = q - w;
+  const fr = [[.25,'¼'],[.5,'½'],[.75,'¾'],[1/3,'⅓'],[2/3,'⅔']];
+  const hit = fr.find(([k]) => Math.abs(f - k) < .02);
+  if (f > .02 && !hit) return String(+q.toFixed(2));
+  return (w ? String(w) : '') + (hit ? hit[1] : '') || '0';
+}
+function fmtIng({ q, u, n }, scale = 1) {
+  if (q == null) return n;
+  q *= scale;
+  let unit = u;
+  if (unit && q > 1 && ['cup','can','clove'].includes(unit)) unit += 's';
+  return `${fmtQ(q)} ${unit ? unit + ' ' : ''}${n}`;
+}
+function groceries() {
+  const map = new Map();
+  for (const r of week().filter(r => r.groc)) {
+    for (const s of r.ingredients) {
+      const p = parse(s);
+      const key = `${p.u}|${p.n}`;
+      const cur = map.get(key);
+      if (cur && cur.q != null && p.q != null) { cur.q += p.q; cur.from.push(r.name); }
+      else if (!cur) map.set(key, { ...p, key, from:[r.name] });
+    }
+  }
+  return [...map.values()].map(i => ({ ...i, text: fmtIng(i, S.scale) }));
+}
+const minutes = t => parseInt(t, 10) || 0;
+function totalTime() {
+  const m = week().reduce((a, r) => a + minutes(r.time), 0);
+  return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60 ? (m % 60) + ' min' : ''}`.trim() : `${m} min`;
+}
+
+// ---------- shared pieces ----------
+function searchBox(up = false, compact = false) {
+  return `<div class="search">
+    <div class="sbox">${ic('search', 18)}
+      <input class="q" id="q-${S.layout}" type="text" autocomplete="off" aria-label="Search recipes"
+        placeholder="${S.filter === 'name' ? 'Search recipes by name' : 'Search by ingredient'}">
+      ${compact ? '<span class="kbd">/</span>' : ''}
+      <div class="seg" role="group" aria-label="Search by">
+        <button data-act="filter" data-v="name" class="${S.filter === 'name' ? 'on' : ''}">Name</button>
+        <button data-act="filter" data-v="ingredients" class="${S.filter === 'ingredients' ? 'on' : ''}">${compact ? 'Ingr.' : 'Ingredient'}</button>
+      </div>
+    </div>
+    <div class="ta${up ? ' up' : ''}"></div>
+  </div>`;
+}
+function detail(r, make = true) {
+  return `<div class="detail">
+    ${make ? `<button class="btn btn-primary wide" data-act="cook" data-id="${r.id}">${ic('play', 20)} Make this recipe</button>` : ''}
+    <div><h3 class="lbl green">Ingredients</h3><ul class="ing">${r.ingredients.map(i => `<li>${esc(fmtIng(parse(i)))}</li>`).join('')}</ul></div>
+    <div><h3 class="lbl blue">Steps</h3><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></div>
+  </div>`;
+}
+const favBtn = (r, size = 22) => `<button class="iconbtn fav" data-act="fav" data-id="${r.id}" aria-pressed="${r.fav}" aria-label="${r.fav ? 'Remove from favorites' : 'Add to favorites'}" title="${r.fav ? 'Favorited' : 'Favorite'}">${ic(r.fav ? 'heartF' : 'heart', size)}</button>`;
+const gpill = r => `<button class="gpill ${r.groc ? 'on' : ''}" data-act="groc" data-id="${r.id}" aria-pressed="${r.groc}">${ic(r.groc ? 'cart' : 'cartOff', 18)}<span>${r.groc ? 'On grocery list' : 'Not on list'}</span></button>`;
+function moreMenu(r) {
+  return `<div class="menu-wrap"><button class="iconbtn" data-act="menu" data-id="${r.id}" aria-label="More actions" aria-expanded="${S.menuId === r.id}">${ic('dots', 22)}</button>
+    ${S.menuId === r.id ? `<div class="menu" role="menu">
+      <button data-act="swap" data-id="${r.id}">${ic('swap', 18)} Swap for another recipe</button>
+      <button data-act="remove" data-id="${r.id}" class="danger">${ic('trash', 18)} Remove from this week</button>
+    </div>` : ''}</div>`;
+}
+function clearRow() {
+  const n = S.week.length;
+  if (!n) return '';
+  return S.confirmClear
+    ? `<span>Remove all ${n} meals from this week?</span><button class="btn btn-danger sm" data-act="clear">Clear week</button><button class="btn btn-ghost sm" data-act="cancelClear">Keep them</button>`
+    : `<button class="btn btn-ghost sm" data-act="clear">${ic('trash', 18)} Clear this week</button>`;
+}
+const emptyWeek = () => `<div class="empty"><b>No meals planned yet</b>Search for a recipe or add a random one to start the week.</div>`;
+function groceryList() {
+  const items = groceries();
+  const left = items.filter(i => !S.checked.has(i.key)).length;
+  const meals = week().filter(r => r.groc).length;
+  return `<div class="gl">
+    <div class="gl-head"><div><h2>Grocery list</h2><p>${left} of ${items.length} left · from ${meals} meal${meals === 1 ? '' : 's'}</p></div>
+      <div class="seg" role="group" aria-label="Batch size">${[1, 2].map(x => `<button data-act="scale" data-v="${x}" class="${S.scale === x ? 'on' : ''}">${x}×</button>`).join('')}</div></div>
+    ${items.length ? `<ul class="gl-items">${items.map(i => {
+      const done = S.checked.has(i.key);
+      return `<li><label class="${done ? 'done' : ''}"><input type="checkbox" data-check="${esc(i.key)}" ${done ? 'checked' : ''}><span>${esc(i.text)}${i.from.length > 1 ? `<span class="gl-from">${i.from.length} recipes</span>` : ''}</span></label></li>`;
+    }).join('')}</ul>` : `<div class="empty"><b>Nothing to buy</b>Turn on the grocery toggle for a meal to add its ingredients.</div>`}
+  </div>`;
+}
+function drawer() {
+  return S.drawer ? `<button class="scrim" data-act="drawer" aria-label="Close grocery list"></button>
+    <div class="drawer" role="dialog" aria-label="Grocery list"><div class="drawer-head"><button class="iconbtn" data-act="drawer" aria-label="Close">${ic('close', 22)}</button></div>
+    <div class="scroll" data-scroll="drawer">${groceryList()}</div></div>` : '';
+}
+const groceryCount = () => groceries().filter(i => !S.checked.has(i.key)).length;
+
+// ---------- 1: Tidied tabs ----------
+function L1() {
+  const t = S.tab, count = groceryCount();
+  const tabs = [['week', 'This week', 'cal'], ['groc', 'Groceries', 'cart'], ['fav', 'Favorites', 'heart']];
+  let body;
+  if (t === 'week') {
+    const ws = week();
+    body = `<div class="pagehead"><h1>This week</h1><p>${ws.length} meals · ${ws.filter(r => r.groc).length} on the grocery list</p></div>
+      <div class="addrow">${searchBox()}
+        <div class="split"><button class="btn btn-soft" data-act="random">${ic('shuffle', 20)} Random</button>
+          <select id="randcount" aria-label="How many random recipes">${[1, 2, 3, 4].map(n => `<option ${S.randCount === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      </div>
+      <div class="list">${ws.map(r => `<article class="card ${r.groc ? '' : 'off'} ${S.openId === r.id ? 'open' : ''}">
+        <button class="card-head" data-act="open" data-id="${r.id}" aria-expanded="${S.openId === r.id}"><span class="nm">${esc(r.name)}</span><span class="chev">${ic('chev', 22)}</span></button>
+        <div class="card-row"><span class="mt">${r.time}</span>
+          <div class="card-actions">${gpill(r)}${favBtn(r)}${moreMenu(r)}</div></div>
+        ${S.openId === r.id ? detail(r) : ''}
+      </article>`).join('') || emptyWeek()}</div>
+      <div class="listfoot">${clearRow()}</div>`;
+  } else if (t === 'groc') {
+    body = groceryList();
+  } else {
+    const favs = POOL.map(p => R[p.id]).filter(r => r.fav);
+    body = `<div class="pagehead"><h1>Favorites</h1><p>${favs.length} saved</p></div>
+      <div class="list">${favs.map(r => {
+        const inWeek = S.week.includes(r.id);
+        return `<article class="card fav-card"><div><div class="nm">${esc(r.name)}</div><div class="mt">${r.time}</div></div>
+          <button class="btn sm ${inWeek ? 'btn-ghost' : 'btn-primary'}" data-act="toggleWeek" data-id="${r.id}">${inWeek ? 'In this week' : `${ic('plus', 18)} Add to week`}</button>${favBtn(r)}</article>`;
+      }).join('')}</div>`;
+  }
+  return `<div class="app l1">
+    <header class="top"><span class="brand">R&amp;J Meals</span>
+      <nav class="toptabs">${tabs.map(([k, l]) => `<button data-act="tab" data-v="${k}" class="${t === k ? 'on' : ''}">${l}${k === 'groc' && count ? ` <span class="badge">${count}</span>` : ''}</button>`).join('')}</nav>
+      <span class="user">Jake</span></header>
+    <main class="scroll" data-scroll="l1-${t}"><div class="wrap">${body}</div></main>
+    <nav class="bottomnav">${tabs.map(([k, l, i]) => `<button data-act="tab" data-v="${k}" class="${t === k ? 'on' : ''}"><span class="bn-ic">${ic(i, 22)}${k === 'groc' && count ? `<span class="badge">${count}</span>` : ''}</span>${l}</button>`).join('')}</nav>
+  </div>`;
+}
+
+// ---------- 2: Planner + list ----------
+function L2() {
+  const ws = week(), items = groceries();
+  return `<div class="app l2">
+    <header class="top"><span class="brand">R&amp;J Meals</span>
+      <nav class="toptabs"><button class="on">Plan</button><button data-act="toast" data-v="Favorites stays its own page here">Favorites</button></nav>
+      <span class="user">Jake</span></header>
+    <div class="l2-body ${S.sheetOpen ? 'sheet-open' : ''}">
+      <main class="scroll" data-scroll="l2"><div class="wrap">
+        <div class="pagehead"><h1>This week</h1></div>
+        <div class="summary"><span><b>${ws.length}</b> meals</span><span><b>${totalTime()}</b> of cooking</span><span><b>${items.length}</b> things to buy</span></div>
+        <div class="toolbar">${searchBox()}<button class="btn btn-soft" data-act="random">${ic('shuffle', 20)} Random</button></div>
+        <div class="list">${ws.map(r => `<article class="ccard ${r.groc ? '' : 'off'} ${S.openId === r.id ? 'open' : ''}">
+          <div class="ccard-row">
+            <button class="card-head" data-act="open" data-id="${r.id}" aria-expanded="${S.openId === r.id}"><span class="stack"><span class="nm">${esc(r.name)}</span><span class="mt">${r.time}${r.groc ? '' : ' · not on grocery list'}</span></span></button>
+            <button class="iconbtn ${r.groc ? 'on' : ''}" style="${r.groc ? 'color:var(--lav);background:rgba(180,190,254,.14)' : ''}" data-act="groc" data-id="${r.id}" aria-pressed="${r.groc}" title="${r.groc ? 'On grocery list' : 'Not on grocery list'}">${ic(r.groc ? 'cart' : 'cartOff', 20)}</button>
+            ${favBtn(r, 20)}${moreMenu(r)}
+          </div>
+          ${S.openId === r.id ? detail(r) : ''}
+        </article>`).join('') || emptyWeek()}</div>
+        <div class="listfoot">${clearRow()}</div>
+      </div></main>
+      <aside class="l2-side" aria-label="Grocery list">
+        <button class="sheet-handle" data-act="sheet" aria-expanded="${S.sheetOpen}">${ic('cart', 20)} Grocery list · ${groceryCount()} left<span class="chev">${ic('chev', 22)}</span></button>
+        <div class="side-inner scroll" data-scroll="l2s">${groceryList()}</div>
+      </aside>
+    </div>
+  </div>`;
+}
+
+// ---------- 3: Recipe reader ----------
+function L3() {
+  const ws = week();
+  const r = R[S.selId] && S.week.includes(S.selId) ? R[S.selId] : ws[0];
+  const count = groceryCount();
+  return `<div class="app l3">
+    <header class="top"><span class="brand">R&amp;J Meals</span>
+      <div class="top-actions"><button class="btn btn-soft sm" data-act="drawer">${ic('cart', 18)} Groceries ${count ? `<span class="badge">${count}</span>` : ''}</button><span class="user">Jake</span></div></header>
+    <div class="l3-body ${S.l3Detail ? 'show-detail' : ''}">
+      <aside class="l3-list">
+        <div class="l3-tools">${searchBox(false, true)}<button class="btn btn-ghost sm" data-act="random" style="justify-content:flex-start">${ic('shuffle', 18)} Add a random recipe</button></div>
+        <div class="scroll" data-scroll="l3l"><ul>${ws.map(x => `<li><button class="l3-item ${r && x.id === r.id ? 'on' : ''} ${x.groc ? '' : 'off'}" data-act="sel" data-id="${x.id}">
+          <span class="nm">${esc(x.name)}</span>
+          <span class="mt">${x.time}${x.fav ? `<span style="color:var(--green);display:inline-flex">${ic('heartF', 13)}</span>` : ''}${x.groc ? '' : '<span class="tag-off">not on list</span>'}</span>
+        </button></li>`).join('')}</ul></div>
+        <div class="l3-foot"><span>${ws.length} meals · ${totalTime()}</span>${ws.length ? (S.confirmClear ? `<span><button class="link" data-act="clear" style="color:var(--red)">Yes, clear all</button> · <button class="link" data-act="cancelClear">Keep</button></span>` : `<button class="link" data-act="clear">Clear week</button>`) : ''}</div>
+      </aside>
+      <main class="l3-detail scroll" data-scroll="l3d">${r ? `<div class="reader">
+        <button class="btn btn-ghost sm backbtn" data-act="back">${ic('back', 18)} This week</button>
+        <div><h1>${esc(r.name)}</h1><div class="mt">${r.time} · ${r.ingredients.length} ingredients · ${r.steps.length} steps</div></div>
+        <div class="reader-actions">
+          <button class="btn btn-primary" data-act="cook" data-id="${r.id}">${ic('play', 20)} Make this recipe</button>
+          ${gpill(r)}
+          <button class="btn btn-ghost sm" data-act="fav" data-id="${r.id}" style="color:var(--green)">${ic(r.fav ? 'heartF' : 'heart', 18)} ${r.fav ? 'Favorited' : 'Favorite'}</button>
+          <button class="btn btn-ghost sm" data-act="swap" data-id="${r.id}">${ic('swap', 18)} Swap</button>
+          <button class="btn btn-ghost sm danger" data-act="remove" data-id="${r.id}">${ic('trash', 18)} Remove</button>
+        </div>
+        <div class="reader-cols">
+          <div class="ing-box"><h3 class="lbl green">Ingredients</h3><ul class="ing">${r.ingredients.map(i => `<li>${esc(fmtIng(parse(i)))}</li>`).join('')}</ul></div>
+          <div><h3 class="lbl blue">Steps</h3><ol class="steps">${r.steps.map(s => `<li><span>${esc(s)}</span></li>`).join('')}</ol></div>
+        </div>
+      </div>` : `<div class="reader">${emptyWeek()}</div>`}</main>
+    </div>
+    ${drawer()}
+  </div>`;
+}
+
+// ---------- 4: Command bar ----------
+function L4() {
+  const ws = week(), count = groceryCount();
+  return `<div class="app l4">
+    <header class="top"><span class="brand">R&amp;J Meals</span>
+      <nav class="toptabs"><button class="on">This week</button><button data-act="toast" data-v="Favorites stays its own page here">Favorites</button></nav>
+      <span class="user">Jake</span></header>
+    <main class="scroll" data-scroll="l4"><div class="wrap">
+      <div class="l4-head"><h1>This week</h1><span class="mt">${ws.length} meals · ${totalTime()}</span></div>
+      <div class="rows">${ws.map(r => `<div class="row ${r.groc ? '' : 'off'} ${S.openId === r.id ? 'open' : ''}">
+        <div class="row-line">
+          <button class="chk ${r.groc ? 'on' : ''}" data-act="groc" data-id="${r.id}" aria-pressed="${r.groc}" title="${r.groc ? 'On grocery list' : 'Not on grocery list'}">${ic(r.groc ? 'cart' : 'cartOff', 18)}</button>
+          <button class="row-main" data-act="open" data-id="${r.id}" aria-expanded="${S.openId === r.id}"><span class="nm">${esc(r.name)}</span><span class="mt">${r.time}</span></button>
+          ${favBtn(r, 20)}${moreMenu(r)}
+        </div>
+        ${S.openId === r.id ? detail(r) : ''}
+      </div>`).join('') || emptyWeek()}</div>
+      <div class="listfoot" style="margin-top:16px">${clearRow()}</div>
+    </div></main>
+    ${S.l4groc ? `<div class="pop" role="dialog" aria-label="Grocery list"><div class="scroll" data-scroll="l4g">${groceryList()}</div></div>` : ''}
+    <div class="cmdbar"><div class="cmd">
+      ${searchBox(true, true)}
+      <button class="iconbtn" data-act="random" title="Add a random recipe" aria-label="Add a random recipe">${ic('shuffle', 22)}</button>
+      <button class="cmd-groc" data-act="l4groc" aria-expanded="${S.l4groc}">${ic(S.l4groc ? 'close' : 'cart', 20)}<span class="lab">Groceries</span>${count && !S.l4groc ? `<span class="badge">${count}</span>` : ''}</button>
+    </div></div>
+  </div>`;
+}
+
+// ---------- 5: Week board ----------
+function tile(r) {
+  return `<div class="tile ${r.groc ? '' : 'off'}" draggable="true" data-drag="${r.id}">
+    <button class="tile-main" data-act="modal" data-id="${r.id}"><span class="nm">${esc(r.name)}</span><span class="mt">${r.time}</span></button>
+    <div class="tile-ic">
+      <button class="iconbtn ${r.groc ? 'on' : ''}" data-act="groc" data-id="${r.id}" aria-pressed="${r.groc}" title="${r.groc ? 'On grocery list' : 'Not on grocery list'}">${ic(r.groc ? 'cart' : 'cartOff', 16)}</button>
+      <button class="iconbtn fav" data-act="fav" data-id="${r.id}" aria-pressed="${r.fav}" title="Favorite">${ic(r.fav ? 'heartF' : 'heart', 16)}</button>
+    </div>
+  </div>`;
+}
+function L5() {
+  const ws = week(), count = groceryCount();
+  const unplanned = ws.filter(r => !r.day);
+  const m = S.modalId && R[S.modalId];
+  return `<div class="app l5">
+    <header class="top"><span class="brand">R&amp;J Meals</span><span class="crumb">Week of Nov 9</span>
+      <div class="top-actions"><button class="btn btn-soft sm" data-act="drawer">${ic('cart', 18)} Groceries ${count ? `<span class="badge">${count}</span>` : ''}</button><span class="user">Jake</span></div></header>
+    <main class="scroll" data-scroll="l5"><div class="wrap">
+      <div class="l5-tools">${searchBox()}<button class="btn btn-soft" data-act="random">${ic('shuffle', 20)} Random</button></div>
+      <div class="daystrip">${DAYS.map(d => `<button data-act="day" data-v="${d}" class="${S.day === d ? 'on' : ''}">${d}<b>${DATES[d]}</b><i class="${ws.some(r => r.day === d) ? '' : 'none'}"></i></button>`).join('')}</div>
+      <div class="board">${DAYS.map(d => {
+        const rs = ws.filter(r => r.day === d);
+        return `<section class="day ${S.day === d ? 'cur' : ''} ${d === 'Mon' ? 'today' : ''}" data-drop="${d}"><h3>${d}<span>${DATES[d]}</span></h3>${rs.map(tile).join('') || '<p class="emptyday">Nothing planned</p>'}</section>`;
+      }).join('')}</div>
+      <section class="tray" data-drop=""><h3 class="lbl">Not planned yet · ${unplanned.length}</h3>
+        ${unplanned.length ? `<div class="tray-tiles">${unplanned.map(tile).join('')}</div>` : ''}
+        <p>New recipes land here. Drag one onto a day, or open it and pick a day.</p></section>
+    </div></main>
+    ${m ? `<button class="scrim" data-act="closeModal" aria-label="Close"></button>
+      <div class="modal" role="dialog" aria-label="${esc(m.name)}">
+        <div class="modal-head"><div><h2>${esc(m.name)}</h2><div class="mt">${m.time}</div></div><button class="iconbtn" data-act="closeModal" aria-label="Close">${ic('close', 22)}</button></div>
+        <div class="scroll" data-scroll="l5m">
+          <div><h3 class="lbl" style="margin-bottom:8px">Cook on</h3><div class="daypick">${DAYS.map(d => `<button data-act="move" data-id="${m.id}" data-v="${d}" class="${m.day === d ? 'on' : ''}">${d} ${DATES[d]}</button>`).join('')}<button data-act="move" data-id="${m.id}" data-v="" class="${!m.day ? 'on' : ''}">Not planned</button></div></div>
+          <div class="reader-actions">${gpill(m)}${favBtn(m)}<button class="btn btn-ghost sm" data-act="swap" data-id="${m.id}">${ic('swap', 18)} Swap</button><button class="btn btn-ghost sm danger" data-act="remove" data-id="${m.id}">${ic('trash', 18)} Remove</button></div>
+          ${detail(m)}
+        </div>
+      </div>` : ''}
+    ${drawer()}
+  </div>`;
+}
+
+// ---------- notes ----------
+const NOTES = {
+  1: { name:'Tidied tabs', idea:'The closest to what you have now. Groceries gets its own tab, card buttons get labels or move into a ⋯ menu, and Clear moves down to the end of the list.',
+       good:['Smallest change to the templ files','Grocery list becomes a page you can link to','Destructive actions sit behind a menu'],
+       gives:['Still one column on a wide screen','The grocery list is a tab away while you plan'], cost:1, costNote:'Mostly restyling. Add a /groceries route.' },
+  2: { name:'Planner + list', idea:'Meals on the left and a grocery list that stays open on the right. Toggle a meal and the list updates next to it. On a phone the list is a bottom sheet you pull up.',
+       good:['Shows what a meal costs in groceries right away','Uses the space on desktop','Adds a week summary'],
+       gives:['Needs an htmx OOB swap so the list refreshes on every change','The bottom sheet adds work on phones'], cost:2, costNote:'Rework the layout and push grocery updates out-of-band.' },
+  3: { name:'Recipe reader', idea:'Like a mail client: a list of this week’s meals and a full reading pane. Every action is a labeled button on the open recipe. On a phone, the list opens into the recipe.',
+       good:['Best for reading a recipe before you cook','All actions are spelled out','Room for bigger type'],
+       gives:['Harder to scan or edit the whole week at once','Needs a selected-recipe view and route'], cost:2, costNote:'New detail partial. The list shrinks to rows.' },
+  4: { name:'Command bar', idea:'Dense rows, with search, random and groceries in a floating bar at the bottom where your thumb is. Press / to search. A row’s cart box toggles groceries, like a checklist.',
+       good:['Fits the most meals on one screen','The main actions are within thumb reach','Feels fast'],
+       gives:['Back to icon-only buttons, so people have to learn them','The floating bar covers the bottom of the list'], cost:1, costNote:'Restyle the cards as rows and add a fixed bar.' },
+  5: { name:'Week board', idea:'Plan by day: drag meals onto Monday through Sunday, and new picks wait in an "unplanned" tray. On a phone you get a day strip. This is a feature change, not only a layout.',
+       good:['Answers "what’s for dinner Tuesday?"','Natural place for leftovers or eat-out nights later','Most useful for planning'],
+       gives:['Needs a Day field in each user’s state in Firestore','Seven columns get tight below about 1000px'], cost:3, costNote:'Data model, drag and drop, and a new board view.' },
+};
+function renderChrome() {
+  document.getElementById('tabs').innerHTML = [1, 2, 3, 4, 5].map(n => `<button data-layout="${n}" class="${S.layout === n ? 'on' : ''}" aria-pressed="${S.layout === n}"><b>${n}</b>${NOTES[n].name}</button>`).join('');
+  const n = NOTES[S.layout];
+  document.getElementById('notes').innerHTML = `
+    <div><h2>${n.name}</h2><p>${n.idea}</p></div>
+    <div><span class="lbl green">Better at</span><ul>${n.good.map(x => `<li>${x}</li>`).join('')}</ul></div>
+    <div><span class="lbl" style="color:var(--red)">Gives up</span><ul>${n.gives.map(x => `<li>${x}</li>`).join('')}</ul></div>
+    <div><span class="lbl" style="color:var(--peach)">Build effort</span><span class="cost">${[1, 2, 3].map(i => `<i class="${i <= n.cost ? 'f' : ''}"></i>`).join('')} ${['', 'Small', 'Medium', 'Large'][n.cost]}</span><p style="margin-top:4px">${n.costNote}</p></div>`;
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === S.view));
+}
+
+// ---------- render ----------
+const frame = document.getElementById('frame');
+const LAYOUTS = { 1: L1, 2: L2, 3: L3, 4: L4, 5: L5 };
+function render() {
+  const pos = {};
+  frame.querySelectorAll('[data-scroll]').forEach(el => pos[el.dataset.scroll] = el.scrollTop);
+  frame.innerHTML = LAYOUTS[S.layout]() + (S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : '');
+  frame.querySelectorAll('[data-scroll]').forEach(el => { if (pos[el.dataset.scroll]) el.scrollTop = pos[el.dataset.scroll]; });
+  frame.classList.toggle('phone', S.view === 'phone');
+  renderChrome();
+}
+let toastTimer;
+function toast(msg) {
+  S.toast = msg; clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { S.toast = ''; render(); }, 2400);
+}
+function addRecipe(id) {
+  if (S.week.includes(id)) return;
+  S.week.push(id); R[id].groc = true; R[id].day = null;
+  toast(`Added ${R[id].name}`);
+}
+function randomIds(n) {
+  const free = POOL.filter(p => !S.week.includes(p.id)).map(p => p.id).sort(() => Math.random() - .5);
+  return free.slice(0, n);
+}
+
+// ---------- events ----------
+document.addEventListener('click', e => {
+  const lay = e.target.closest('[data-layout]');
+  if (lay) { Object.assign(S, { layout: +lay.dataset.layout, menuId: null, openId: null, drawer: false, modalId: null, l4groc: false, confirmClear: false }); render(); return; }
+  const v = e.target.closest('[data-view]');
+  if (v) { S.view = v.dataset.view; render(); return; }
+  if (!frame.contains(e.target)) return;
+
+  const pickBtn = e.target.closest('[data-pick]');
+  if (pickBtn) { addRecipe(pickBtn.dataset.pick); render(); return; }
+  if (!e.target.closest('.search')) frame.querySelectorAll('.ta').forEach(t => t.innerHTML = '');
+
+  const a = e.target.closest('[data-act]');
+  if (!a) { if (S.menuId) { S.menuId = null; render(); } return; }
+  const id = a.dataset.id, val = a.dataset.v, r = R[id];
+  const act = a.dataset.act;
+  if (act !== 'menu') S.menuId = null;
+  if (act !== 'clear' && act !== 'cancelClear') S.confirmClear = false;
+  switch (act) {
+    case 'open': S.openId = S.openId === id ? null : id; break;
+    case 'menu': S.menuId = S.menuId === id ? null : id; break;
+    case 'groc': r.groc = !r.groc; break;
+    case 'fav': r.fav = !r.fav; break;
+    case 'remove': S.week = S.week.filter(x => x !== id); if (S.modalId === id) S.modalId = null; if (S.selId === id) { S.selId = S.week[0]; S.l3Detail = false; } toast(`Removed ${r.name}`); break;
+    case 'swap': {
+      const [nid] = randomIds(1); if (!nid) break;
+      S.week[S.week.indexOf(id)] = nid; R[nid].day = r.day; R[nid].groc = true;
+      if (S.openId === id) S.openId = nid; if (S.selId === id) S.selId = nid; if (S.modalId === id) S.modalId = nid;
+      toast(`Swapped in ${R[nid].name}`); break;
+    }
+    case 'random': {
+      const n = S.layout === 1 ? S.randCount : 1;
+      const ids = randomIds(n);
+      if (!ids.length) { toast('Every sample recipe is already this week'); break; }
+      ids.forEach(x => { S.week.push(x); R[x].groc = true; R[x].day = null; });
+      toast(ids.length === 1 ? `Added ${R[ids[0]].name}` : `Added ${ids.length} random recipes`); break;
+    }
+    case 'clear': if (S.confirmClear) { S.week = []; S.confirmClear = false; S.openId = null; toast('Cleared this week'); } else S.confirmClear = true; break;
+    case 'cancelClear': S.confirmClear = false; break;
+    case 'filter': S.filter = val; break;
+    case 'tab': S.tab = val; break;
+    case 'scale': S.scale = +val; break;
+    case 'sheet': S.sheetOpen = !S.sheetOpen; break;
+    case 'drawer': S.drawer = !S.drawer; break;
+    case 'l4groc': S.l4groc = !S.l4groc; break;
+    case 'sel': S.selId = id; S.l3Detail = true; break;
+    case 'back': S.l3Detail = false; break;
+    case 'day': S.day = val; break;
+    case 'modal': S.modalId = id; break;
+    case 'closeModal': S.modalId = null; break;
+    case 'move': r.day = val || null; if (val) S.day = val; break;
+    case 'toggleWeek': if (S.week.includes(id)) { S.week = S.week.filter(x => x !== id); } else addRecipe(id); break;
+    case 'cook': toast('Cook mode opens here, the same as today'); break;
+    case 'toast': toast(val); break;
+  }
+  render();
+});
+frame.addEventListener('change', e => {
+  if (e.target.dataset.check != null) {
+    const k = e.target.dataset.check;
+    S.checked.has(k) ? S.checked.delete(k) : S.checked.add(k);
+    render();
+  } else if (e.target.id === 'randcount') S.randCount = +e.target.value;
+});
+function matches(q) {
+  q = q.trim().toLowerCase();
+  if (!q) return [];
+  return POOL.filter(p => !S.week.includes(p.id)).filter(p => S.filter === 'name'
+    ? p.name.toLowerCase().includes(q)
+    : p.ingredients.some(i => i.toLowerCase().includes(q))).slice(0, 6);
+}
+frame.addEventListener('input', e => {
+  if (!e.target.classList.contains('q')) return;
+  const ta = e.target.closest('.search').querySelector('.ta');
+  const q = e.target.value, ms = matches(q);
+  ta.innerHTML = !q.trim() ? '' : ms.length
+    ? ms.map((m, i) => `<button type="button" data-pick="${m.id}" class="${i === 0 ? 'hl' : ''}"><span>${esc(m.name)}</span><span>${m.time}</span></button>`).join('')
+    : `<div class="none">No recipes match “${esc(q)}”. Try ${S.filter === 'name' ? 'chicken, curry or pasta' : 'garlic, rice or spinach'}.</div>`;
+});
+frame.addEventListener('keydown', e => {
+  if (e.target.classList?.contains('q') && e.key === 'Enter') {
+    const [m] = matches(e.target.value);
+    if (m) { addRecipe(m.id); render(); }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (S.modalId || S.drawer || S.l4groc || S.menuId || S.sheetOpen) { Object.assign(S, { modalId: null, drawer: false, l4groc: false, menuId: null, sheetOpen: false }); render(); }
+  } else if (e.key === '/' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName)) {
+    const q = frame.querySelector('.q');
+    if (q) { e.preventDefault(); q.focus(); }
+  }
+});
+// drag and drop for the week board
+frame.addEventListener('dragstart', e => {
+  const t = e.target.closest?.('[data-drag]');
+  if (t) { e.dataTransfer.setData('text/plain', t.dataset.drag); e.dataTransfer.effectAllowed = 'move'; }
+});
+frame.addEventListener('dragover', e => {
+  const d = e.target.closest?.('[data-drop]');
+  if (!d) return;
+  e.preventDefault();
+  frame.querySelectorAll('.drop').forEach(x => x !== d && x.classList.remove('drop'));
+  d.classList.add('drop');
+});
+frame.addEventListener('dragleave', e => {
+  const d = e.target.closest?.('[data-drop]');
+  if (d && !d.contains(e.relatedTarget)) d.classList.remove('drop');
+});
+frame.addEventListener('drop', e => {
+  const d = e.target.closest?.('[data-drop]');
+  if (!d) return;
+  e.preventDefault();
+  const id = e.dataTransfer.getData('text/plain');
+  if (R[id]) { R[id].day = d.dataset.drop || null; render(); }
+});
+
+render();
+</script>
+
+</body>
+</html>
