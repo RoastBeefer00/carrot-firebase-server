@@ -1677,6 +1677,9 @@
     border-radius: 9px;
   }
   .plan-quick {
+    display: none;
+  }
+  .plan-tray .plan-quick {
     flex-basis: 100%;
     display: flex;
     flex-wrap: wrap;

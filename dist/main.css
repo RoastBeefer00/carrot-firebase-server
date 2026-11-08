@@ -285,7 +285,8 @@
   .plan-tile-name { color: var(--color-text); font-weight: 600; font-size: 15px; line-height: 1.3; }
   .plan-tile-icons { display: flex; flex: 0 0 auto; }
   .plan-tile-icons .icon-btn { width: 34px; height: 34px; border-radius: 9px; }
-  .plan-quick { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px; }
+  .plan-quick { display: none; }
+  .plan-tray .plan-quick { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px; }
   .plan-quick button {
     height: 28px;
     min-width: 40px;

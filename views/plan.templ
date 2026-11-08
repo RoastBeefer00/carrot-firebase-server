@@ -44,7 +44,7 @@ templ PlanPage(s ShellData, d PlanData) {
 						</h2>
 						<div class="plan-day-items" data-items>
 							for _, r := range recipesOn(d.Recipes, iso(day)) {
-								@planTile(r, d.Week, false)
+								@planTile(r, d.Week)
 							}
 							<p class={ "plan-empty", templ.KV("hidden", len(recipesOn(d.Recipes, iso(day))) > 0) } data-empty>Nothing planned</p>
 						</div>
@@ -55,7 +55,7 @@ templ PlanPage(s ShellData, d PlanData) {
 				<h2 class="label">Not planned yet · { strconv.Itoa(len(recipesOn(d.Recipes, ""))) }</h2>
 				<div class="plan-tray-items" data-items>
 					for _, r := range recipesOn(d.Recipes, "") {
-						@planTile(r, d.Week, true)
+						@planTile(r, d.Week)
 					}
 				</div>
 				<p class="text-overlay1 text-sm">
@@ -67,7 +67,7 @@ templ PlanPage(s ShellData, d PlanData) {
 					<h2 class="label">Planned for other weeks · { strconv.Itoa(len(others)) }</h2>
 					<div class="plan-tray-items">
 						for _, r := range others {
-							@planTile(r, d.Week, false)
+							@planTile(r, d.Week)
 						}
 					</div>
 				</section>
@@ -79,7 +79,7 @@ templ PlanPage(s ShellData, d PlanData) {
 	}
 }
 
-templ planTile(r services.Recipe, w Week, quick bool) {
+templ planTile(r services.Recipe, w Week) {
 	<div class={ "plan-tile", templ.KV("is-off", r.SkipGroceries) } data-drag={ r.Id }>
 		<span class="grip" data-grip title="Drag to another day">
 			@icon("grip", 18)
@@ -100,15 +100,15 @@ templ planTile(r services.Recipe, w Week, quick bool) {
 			@GroceryToggle(r, 17)
 			@FavoriteButton(r, 17)
 		</div>
-		if quick {
-			<div class="plan-quick" aria-label="Plan for">
-				for _, day := range w.Days() {
-					<button type="button" hx-post={ "/api/plan/day/" + r.Id } hx-vals={ vals("day", iso(day)) } title={ day.Format("Monday, Jan 2") }>
-						{ day.Format("Mon") } <span class="tabular-nums">{ strconv.Itoa(day.Day()) }</span>
-					</button>
-				}
-			</div>
-		}
+		// Every tile has the day buttons and only the tray shows them, so a meal
+		// dragged in or out of the tray looks right before the page re-renders.
+		<div class="plan-quick" aria-label="Plan for">
+			for _, day := range w.Days() {
+				<button type="button" hx-post={ "/api/plan/day/" + r.Id } hx-vals={ vals("day", iso(day)) } title={ day.Format("Monday, Jan 2") }>
+					{ day.Format("Mon") } <span class="tabular-nums">{ strconv.Itoa(day.Day()) }</span>
+				</button>
+			}
+		</div>
 	</div>
 }
 

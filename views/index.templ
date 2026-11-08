@@ -212,20 +212,25 @@ templ Index(page templ.Component) {
 									this.showTip(el);
 								}
 							},
+							// The tip is filled and placed here rather than through Alpine,
+							// which updates the page a frame later, so a tip moving to
+							// another word would show there with the new text for a frame.
 							showTip(el) {
 								tipFor = el;
+								const tip = this.$refs.tip;
+								tip.textContent = el.dataset.amount;
+								tip.hidden = false;
+								this.placeTip(tip, el);
 								this.tip = el.dataset.amount;
-								this.$nextTick(() => this.placeTip());
 							},
 							hideTip() {
 								tipFor = null;
+								this.$refs.tip.hidden = true;
 								this.tip = null;
 							},
 							// Sits above the word, or below it near the top, and stays on screen.
-							placeTip() {
-								const tip = this.$refs.tip;
-								if (!tipFor || !tip) return;
-								const word = tipFor.getBoundingClientRect();
+							placeTip(tip, el) {
+								const word = el.getBoundingClientRect();
 								const gap = 16;
 								const left = word.left + word.width / 2 - tip.offsetWidth / 2;
 								tip.style.left = `${Math.max(gap, Math.min(left, innerWidth - tip.offsetWidth - gap))}px`;
