@@ -91,8 +91,13 @@ templ Index(page templ.Component) {
 
 					Alpine.data('cookMode', (id, total) => {
 						let wakeLock = null;
+						// The word the ingredient tip points at. It stays out of Alpine's
+						// reactive state, which can't wrap a DOM element.
+						let tipFor = null;
 						return {
 							cooking: false,
+							// The ingredient line shown for a word tapped in a step, or null.
+							tip: null,
 							// 0 is the ingredient list; 1..total are the recipe's steps.
 							step: 0,
 							checked: [],
@@ -113,6 +118,8 @@ templ Index(page templ.Component) {
 								}
 								this.$watch('step', () => this.save());
 								this.$watch('checked', () => this.save());
+								this.$watch('step', () => this.hideTip());
+								this.$watch('peek', () => this.hideTip());
 								// The browser keeps history state across a refresh, so this
 								// reopens the view if it was open when the page reloaded.
 								if (history.state?.cook === id) this.show();
@@ -143,6 +150,7 @@ templ Index(page templ.Component) {
 								this.$nextTick(() => this.$refs.next.focus());
 							},
 							hide() {
+								this.hideTip();
 								this.cooking = false;
 								cookingId = null;
 								this.peek = false;
@@ -188,9 +196,47 @@ templ Index(page templ.Component) {
 							back() {
 								this.goTo(this.step - 1);
 							},
+							// A mouse shows an ingredient's amount on hover; a tap or a key
+							// press shows it until the next tap.
+							hoverTip(e) {
+								if (e.pointerType === 'mouse') this.showTip(e.currentTarget);
+							},
+							leaveTip(e) {
+								if (e.pointerType === 'mouse') this.hideTip();
+							},
+							toggleTip(e) {
+								const el = e.currentTarget;
+								if (tipFor === el && e.pointerType !== 'mouse') {
+									this.hideTip();
+								} else {
+									this.showTip(el);
+								}
+							},
+							showTip(el) {
+								tipFor = el;
+								this.tip = el.dataset.amount;
+								this.$nextTick(() => this.placeTip());
+							},
+							hideTip() {
+								tipFor = null;
+								this.tip = null;
+							},
+							// Sits above the word, or below it near the top, and stays on screen.
+							placeTip() {
+								const tip = this.$refs.tip;
+								if (!tipFor || !tip) return;
+								const word = tipFor.getBoundingClientRect();
+								const gap = 16;
+								const left = word.left + word.width / 2 - tip.offsetWidth / 2;
+								tip.style.left = `${Math.max(gap, Math.min(left, innerWidth - tip.offsetWidth - gap))}px`;
+								const above = word.top - tip.offsetHeight - 8;
+								tip.style.top = `${above < gap ? word.bottom + 8 : above}px`;
+							},
 							handleKey(e) {
 								if (!this.cooking) return;
-								if (e.key === 'Escape') {
+								if (e.key === 'Escape' && this.tip) {
+									this.hideTip();
+								} else if (e.key === 'Escape') {
 									this.peek ? (this.peek = false) : this.close();
 								} else if (this.peek) {
 									return;
