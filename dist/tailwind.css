@@ -282,6 +282,9 @@
   .z-\[60\] {
     z-index: 60;
   }
+  .z-\[70\] {
+    z-index: 70;
+  }
   .container {
     width: 100%;
     @media (width >= 1080px) {
@@ -435,6 +438,9 @@
   }
   .max-w-\[1400px\] {
     max-width: 1400px;
+  }
+  .max-w-\[calc\(100vw-2rem\)\] {
+    max-width: calc(100vw - 2rem);
   }
   .max-w-xl {
     max-width: var(--container-xl);
@@ -844,8 +850,17 @@
   .underline {
     text-decoration-line: underline;
   }
+  .decoration-dotted {
+    text-decoration-style: dotted;
+  }
+  .decoration-2 {
+    text-decoration-thickness: 2px;
+  }
   .underline-offset-4 {
     text-underline-offset: 4px;
+  }
+  .underline-offset-\[0\.15em\] {
+    text-underline-offset: 0.15em;
   }
   .placeholder-overlay1 {
     &::placeholder {
@@ -1064,6 +1079,13 @@
       }
     }
   }
+  .hover\:decoration-solid {
+    &:hover {
+      @media (hover: hover) {
+        text-decoration-style: solid;
+      }
+    }
+  }
   .hover\:opacity-90 {
     &:hover {
       @media (hover: hover) {
@@ -1094,6 +1116,17 @@
   .focus\:ring-lavender {
     &:focus {
       --tw-ring-color: var(--color-lavender);
+    }
+  }
+  .focus-visible\:outline-2 {
+    &:focus-visible {
+      outline-style: var(--tw-outline-style);
+      outline-width: 2px;
+    }
+  }
+  .focus-visible\:outline-green {
+    &:focus-visible {
+      outline-color: var(--color-green);
     }
   }
   .active\:scale-\[0\.95\] {

@@ -15,6 +15,7 @@ templ MakeRecipe(recipe services.Recipe) {
 		x-on:keydown.window="handleKey($event)"
 		x-on:visibilitychange.document="keepAwake()"
 		x-on:cook-history.window="syncHistory($event.detail)"
+		x-on:resize.window="hideTip()"
 		class=""
 	>
 		<button
@@ -35,6 +36,7 @@ templ MakeRecipe(recipe services.Recipe) {
 			role="dialog"
 			aria-modal="true"
 			aria-label={ "Making " + recipe.Name }
+			x-on:click="$event.target.closest('[data-amount]') || hideTip()"
 			class="fixed inset-0 z-[60] h-[100dvh] flex flex-col bg-base"
 		>
 			<header class="flex items-center gap-2 px-3 py-3 sm:px-6">
@@ -66,7 +68,7 @@ templ MakeRecipe(recipe services.Recipe) {
 			<div class="h-1.5 bg-surface0">
 				<div class="h-full bg-lavender transition-all duration-300" x-bind:style="`width: ${progress}%`"></div>
 			</div>
-			<main x-ref="body" class="flex-1 min-h-0 overflow-y-auto flex flex-col px-5 py-6 sm:px-10 sm:py-10">
+			<main x-ref="body" x-on:scroll="hideTip()" class="flex-1 min-h-0 overflow-y-auto flex flex-col px-5 py-6 sm:px-10 sm:py-10">
 				<div class="my-auto w-full max-w-4xl mx-auto">
 					<div x-show="step === 0 || peek">
 						<h3 class="text-green text-xl sm:text-2xl font-semibold mb-4">Ingredients</h3>
@@ -84,11 +86,26 @@ templ MakeRecipe(recipe services.Recipe) {
 							<h3 class="text-lavender text-xl sm:text-2xl font-semibold mb-4">
 								Step { strconv.Itoa(i + 1) } of { strconv.Itoa(len(recipe.Steps)) }
 							</h3>
-							<p class="text-text text-3xl sm:text-4xl lg:text-5xl leading-snug lg:leading-tight">{ step }</p>
+							<p class="text-text text-3xl sm:text-4xl lg:text-5xl leading-snug lg:leading-tight">
+								for _, part := range services.StepParts(recipe.Ingredients, step) {
+									if part.Ingredient < 0 {
+										{ part.Text }
+									} else {
+										@ingredientMention(part.Text, recipe.Ingredients[part.Ingredient])
+									}
+								}
+							</p>
 						</div>
 					}
 				</div>
 			</main>
+			<div
+				x-ref="tip"
+				x-show="tip"
+				x-text="tip"
+				role="status"
+				class="fixed z-[70] max-w-[calc(100vw-2rem)] px-4 py-3 rounded-xl bg-surface0 border border-green text-text text-xl sm:text-2xl font-semibold shadow-lg pointer-events-none"
+			></div>
 			<footer class="flex gap-3 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
 				<button
 					x-show="step > 0 && !peek"
@@ -108,4 +125,23 @@ templ MakeRecipe(recipe services.Recipe) {
 			</footer>
 		</div>
 	</div>
+}
+
+// ingredientMention is an ingredient named in a step, which shows the ingredient's
+// line from the list when tapped or hovered. It's a span rather than a button
+// because a button is never fully inline, so a line could break between it and
+// the punctuation after it.
+templ ingredientMention(text, ingredient string) {
+	<span
+		role="button"
+		tabindex="0"
+		data-amount={ services.FormatIngredient(ingredient) }
+		x-on:pointerenter="hoverTip($event)"
+		x-on:pointerleave="leaveTip($event)"
+		x-on:click="toggleTip($event)"
+		x-on:keydown.enter.prevent="toggleTip($event)"
+		x-on:keydown.space.prevent="toggleTip($event)"
+		x-on:blur="hideTip()"
+		class="text-green underline decoration-dotted decoration-2 underline-offset-[0.15em] hover:decoration-solid hover:cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-green"
+	>{ text }</span>
 }
